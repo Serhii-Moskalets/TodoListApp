@@ -37,7 +37,7 @@ public class TaskEntity
     /// Gets or sets the due date of the task.
     /// </summary>
     [Column("Due_Date")]
-    public DateTime DueDate { get; set; }
+    public DateTime? DueDate { get; set; }
 
     /// <summary>
     /// Gets or sets the status of the task.
