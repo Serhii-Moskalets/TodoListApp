@@ -8,12 +8,12 @@ namespace TodoListApp.Domain.Interfaces.Repositories;
 /// Repository interface for working with <see cref="TaskEntity"/>.
 /// Provides methods for querying, creating, updating, and deleting tasks.
 /// </summary>
-public interface ITaskRepository
+public interface ITaskRepository : IRepository<TaskEntity>
 {
     /// <summary>
     /// Retrieves tasks for a specific user and To-Do list with optional filtering and sorting.
     /// </summary>
-    /// <param name="id">The user identifier.</param>
+    /// <param name="userId">The user identifier.</param>
     /// <param name="todoListId">The To-Do list identifier.</param>
     /// <param name="statuses">Optional collection of task statuses to filter by.</param>
     /// <param name="dueBefore">Optional upper bound for the task due date.</param>
@@ -23,7 +23,7 @@ public interface ITaskRepository
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A read-only collection of tasks.</returns>
     Task<IReadOnlyCollection<TaskEntity>> GetTasksAsync(
-        Guid id,
+        Guid userId,
         Guid todoListId,
         IReadOnlyCollection<StatusTask>? statuses = null,
         DateTime? dueBefore = null,
@@ -55,35 +55,15 @@ public interface ITaskRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves a task by its identifier.
-    /// </summary>
-    /// <param name="taskId">The task identifier.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The task if found; otherwise, <c>null</c>.</returns>
-    Task<TaskEntity?> GetByIdAsync(
-        Guid taskId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Determines whether a task exists for the specified user.
     /// </summary>
     /// <param name="taskId">The task identifier.</param>
     /// <param name="userId">The user identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns><c>true</c> if the task exists; otherwise, <c>false</c>.</returns>
-    Task<bool> ExistsAsync(
+    Task<bool> ExistsForUserAsync(
         Guid taskId,
         Guid userId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Determines whether a task exists by its identifier.
-    /// </summary>
-    /// <param name="taskId">The task identifier.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns><c>true</c> if the task exists; otherwise, <c>false</c>.</returns>
-    Task<bool> ExistsAsync(
-        Guid taskId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -99,36 +79,6 @@ public interface ITaskRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Adds a new task.
-    /// </summary>
-    /// <param name="task">The task entity to add.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    Task AddAsync(
-        TaskEntity task,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Updates an existing task.
-    /// </summary>
-    /// <param name="task">The task entity to update.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    Task UpdateAsync(
-        TaskEntity task,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Deletes a task by its identifier.
-    /// </summary>
-    /// <param name="taskId">The task identifier.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    Task DeleteAsync(
-        Guid taskId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Deletes all overdue tasks for a specific user and To-Do list.
     /// </summary>
     /// <param name="userId">The user identifier.</param>
@@ -139,18 +89,6 @@ public interface ITaskRepository
         Guid userId,
         Guid listId,
         CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Persists all pending changes to the database asynchronously.
-    /// </summary>
-    /// <param name="cancellationToken">
-    /// A <see cref="CancellationToken"/> to observe while waiting for the task to complete.
-    /// </param>
-    /// <returns>
-    /// A <see cref="Task{TResult}"/> representing the asynchronous operation.
-    /// The result contains the number of state entries written to the database.
-    /// </returns>
-    Task<int> SaveChangeAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes a tag from the specified task.
