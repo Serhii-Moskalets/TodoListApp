@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TodoListApp.Infrastructure.Persistence;
 
+
 #nullable disable
 
 namespace TodoListApp.Infrastructure.Migrations
