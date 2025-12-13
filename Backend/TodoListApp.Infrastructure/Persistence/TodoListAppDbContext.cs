@@ -47,11 +47,6 @@ public class TodoListAppDbContext : DbContext
     public DbSet<UserTaskAccessEntity> UserTaskAccesses { get; set; }
 
     /// <summary>
-    /// Gets or setsthe DbSet of logs.
-    /// </summary>
-    public DbSet<LogEntity> Logs { get; set; }
-
-    /// <summary>
     /// Configures the model by applying entity configurations from the assembly.
     /// </summary>
     /// <param name="modelBuilder">The model builder to configure the entities.</param>

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TodoListApp.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using TodoListApp.Infrastructure.Persistence;
 namespace TodoListApp.Infrastructure.Migrations
 {
     [DbContext(typeof(TodoListAppDbContext))]
-    partial class TodoListAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251213140410_RemoveLogEntity")]
+    partial class RemoveLogEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
