@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.CompilerServices;
 using TodoListApp.Domain.Enums;
 
 namespace TodoListApp.Domain.Entities;
@@ -87,12 +88,12 @@ public class TaskEntity : BaseEntity
     /// Gets the ID of the tag associated with the task, if any.
     /// </summary>
     [Column("Tag_Id")]
-    public Guid? TagId { get; init; }
+    public Guid? TagId { get; private set; }
 
     /// <summary>
     /// Gets the tag entity associated with the task.
     /// </summary>
-    public virtual TagEntity? Tag { get; init; }
+    public virtual TagEntity? Tag { get; private set; }
 
     /// <summary>
     /// Gets the task list to which this task belongs.
@@ -113,4 +114,13 @@ public class TaskEntity : BaseEntity
     /// Gets the collection of user accesses associated with this task.
     /// </summary>
     public virtual ICollection<UserTaskAccessEntity> UserAccesses { get; private set; } = new HashSet<UserTaskAccessEntity>();
+
+    /// <summary>
+    /// Removes the tag associated with the task by setting <see cref="Tag"/> and <see cref="TagId"/> to <c>null</c>.
+    /// </summary>
+    public void RemoveTag()
+    {
+        this.Tag = null;
+        this.TagId = null;
+    }
 }

@@ -28,7 +28,7 @@ public interface ITaskRepository : IRepository<TaskEntity>
         IReadOnlyCollection<StatusTask>? statuses = null,
         DateTime? dueBefore = null,
         DateTime? dueAfter = null,
-        string? sortBy = null,
+        TaskSortBy? sortBy = null,
         bool ascending = true,
         CancellationToken cancellationToken = default);
 
@@ -36,10 +36,12 @@ public interface ITaskRepository : IRepository<TaskEntity>
     /// Retrieves all overdue tasks for the specified user.
     /// </summary>
     /// <param name="userId">The user identifier.</param>
+    /// <param name="taskListId">The To-Do list identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A read-only collection of overdue tasks.</returns>
     Task<IReadOnlyCollection<TaskEntity>> GetOverdueTasksAsync(
         Guid userId,
+        Guid taskListId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -70,24 +72,24 @@ public interface ITaskRepository : IRepository<TaskEntity>
     /// Counts overdue tasks for a specific user and To-Do list.
     /// </summary>
     /// <param name="userId">The user identifier.</param>
-    /// <param name="listId">The To-Do list identifier.</param>
+    /// <param name="taskListId">The To-Do list identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The number of overdue tasks.</returns>
     Task<int> CountOverdueTasksAsync(
         Guid userId,
-        Guid listId,
+        Guid taskListId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes all overdue tasks for a specific user and To-Do list.
     /// </summary>
     /// <param name="userId">The user identifier.</param>
-    /// <param name="listId">The To-Do list identifier.</param>
+    /// <param name="taskListId">The To-Do list identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     Task DeleteOverdueTasksAsync(
         Guid userId,
-        Guid listId,
+        Guid taskListId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -104,7 +106,7 @@ public interface ITaskRepository : IRepository<TaskEntity>
     /// Retrieves paginated tasks with optional filtering.
     /// </summary>
     /// <param name="userId">The user identifier.</param>
-    /// <param name="todoListId">The To-Do list identifier.</param>
+    /// <param name="taskListId">The To-Do list identifier.</param>
     /// <param name="page">The page number (1-based).</param>
     /// <param name="pageSize">The number of items per page.</param>
     /// <param name="filter">Optional filter expression.</param>
@@ -114,7 +116,7 @@ public interface ITaskRepository : IRepository<TaskEntity>
     /// </returns>
     Task<(IReadOnlyCollection<TaskEntity> Items, int TotalCount)> GetPaginatedAsync(
         Guid userId,
-        Guid todoListId,
+        Guid taskListId,
         int page,
         int pageSize,
         Expression<Func<TaskEntity, bool>>? filter = null,

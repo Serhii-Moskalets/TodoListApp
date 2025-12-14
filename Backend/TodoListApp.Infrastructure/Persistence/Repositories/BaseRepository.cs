@@ -40,6 +40,9 @@ public abstract class BaseRepository<TEntity> : IRepository<TEntity>
     /// <param name="entity">The entity to add.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>A task representing the asynchronous add operation.</returns>
+    /// <remarks>
+    /// Changes are not automatically saved. Call SaveChangesAsync in service if needed.
+    /// </remarks>
     public virtual async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
@@ -75,6 +78,9 @@ public abstract class BaseRepository<TEntity> : IRepository<TEntity>
     /// <param name="id">The unique identifier of the entity to delete.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>A task representing the asynchronous delete operation.</returns>
+    /// <remarks>
+    /// Changes are not automatically saved. Call SaveChangesAsync in service if needed.
+    /// </remarks>
     public virtual async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await this.GetByIdAsync(id, false, cancellationToken);
@@ -99,6 +105,9 @@ public abstract class BaseRepository<TEntity> : IRepository<TEntity>
     /// <param name="entity">The entity to update.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>A task representing the asynchronous update operation.</returns>
+    /// <remarks>
+    /// Changes are not automatically saved. Call SaveChangesAsync in service if needed.
+    /// </remarks>
     public virtual Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
