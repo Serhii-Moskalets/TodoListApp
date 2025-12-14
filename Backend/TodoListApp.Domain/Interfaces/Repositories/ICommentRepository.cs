@@ -17,14 +17,6 @@ public interface ICommentRepository : IRepository<CommentEntity>
     Task<IReadOnlyCollection<CommentEntity>> GetByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves all comments created by a specific user.
-    /// </summary>
-    /// <param name="userId">The identifier of the user.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A read-only collection of <see cref="CommentEntity"/>.</returns>
-    Task<IReadOnlyCollection<CommentEntity>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Retrieves a paginated collection of comments for a specific task.
     /// </summary>
     /// <param name="taskId">The identifier of the task.</param>
@@ -43,9 +35,9 @@ public interface ICommentRepository : IRepository<CommentEntity>
     /// <summary>
     /// Checks whether a given user is the owner of a specific comment.
     /// </summary>
-    /// <param name="comment">The identifier of the comment.</param>
+    /// <param name="commentId">The identifier of the comment.</param>
     /// <param name="userId">The identifier of the user.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns><c>true</c> if the user is the owner of the comment; otherwise, <c>false</c>.</returns>
-    Task<bool> IsCommentOwnerAsync(Guid comment, Guid userId, CancellationToken cancellationToken = default);
+    Task<bool> IsCommentOwnerAsync(Guid commentId, Guid userId, CancellationToken cancellationToken = default);
 }
