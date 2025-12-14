@@ -43,14 +43,4 @@ public interface IUserRepository : IRepository<UserEntity>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns><c>true</c> if a user with the specified username exists; otherwise, <c>false</c>.</returns>
     Task<bool> ExistsByUserNameAsync(string userName, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Searches for users by an optional search term.
-    /// </summary>
-    /// <param name="searchTerm">An optional term to filter users by username or email. If <c>null</c>, all users are returned.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A read-only collection of <see cref="UserEntity"/> that match the search criteria.</returns>
-    Task<IReadOnlyCollection<UserEntity>> SearchAsync(
-        string? searchTerm = null,
-        CancellationToken cancellationToken = default);
 }

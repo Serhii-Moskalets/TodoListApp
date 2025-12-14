@@ -1,4 +1,6 @@
-﻿namespace TodoListApp.Domain.Interfaces.Repositories;
+﻿using TodoListApp.Domain.Entities;
+
+namespace TodoListApp.Domain.Interfaces.Repositories;
 
 /// <summary>
 /// Generic repository interface providing basic CRUD operations for any entity type.
@@ -8,15 +10,18 @@
 /// <typeparam name="TEntity">The type of the entity that the repository will manage. Must be a class.</typeparam>
 public interface IRepository
     <TEntity>
-    where TEntity : class
+    where TEntity : BaseEntity
 {
     /// <summary>
-    /// Retrieves an entity by its unique identifier.
+    /// Retrieves an entity by its unique identifier, optionally as a no-tracking query.
     /// </summary>
     /// <param name="id">The unique identifier of the entity.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+    /// <param name="asNoTracking">
+    /// If <c>true</c>, the entity will be loaded without tracking, which improves performance for read-only operations.
+    /// </param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to monitor for cancellation requests.</param>
     /// <returns>The entity if found; otherwise, <c>null</c>.</returns>
-    Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<TEntity?> GetByIdAsync(Guid id, bool asNoTracking = true, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Checks whether an entity exists by its unique identifier.

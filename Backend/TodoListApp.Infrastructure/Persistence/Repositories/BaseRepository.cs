@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Interfaces.Repositories;
 
 namespace TodoListApp.Infrastructure.Persistence.Repositories;
@@ -9,22 +10,29 @@ namespace TodoListApp.Infrastructure.Persistence.Repositories;
 /// for concrete repositories that manage specific entity types.
 /// </summary>
 /// <typeparam name="TEntity">The type of the entity to be managed. Must be a class.</typeparam>
-public class BaseRepository<TEntity> : IRepository<TEntity>
-    where TEntity : class
+public abstract class BaseRepository<TEntity> : IRepository<TEntity>
+    where TEntity : BaseEntity
 {
-    private readonly TodoListAppDbContext _context;
-    private readonly DbSet<TEntity> _dbSet;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseRepository{TEntity}"/> class
     /// with the specified database context.
     /// </summary>
     /// <param name="context">The database context used for data operations.</param>
-    public BaseRepository(TodoListAppDbContext context)
+    protected BaseRepository(TodoListAppDbContext context)
     {
-        this._context = context;
-        this._dbSet = this._context.Set<TEntity>();
+        this.Context = context;
+        this.DbSet = this.Context.Set<TEntity>();
     }
+
+    /// <summary>
+    /// Gets the database context used by this repository.
+    /// </summary>
+    protected TodoListAppDbContext Context { get; }
+
+    /// <summary>
+    /// Gets the <see cref="DbSet{TEntity}"/> representing the collection of entities in the database.
+    /// </summary>
+    protected DbSet<TEntity> DbSet { get; }
 
     /// <summary>
     /// Adds a new entity to the repository.
@@ -34,7 +42,31 @@ public class BaseRepository<TEntity> : IRepository<TEntity>
     /// <returns>A task representing the asynchronous add operation.</returns>
     public virtual async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-        await this._dbSet.AddAsync(entity, cancellationToken);
+        ArgumentNullException.ThrowIfNull(entity);
+        await this.DbSet.AddAsync(entity, cancellationToken);
+    }
+
+    /// <summary>
+    /// Retrieves an entity by its unique identifier, optionally using a no-tracking query.
+    /// </summary>
+    /// <param name="id">The unique identifier of the entity.</param>
+    /// <param name="asNoTracking">
+    /// If <c>true</c>, the query will not track changes in the retrieved entity,
+    /// which can improve performance for read-only operations.
+    /// </param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>
+    /// A task that returns the entity if found; otherwise, <c>null</c>.
+    /// </returns>
+    public virtual async Task<TEntity?> GetByIdAsync(Guid id, bool asNoTracking = true, CancellationToken cancellationToken = default)
+    {
+        IQueryable<TEntity> query = this.DbSet;
+        if (asNoTracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        return await query.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
     /// <summary>
@@ -45,10 +77,10 @@ public class BaseRepository<TEntity> : IRepository<TEntity>
     /// <returns>A task representing the asynchronous delete operation.</returns>
     public virtual async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var entity = await this.GetByIdAsync(id, cancellationToken);
+        var entity = await this.GetByIdAsync(id, false, cancellationToken);
         if (entity != null)
         {
-            this._dbSet.Remove(entity);
+            this.DbSet.Remove(entity);
         }
     }
 
@@ -59,21 +91,7 @@ public class BaseRepository<TEntity> : IRepository<TEntity>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>A task that returns <c>true</c> if the entity exists; otherwise, <c>false</c>.</returns>
     public virtual async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        var entity = await this.GetByIdAsync(id, cancellationToken);
-        return entity != null;
-    }
-
-    /// <summary>
-    /// Retrieves an entity by its unique identifier.
-    /// </summary>
-    /// <param name="id">The unique identifier of the entity.</param>
-    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>A task that returns the entity if found; otherwise, <c>null</c>.</returns>
-    public virtual async Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        return await this._dbSet.FindAsync([id], cancellationToken);
-    }
+        => await this.DbSet.AsNoTracking().AnyAsync(e => e.Id == id, cancellationToken);
 
     /// <summary>
     /// Updates an existing entity in the repository.
@@ -83,7 +101,8 @@ public class BaseRepository<TEntity> : IRepository<TEntity>
     /// <returns>A task representing the asynchronous update operation.</returns>
     public virtual Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-        this._dbSet.Update(entity);
+        ArgumentNullException.ThrowIfNull(entity);
+        this.DbSet.Update(entity);
         return Task.CompletedTask;
     }
 
@@ -94,6 +113,6 @@ public class BaseRepository<TEntity> : IRepository<TEntity>
     /// <returns>A task that returns the number of state entries written to the database.</returns>
     public virtual async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return await this._context.SaveChangesAsync(cancellationToken);
+        return await this.Context.SaveChangesAsync(cancellationToken);
     }
 }

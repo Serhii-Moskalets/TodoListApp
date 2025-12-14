@@ -6,8 +6,16 @@ namespace TodoListApp.Domain.Interfaces.Repositories;
 /// Repository interface for managing <see cref="UserTaskAccessEntity"/>.
 /// Provides methods for querying, adding, and deleting user task access records.
 /// </summary>
-public interface IUserTaskAccessRepository : IRepository<UserTaskAccessEntity>
+public interface IUserTaskAccessRepository
 {
+    /// <summary>
+    /// Adds a new user task access record.
+    /// </summary>
+    /// <param name="entity">The user task access entity to add.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+    /// <returns>A task representing the asynchronous add operation.</returns>
+    Task AddAsync(UserTaskAccessEntity entity, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Retrieves a user task access record by task ID and user ID.
     /// </summary>
