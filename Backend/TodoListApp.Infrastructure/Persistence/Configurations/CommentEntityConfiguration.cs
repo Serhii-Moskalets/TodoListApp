@@ -20,7 +20,7 @@ public class CommentEntityConfiguration : IEntityTypeConfiguration<CommentEntity
         builder.HasKey(c => c.Id);
 
         // Configure properties
-        builder.Property(c => c.Id).HasColumnType("uuid");
+        builder.Property(c => c.Id).HasColumnType("uuid").ValueGeneratedNever();
         builder.Property(c => c.UserId).HasColumnType("uuid");
         builder.Property(c => c.TaskId).HasColumnType("uuid");
         builder.Property(c => c.Text).IsRequired().HasMaxLength(4000);

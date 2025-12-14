@@ -6,47 +6,60 @@ namespace TodoListApp.Domain.Entities;
 /// Represents a user's comment on a task.
 /// </summary>
 [Table("Comments")]
-public class CommentEntity
+public class CommentEntity : BaseEntity
 {
     /// <summary>
-    /// Gets the unique identifier of the comment.
+    /// Initializes a new instance of the <see cref="CommentEntity"/> class.
     /// </summary>
-    [Column("Comment_Id")]
-    public Guid Id { get; private set; } = Guid.NewGuid();
+    /// <param name="taskId">The ID of the task the comment belongs to.</param>
+    /// <param name="userId">The ID of the user who created the comment.</param>
+    /// <param name="text">The text content of the comment.</param>
+    public CommentEntity(Guid taskId, Guid userId, string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new ArgumentException("Comment text cannot be empty", nameof(text));
+        }
+
+        this.TaskId = taskId;
+        this.UserId = userId;
+        this.Text = text;
+        this.CreatedDate = DateTime.UtcNow;
+    }
+
+    private CommentEntity() { }
 
     /// <summary>
-    /// Gets or sets the text content of the comment.
+    /// Gets the text content of the comment.
     /// </summary>
     [Column("Text")]
-    public string Text { get; set; } = null!;
+    required public string Text { get; init; }
 
     /// <summary>
     /// Gets the date and time when the comment was created.
     /// </summary>
     [Column("Created_Date")]
-    public DateTime CreatedDate { get; private set; } = DateTime.UtcNow;
+    required public DateTime CreatedDate { get; init; }
 
     /// <summary>
-    /// Gets or sets the ID of the task that this comment belongs to.
+    /// Gets the ID of the task that this comment belongs to.
     /// </summary>
     [Column("Task_Id")]
-    [ForeignKey(nameof(Task))]
-    public Guid TaskId { get; set; }
+    required public Guid TaskId { get; init; }
 
     /// <summary>
-    /// Gets or sets the ID of the user who created the comment.
+    /// Gets the ID of the user who created the comment.
     /// </summary>
     [Column("User_Id")]
-    [ForeignKey(nameof(User))]
-    public Guid UserId { get; set; }
+    required public Guid UserId { get; init; }
 
     /// <summary>
-    /// Gets or sets the user who created the comment.
+    /// Gets the user who created the comment.
     /// </summary>
-    public UserEntity User { get; set; } = null!;
+    public virtual UserEntity User { get; init; } = null!;
 
     /// <summary>
-    /// Gets or sets the task to which this comment belongs.
+    /// Gets the task to which this comment belongs.
     /// </summary>
-    public TaskEntity Task { get; set; } = null!;
+    public virtual TaskEntity Task { get; init; } = null!;
 }

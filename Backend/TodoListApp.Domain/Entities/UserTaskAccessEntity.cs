@@ -9,24 +9,37 @@ namespace TodoListApp.Domain.Entities;
 public class UserTaskAccessEntity
 {
     /// <summary>
-    /// Gets or sets the ID of the task.
+    /// Initializes a new instance of the <see cref="UserTaskAccessEntity"/> class.
+    /// </summary>
+    /// <param name="taskId">The ID of the task the access relationship between a user and a task belongs to.</param>
+    /// <param name="userId">The ID of the user the access relationship between a user and a task belongs to.</param>
+    public UserTaskAccessEntity(Guid taskId, Guid userId)
+    {
+        this.TaskId = taskId;
+        this.UserId = userId;
+    }
+
+    private UserTaskAccessEntity() { }
+
+    /// <summary>
+    /// Gets the ID of the task.
     /// </summary>
     [Column("Task_Id")]
-    public Guid TaskId { get; set; }
+    required public Guid TaskId { get; init; }
 
     /// <summary>
-    /// Gets or sets the ID of the user.
+    /// Gets the ID of the user.
     /// </summary>
     [Column("User_Id")]
-    public Guid UserId { get; set; }
+    required public Guid UserId { get; init; }
 
     /// <summary>
-    /// Gets or sets the task associated with this access.
+    /// Gets the task associated with this access.
     /// </summary>
-    public TaskEntity Task { get; set; } = null!;
+    public virtual TaskEntity Task { get; init; } = null!;
 
     /// <summary>
-    /// Gets or sets the user associated with this access.
+    /// Gets the user associated with this access.
     /// </summary>
-    public UserEntity User { get; set; } = null!;
+    public virtual UserEntity User { get; init; } = null!;
 }
