@@ -31,7 +31,7 @@ public interface IUserTaskAccessRepository
     /// <param name="userId">The identifier of the user.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A read-only collection of <see cref="TaskEntity"/> shared with the user.</returns>
-    Task<IReadOnlyCollection<TaskEntity>> GetSharedTasksForUserAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<UserTaskAccessEntity>> GetSharedTasksForUserAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Checks whether a user task access record exists for the given task and user.
@@ -41,15 +41,6 @@ public interface IUserTaskAccessRepository
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns><c>true</c> if the access record exists; otherwise, <c>false</c>.</returns>
     Task<bool> ExistsAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Checks whether a user has access to any task in a specific task list.
-    /// </summary>
-    /// <param name="userId">The user identifier.</param>
-    /// <param name="todoListId">The task list identifier.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns><c>true</c> if the user has access to any task in the list; otherwise, <c>false</c>.</returns>
-    Task<bool> HasAccessToAnyTaskInListAsync(Guid userId, Guid todoListId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a user task access record by task ID and user ID.
@@ -75,4 +66,11 @@ public interface IUserTaskAccessRepository
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A task representing the asynchronous delete operation.</returns>
     Task DeleteAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Persists all pending changes to the database asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+    /// <returns>The number of state entries written to the database.</returns>
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
