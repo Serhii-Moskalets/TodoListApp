@@ -6,40 +6,52 @@ namespace TodoListApp.Domain.Entities;
 /// Represents a task list owned by a user, containing multiple tasks.
 /// </summary>
 [Table("Task_Lists")]
-public class TaskListEntity
+public class TaskListEntity : BaseEntity
 {
     /// <summary>
-    /// Gets the unique identifier of the task list.
+    /// Initializes a new instance of the <see cref="TaskListEntity"/> class.
     /// </summary>
-    [Column("Task_List_Id")]
-    public Guid Id { get; private set; } = Guid.NewGuid();
+    /// <param name="ownerId">The ID of the user who created the task list.</param>
+    /// <param name="title">The title of the task list.</param>
+    public TaskListEntity(Guid ownerId, string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new ArgumentException("Title of the task list cannot be empty.", nameof(title));
+        }
+
+        this.OwnerId = ownerId;
+        this.Title = title.Trim();
+        this.CreatedDate = DateTime.UtcNow;
+    }
+
+    private TaskListEntity() { }
 
     /// <summary>
-    /// Gets or sets the title of the task list.
+    /// Gets the title of the task list.
     /// </summary>
     [Column("Title")]
-    public string Title { get; set; } = null!;
+    required public string Title { get; init; }
 
     /// <summary>
     /// Gets the creation date of the task list.
     /// </summary>
     [Column("Created_Date")]
-    public DateTime CreatedDate { get; private set;  } = DateTime.UtcNow;
+    required public DateTime CreatedDate { get; init; }
 
     /// <summary>
-    /// Gets or sets the ID of the user who owns this task list.
+    /// Gets the ID of the user who owns this task list.
     /// </summary>
     [Column("Owner_Id")]
-    [ForeignKey(nameof(Owner))]
-    public Guid OwnerId { get; set; }
+    required public Guid OwnerId { get; init; }
 
     /// <summary>
-    /// Gets or sets the user who owns this task list.
+    /// Gets the user who owns this task list.
     /// </summary>
-    public UserEntity Owner { get; set; } = null!;
+    public virtual UserEntity Owner { get; init; } = null!;
 
     /// <summary>
     /// Gets the collection of tasks contained in this task list.
     /// </summary>
-    public List<TaskEntity> Tasks { get; private set; } = new();
+    public ICollection<TaskEntity> Tasks { get; private set; } = new HashSet<TaskEntity>();
 }

@@ -20,12 +20,11 @@ public class TaskEntityConfiguration : IEntityTypeConfiguration<TaskEntity>
         builder.HasKey(t => t.Id);
 
         // Configure properties
-        builder.Property(t => t.Id).HasColumnType("uuid");
-        builder.Property(t => t.OwnerId).HasColumnType("uuid");
+        builder.Property(t => t.Id).HasColumnType("uuid").ValueGeneratedNever();
+        builder.Property(t => t.OwnerId).IsRequired().HasColumnType("uuid");
         builder.Property(t => t.TagId).HasColumnType("uuid");
-        builder.Property(t => t.TaskListId).HasColumnType("uuid");
+        builder.Property(t => t.TaskListId).IsRequired().HasColumnType("uuid");
         builder.Property(t => t.Title).IsRequired().HasMaxLength(200);
-        builder.Property(t => t.Description).HasMaxLength(1000);
         builder.Property(t => t.Status).IsRequired();
 
         // Configure relationship with User

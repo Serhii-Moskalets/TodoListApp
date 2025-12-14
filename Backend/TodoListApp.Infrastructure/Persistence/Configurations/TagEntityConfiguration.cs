@@ -20,8 +20,8 @@ public class TagEntityConfiguration : IEntityTypeConfiguration<TagEntity>
         builder.HasKey(t => t.Id);
 
         // Configure properties
-        builder.Property(t => t.Name).IsRequired().HasMaxLength(20);
-        builder.Property(t => t.Id).HasColumnType("uuid");
+        builder.Property(t => t.Id).HasColumnType("uuid").ValueGeneratedNever();
+        builder.Property(t => t.Name).IsRequired().HasMaxLength(100);
         builder.Property(t => t.UserId).HasColumnType("uuid");
 
         // Configure relationship with User
