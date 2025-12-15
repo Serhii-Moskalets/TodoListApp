@@ -73,11 +73,13 @@ public interface ITaskRepository : IRepository<TaskEntity>
     /// </summary>
     /// <param name="userId">The user identifier.</param>
     /// <param name="taskListId">The To-Do list identifier.</param>
+    /// <param name="now">The current date and time used to determine overdue tasks.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The number of overdue tasks.</returns>
     Task<int> CountOverdueTasksAsync(
         Guid userId,
         Guid taskListId,
+        DateTime now,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -85,20 +87,24 @@ public interface ITaskRepository : IRepository<TaskEntity>
     /// </summary>
     /// <param name="userId">The user identifier.</param>
     /// <param name="taskListId">The To-Do list identifier.</param>
+    /// <param name="now">The current date and time used to determine overdue tasks.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     Task DeleteOverdueTasksAsync(
         Guid userId,
         Guid taskListId,
+        DateTime now,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes a tag from the specified task.
     /// </summary>
+    /// <param name="userId">The user identifier.</param>
     /// <param name="taskId">The task identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     Task RemoveTagAsync(
+        Guid userId,
         Guid taskId,
         CancellationToken cancellationToken = default);
 

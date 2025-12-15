@@ -20,11 +20,12 @@ public class TaskRepository(TodoListAppDbContext context)
     /// </summary>
     /// <param name="userId">The identifier of the user.</param>
     /// <param name="taskListId">The identifier of the task list.</param>
+    /// <param name="now">The current date and time used to determine overdue tasks.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>The number of overdue tasks.</returns>
-    public async Task<int> CountOverdueTasksAsync(Guid userId, Guid taskListId, CancellationToken cancellationToken = default)
+    public async Task<int> CountOverdueTasksAsync(Guid userId, Guid taskListId, DateTime now, CancellationToken cancellationToken = default)
         => await this.DbSet
-            .Where(x => x.OwnerId == userId && x.TaskListId == taskListId && x.DueDate < DateTime.UtcNow)
+            .Where(x => x.OwnerId == userId && x.TaskListId == taskListId && x.DueDate < now)
             .CountAsync(cancellationToken);
 
     /// <summary>
@@ -32,15 +33,16 @@ public class TaskRepository(TodoListAppDbContext context)
     /// </summary>
     /// <param name="userId">The identifier of the user.</param>
     /// <param name="taskListId">The identifier of the task list.</param>
+    /// <param name="now">The current date and time used to determine overdue tasks.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A task representing the asynchronous delete operation.</returns>
     /// <remarks>
     /// Changes are not automatically saved. Call SaveChangesAsync in service if needed.
     /// </remarks>
-    public async Task DeleteOverdueTasksAsync(Guid userId, Guid taskListId, CancellationToken cancellationToken = default)
+    public async Task DeleteOverdueTasksAsync(Guid userId, Guid taskListId, DateTime now, CancellationToken cancellationToken = default)
     {
         var overdueTasks = await this.DbSet
-            .Where(x => x.OwnerId == userId && x.TaskListId == taskListId && x.DueDate < DateTime.UtcNow)
+            .Where(x => x.OwnerId == userId && x.TaskListId == taskListId && x.DueDate < now)
             .ToListAsync(cancellationToken);
 
         this.DbSet.RemoveRange(overdueTasks);
@@ -174,15 +176,16 @@ public class TaskRepository(TodoListAppDbContext context)
     /// <summary>
     /// Removes a tag from a task.
     /// </summary>
+    /// <param name="userId">The identifier of the user.</param>
     /// <param name="taskId">The identifier of the task.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A task representing the asynchronous remove operation.</returns>
     /// <remarks>
     /// Changes are not automatically saved. Call SaveChangesAsync in service if needed.
     /// </remarks>
-    public async Task RemoveTagAsync(Guid taskId, CancellationToken cancellationToken = default)
+    public async Task RemoveTagAsync(Guid userId, Guid taskId, CancellationToken cancellationToken = default)
     {
-        var task = await this.DbSet.FirstOrDefaultAsync(t => t.Id == taskId, cancellationToken);
+        var task = await this.DbSet.FirstOrDefaultAsync(t => t.Id == taskId && t.OwnerId == userId, cancellationToken);
 
         task?.RemoveTag();
     }
