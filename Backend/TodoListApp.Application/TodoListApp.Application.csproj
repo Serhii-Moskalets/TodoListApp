@@ -20,4 +20,10 @@
     <PackageReference Include="TinyResult" Version="1.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Tasks\Commands\" />
+    <Folder Include="Tasks\Dtos\" />
+    <Folder Include="Tasks\Queries\" />
+  </ItemGroup>
+
 </Project>

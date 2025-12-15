@@ -37,11 +37,13 @@ public interface ITaskRepository : IRepository<TaskEntity>
     /// </summary>
     /// <param name="userId">The user identifier.</param>
     /// <param name="taskListId">The To-Do list identifier.</param>
+    /// <param name="now">The current date and time used to determine overdue tasks.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A read-only collection of overdue tasks.</returns>
     Task<IReadOnlyCollection<TaskEntity>> GetOverdueTasksAsync(
         Guid userId,
         Guid taskListId,
+        DateTime now,
         CancellationToken cancellationToken = default);
 
     /// <summary>

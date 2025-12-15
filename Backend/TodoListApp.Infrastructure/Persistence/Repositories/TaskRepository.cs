@@ -23,7 +23,11 @@ public class TaskRepository(TodoListAppDbContext context)
     /// <param name="now">The current date and time used to determine overdue tasks.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>The number of overdue tasks.</returns>
-    public async Task<int> CountOverdueTasksAsync(Guid userId, Guid taskListId, DateTime now, CancellationToken cancellationToken = default)
+    public async Task<int> CountOverdueTasksAsync(
+        Guid userId,
+        Guid taskListId,
+        DateTime now,
+        CancellationToken cancellationToken = default)
         => await this.DbSet
             .Where(x => x.OwnerId == userId && x.TaskListId == taskListId && x.DueDate < now)
             .CountAsync(cancellationToken);
@@ -39,7 +43,11 @@ public class TaskRepository(TodoListAppDbContext context)
     /// <remarks>
     /// Changes are not automatically saved. Call SaveChangesAsync in service if needed.
     /// </remarks>
-    public async Task DeleteOverdueTasksAsync(Guid userId, Guid taskListId, DateTime now, CancellationToken cancellationToken = default)
+    public async Task DeleteOverdueTasksAsync(
+        Guid userId,
+        Guid taskListId,
+        DateTime now,
+        CancellationToken cancellationToken = default)
     {
         var overdueTasks = await this.DbSet
             .Where(x => x.OwnerId == userId && x.TaskListId == taskListId && x.DueDate < now)
@@ -63,12 +71,17 @@ public class TaskRepository(TodoListAppDbContext context)
     /// </summary>
     /// <param name="userId">The identifier of the user.</param>
     /// <param name="taskListId">The To-Do list identifier.</param>
+    /// <param name="now">The current date and time used to determine overdue tasks.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A read-only collection of overdue <see cref="TaskEntity"/> instances.</returns>
-    public async Task<IReadOnlyCollection<TaskEntity>> GetOverdueTasksAsync(Guid userId, Guid taskListId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<TaskEntity>> GetOverdueTasksAsync(
+        Guid userId,
+        Guid taskListId,
+        DateTime now,
+        CancellationToken cancellationToken = default)
         => await this.DbSet
             .AsNoTracking()
-            .Where(x => x.OwnerId == userId && x.TaskListId == taskListId && x.DueDate < DateTime.UtcNow)
+            .Where(x => x.OwnerId == userId && x.TaskListId == taskListId && x.DueDate < now)
             .Include(x => x.Tag)
             .Include(x => x.Comments)
             .ToListAsync(cancellationToken);
@@ -85,7 +98,13 @@ public class TaskRepository(TodoListAppDbContext context)
     /// <returns>
     /// A tuple containing a read-only collection of <see cref="TaskEntity"/> items and the total count of matching tasks.
     /// </returns>
-    public async Task<(IReadOnlyCollection<TaskEntity> Items, int TotalCount)> GetPaginatedAsync(Guid userId, Guid taskListId, int page, int pageSize, Expression<Func<TaskEntity, bool>>? filter = null, CancellationToken cancellationToken = default)
+    public async Task<(IReadOnlyCollection<TaskEntity> Items, int TotalCount)> GetPaginatedAsync(
+        Guid userId,
+        Guid taskListId,
+        int page,
+        int pageSize,
+        Expression<Func<TaskEntity, bool>>? filter = null,
+        CancellationToken cancellationToken = default)
     {
         var query = this.DbSet.AsNoTracking()
             .Where(x => x.OwnerId == userId && x.TaskListId == taskListId);
