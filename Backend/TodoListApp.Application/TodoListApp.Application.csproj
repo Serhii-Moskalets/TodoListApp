@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
-	<NoWarn>SA1633,SA1200,SA1502,S2326</NoWarn>
+	<NoWarn>SA1633,SA1200,SA1502,S2326,SA1309</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,7 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Task\Commands\CreateTask\" />
     <Folder Include="Task\Commands\DeleteTask\" />
     <Folder Include="Task\Commands\UpdateTask\" />
     <Folder Include="Task\Queries\GetTasks\" />
