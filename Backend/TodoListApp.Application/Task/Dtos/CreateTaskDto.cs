@@ -5,6 +5,8 @@
 /// </summary>
 public class CreateTaskDto
 {
+    public Guid OwnerId { get; init; }
+
     /// <summary>
     /// Gets the title of the task.
     /// </summary>

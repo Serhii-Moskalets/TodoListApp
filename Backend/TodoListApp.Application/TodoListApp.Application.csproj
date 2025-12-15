@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Task\Commands\CreateTask\" />
     <Folder Include="Task\Commands\DeleteTask\" />
     <Folder Include="Task\Commands\UpdateTask\" />
     <Folder Include="Task\Queries\GetTasks\" />
