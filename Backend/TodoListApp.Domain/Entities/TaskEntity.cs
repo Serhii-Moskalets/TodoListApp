@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.CompilerServices;
 using TodoListApp.Domain.Enums;
 
 namespace TodoListApp.Domain.Entities;
@@ -15,17 +14,17 @@ public class TaskEntity : BaseEntity
     /// </summary>
     /// <param name="ownerId">The ID of the user who created the task.</param>
     /// <param name="taskListId">The ID of the task list the task belongs to.</param>
-    /// <param name="statusTask">The status task of the task.</param>
     /// <param name="title">The title of the task.</param>
-    /// <param name="description">The Description of the task.</param>
+    /// <param name="createdAt">The date and time when the task was created.</param>
     /// <param name="dueDate">The due date of the task.</param>
+    /// <param name="description">The Description of the task.</param>
     public TaskEntity(
         Guid ownerId,
         Guid taskListId,
-        StatusTask statusTask,
         string title,
-        string? description = null,
-        DateTime? dueDate = null)
+        DateTime createdAt,
+        DateTime? dueDate = null,
+        string? description = null)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -36,7 +35,8 @@ public class TaskEntity : BaseEntity
         this.TaskListId = taskListId;
         this.Title = title.Trim();
         this.Description = description;
-        this.CreatedDate = DateTime.UtcNow;
+        this.Status = StatusTask.NotStarted;
+        this.CreatedDate = createdAt;
         this.DueDate = dueDate;
     }
 
@@ -46,43 +46,43 @@ public class TaskEntity : BaseEntity
     /// Gets the title of the task.
     /// </summary>
     [Column("Title")]
-    required public string Title { get; init; }
+    public string Title { get; private set; } = null!;
 
     /// <summary>
     /// Gets the description of the task.
     /// </summary>
     [Column("Description")]
-    public string? Description { get; init; }
+    public string? Description { get; private set; }
 
     /// <summary>
     /// Gets the time when the task was created.
     /// </summary>
     [Column("Created_Date")]
-    required public DateTime CreatedDate { get; init; }
+    public DateTime CreatedDate { get; private set; }
 
     /// <summary>
     /// Gets the due date of the task.
     /// </summary>
     [Column("Due_Date")]
-    public DateTime? DueDate { get; init; }
+    public DateTime? DueDate { get; private set; }
 
     /// <summary>
     /// Gets the status of the task.
     /// </summary>
     [Column("Status")]
-    required public StatusTask Status { get; init; }
+    public StatusTask Status { get; private set; }
 
     /// <summary>
     /// Gets the ID of the user who owns the task.
     /// </summary>
     [Column("Owner_Id")]
-    required public Guid OwnerId { get; init; }
+    public Guid OwnerId { get; private set; }
 
     /// <summary>
     /// Gets the ID of the task list that this task belongs to.
     /// </summary>
     [Column("Task_List_Id")]
-    required public Guid TaskListId { get; init; }
+    public Guid TaskListId { get; private set; }
 
     /// <summary>
     /// Gets the ID of the tag associated with the task, if any.
@@ -98,12 +98,12 @@ public class TaskEntity : BaseEntity
     /// <summary>
     /// Gets the task list to which this task belongs.
     /// </summary>
-    public virtual TaskListEntity TaskList { get; init; } = null!;
+    public virtual TaskListEntity TaskList { get; private set; } = null!;
 
     /// <summary>
     /// Gets the owner of the task.
     /// </summary>
-    public virtual UserEntity Owner { get; init; } = null!;
+    public virtual UserEntity Owner { get; private set; } = null!;
 
     /// <summary>
     /// Gets the collection of comments associated with this task.
@@ -116,11 +116,97 @@ public class TaskEntity : BaseEntity
     public virtual ICollection<UserTaskAccessEntity> UserAccesses { get; private set; } = new HashSet<UserTaskAccessEntity>();
 
     /// <summary>
-    /// Removes the tag associated with the task by setting <see cref="Tag"/> and <see cref="TagId"/> to <c>null</c>.
+    /// Creates a new <see cref="TaskEntity"/> instance with the specified parameters.
     /// </summary>
-    public void RemoveTag()
+    /// <param name="ownerId">The ID of the user who created the task.</param>
+    /// <param name="taskListId">The ID of the task list the task belongs to.</param>
+    /// <param name="title">The title of the task.</param>
+    /// <param name="createdAt">The date and time when the task was created.</param>
+    /// <param name="dueDate">The optional due date of the task.</param>
+    /// <returns>A new instance of <see cref="TaskEntity"/>.</returns>
+    public static TaskEntity Create(
+        Guid ownerId,
+        Guid taskListId,
+        string title,
+        DateTime createdAt,
+        DateTime? dueDate = null)
     {
-        this.Tag = null;
-        this.TagId = null;
+        return new TaskEntity(
+            ownerId,
+            taskListId,
+            title,
+            createdAt,
+            dueDate);
+    }
+
+    /// <summary>
+    /// Sets the task status to <see cref="StatusTask.NotStarted"/>.
+    /// </summary>
+    public void NotStarted()
+    {
+        if (this.Status == StatusTask.NotStarted)
+        {
+            return;
+        }
+
+        this.Status = StatusTask.NotStarted;
+    }
+
+    /// <summary>
+    /// Sets the task status to <see cref="StatusTask.InProgress"/>.
+    /// </summary>
+    public void InProgress()
+    {
+        if (this.Status == StatusTask.InProgress)
+        {
+            return;
+        }
+
+        this.Status = StatusTask.InProgress;
+    }
+
+    /// <summary>
+    /// Sets the task status to <see cref="StatusTask.Done"/>.
+    /// </summary>
+    public void Complete()
+    {
+        if (this.Status == StatusTask.Done)
+        {
+            return;
+        }
+
+        this.Status = StatusTask.Done;
+    }
+
+    /// <summary>
+    /// Updates the task title, description, and due date.
+    /// </summary>
+    /// <param name="title">The new title of the task.</param>
+    /// <param name="description">The new description of the task.</param>
+    /// <param name="dueDate">The new due date of the task.</param>
+    /// <exception cref="ArgumentException">Thrown when the title is empty.</exception>
+    public void UpdateDetails(string title, string? description, DateTime? dueDate)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new ArgumentException("Title cannot be empty", nameof(title));
+        }
+
+        this.Title = title.Trim();
+        this.Description = description;
+        this.DueDate = dueDate;
+    }
+
+    /// <summary>
+    /// Sets or removes the tag associated with the task.
+    /// </summary>
+    /// <param name="tag">
+    /// The <see cref="TagEntity"/> to associate with the task,
+    /// or <c>null</c> to remove the current tag.
+    /// </param>
+    public void SetTag(TagEntity? tag)
+    {
+        this.Tag = tag;
+        this.TagId = tag?.Id;
     }
 }
