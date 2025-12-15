@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
-	<NoWarn>SA1633,SA1200</NoWarn>
+	<NoWarn>SA1633,SA1200,SA1502,S2326</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +17,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="TinyResult" Version="1.0.1" />
   </ItemGroup>
 
 </Project>
