@@ -31,7 +31,7 @@ public class TaskDto
     /// <summary>
     /// Gets the due date of the task.
     /// </summary>
-    public DateTime DueDate { get; init; }
+    public DateTime? DueDate { get; init; }
 
     /// <summary>
     /// Gets the current status of the task.
@@ -56,5 +56,5 @@ public class TaskDto
     /// <summary>
     /// Gets the collection of comments associated with the task.
     /// </summary>
-    public IList<CommentDto> Comments { get; init; } = Array.Empty<CommentDto>();
+    public IReadOnlyCollection<CommentDto> Comments { get; init; } = [];
 }

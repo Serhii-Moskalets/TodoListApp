@@ -5,6 +5,9 @@
 /// </summary>
 public class CreateTaskDto
 {
+    /// <summary>
+    /// Gets the unique identifier of the user.
+    /// </summary>
     public Guid OwnerId { get; init; }
 
     /// <summary>
@@ -15,7 +18,7 @@ public class CreateTaskDto
     /// <summary>
     /// Gets the due date of the task.
     /// </summary>
-    public DateTime DueDate { get; init; }
+    public DateTime? DueDate { get; init; }
 
     /// <summary>
     /// Gets the ID of the task list this task belongs to.

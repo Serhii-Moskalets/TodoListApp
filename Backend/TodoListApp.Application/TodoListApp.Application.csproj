@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
-	<NoWarn>SA1633,SA1200,SA1502,S2326,SA1309</NoWarn>
+	<NoWarn>SA1633,SA1200,SA1502,S2326,SA1309,SA1010</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
