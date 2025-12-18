@@ -4,7 +4,7 @@ using TodoListApp.Application.Task.Dtos;
 namespace TodoListApp.Application.Task.Commands.UpdateTask;
 
 /// <summary>
-/// Represents a command to update aт existing task.
+/// Represents a command to update an existing task.
 /// </summary>
 public class UpdateTaskCommand : ICommand
 {
