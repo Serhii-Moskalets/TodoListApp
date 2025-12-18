@@ -8,18 +8,14 @@ namespace TodoListApp.Application.Task.Commands.UpdateTask;
 /// <summary>
 /// Handles the <see cref="UpdateTaskCommand"/> to update an existing task.
 /// </summary>
-public class UpdateTaskCommandHandler : ICommandHandler<UpdateTaskCommand>
+public class UpdateTaskCommandHandler : HandlerBase, ICommandHandler<UpdateTaskCommand>
 {
-    private readonly IUnitOfWork _unitOfWork;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="UpdateTaskCommandHandler"/> class.
     /// </summary>
     /// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
     public UpdateTaskCommandHandler(IUnitOfWork unitOfWork)
-    {
-        this._unitOfWork = unitOfWork;
-    }
+        : base(unitOfWork) { }
 
     /// <summary>
     /// Handles updating a task for a specific user.
@@ -30,21 +26,21 @@ public class UpdateTaskCommandHandler : ICommandHandler<UpdateTaskCommand>
     public async Task<Result<bool>> Handle(UpdateTaskCommand command, CancellationToken cancellationToken)
     {
         var taskDto = command.Dto;
-        var exists = await this._unitOfWork.Tasks.ExistsForUserAsync(taskDto.TaskId, taskDto.OwnerId, cancellationToken);
+        var exists = await this.UnitOfWork.Tasks.ExistsForUserAsync(taskDto.TaskId, taskDto.OwnerId, cancellationToken);
 
         if (!exists)
         {
             return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
         }
 
-        var taskEntity = await this._unitOfWork.Tasks.GetByIdAsync(taskDto.TaskId, cancellationToken: cancellationToken);
+        var taskEntity = await this.UnitOfWork.Tasks.GetByIdAsync(taskDto.TaskId, cancellationToken: cancellationToken);
         if (taskEntity == null)
         {
             return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
         }
 
         taskEntity.UpdateDetails(taskDto.Title, taskDto.Description, taskDto.DueDate);
-        await this._unitOfWork.SaveChangesAsync(cancellationToken);
+        await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);
     }
