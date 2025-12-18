@@ -206,7 +206,7 @@ public class TaskRepository(TodoListAppDbContext context)
     {
         var task = await this.DbSet.FirstOrDefaultAsync(t => t.Id == taskId && t.OwnerId == userId, cancellationToken);
 
-        task?.RemoveTag();
+        task?.SetTag(null);
     }
 
     /// <summary>
