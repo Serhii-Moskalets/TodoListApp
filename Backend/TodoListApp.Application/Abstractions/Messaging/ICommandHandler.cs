@@ -6,7 +6,7 @@ namespace TodoListApp.Application.Abstractions.Messaging;
 /// Handles a specific command of type <typeparamref name="TCommand"/>.
 /// </summary>
 /// <typeparam name="TCommand">The type of the command to handle. Must implement <see cref="ICommand"/>.</typeparam>
-internal interface ICommandHandler<in TCommand>
+public interface ICommandHandler<in TCommand>
     where TCommand : ICommand
 {
     /// <summary>
