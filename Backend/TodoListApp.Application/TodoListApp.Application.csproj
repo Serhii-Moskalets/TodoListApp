@@ -21,7 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Task\Commands\UpdateTask\" />
     <Folder Include="Task\Queries\GetTasks\" />
     <Folder Include="Task\Queries\GetTaskById\" />
     <Folder Include="Task\Queries\GetTaskByTitle\" />
