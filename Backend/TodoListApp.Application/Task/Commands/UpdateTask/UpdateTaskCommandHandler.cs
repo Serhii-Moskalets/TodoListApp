@@ -8,15 +8,13 @@ namespace TodoListApp.Application.Task.Commands.UpdateTask;
 /// <summary>
 /// Handles the <see cref="UpdateTaskCommand"/> to update an existing task.
 /// </summary>
-public class UpdateTaskCommandHandler : HandlerBase, ICommandHandler<UpdateTaskCommand>
+/// <remarks>
+/// Initializes a new instance of the <see cref="UpdateTaskCommandHandler"/> class.
+/// </remarks>
+/// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
+public class UpdateTaskCommandHandler(IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), ICommandHandler<UpdateTaskCommand>
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="UpdateTaskCommandHandler"/> class.
-    /// </summary>
-    /// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
-    public UpdateTaskCommandHandler(IUnitOfWork unitOfWork)
-        : base(unitOfWork) { }
-
     /// <summary>
     /// Handles updating a task for a specific user.
     /// </summary>

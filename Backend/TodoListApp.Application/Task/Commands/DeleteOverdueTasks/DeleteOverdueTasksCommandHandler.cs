@@ -8,15 +8,13 @@ namespace TodoListApp.Application.Task.Commands.DeleteOverdueTasks;
 /// Handles the <see cref="DeleteOverdueTasksCommand"/> and deletes all overdue tasks.
 /// in a specified task list for a given user.
 /// </summary>
-public class DeleteOverdueTasksCommandHandler : HandlerBase, ICommandHandler<DeleteOverdueTasksCommand>
+/// <remarks>
+/// Initializes a new instance of the <see cref="DeleteOverdueTasksCommandHandler"/> class.
+/// </remarks>
+/// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
+public class DeleteOverdueTasksCommandHandler(IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteOverdueTasksCommand>
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DeleteOverdueTasksCommandHandler"/> class.
-    /// </summary>
-    /// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
-    public DeleteOverdueTasksCommandHandler(IUnitOfWork unitOfWork)
-        : base(unitOfWork) { }
-
     /// <summary>
     /// Handles the deletion of overdue tasks in the specified task list for a given user.
     /// </summary>

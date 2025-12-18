@@ -8,15 +8,13 @@ namespace TodoListApp.Application.Task.Commands.CreateTask;
 /// <summary>
 /// Handles the <see cref="CreateTaskCommand"/> to create a new task.
 /// </summary>
-public class CreateTaskCommandHandler : HandlerBase, ICommandHandler<CreateTaskCommand>
+/// <remarks>
+/// Initializes a new instance of the <see cref="CreateTaskCommandHandler"/> class.
+/// </remarks>
+/// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
+public class CreateTaskCommandHandler(IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), ICommandHandler<CreateTaskCommand>
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CreateTaskCommandHandler"/> class.
-    /// </summary>
-    /// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
-    public CreateTaskCommandHandler(IUnitOfWork unitOfWork)
-        : base(unitOfWork) { }
-
     /// <summary>
     /// Handles the creation of a new task based on the provided command.
     /// </summary>

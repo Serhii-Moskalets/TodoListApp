@@ -8,15 +8,13 @@ namespace TodoListApp.Application.Task.Commands.DeleteTask;
 /// <summary>
 /// Handles the <see cref="DeleteTaskCommand"/> to delete an existing task.
 /// </summary>
-public class DeleteTaskCommandHandler : HandlerBase, ICommandHandler<DeleteTaskCommand>
+/// <remarks>
+/// Initializes a new instance of the <see cref="DeleteTaskCommandHandler"/> class.
+/// </remarks>
+/// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
+public class DeleteTaskCommandHandler(IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskCommand>
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DeleteTaskCommandHandler"/> class.
-    /// </summary>
-    /// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
-    public DeleteTaskCommandHandler(IUnitOfWork unitOfWork)
-        : base(unitOfWork) { }
-
     /// <summary>
     /// Handles the deletion of a task for a specific user.
     /// </summary>
