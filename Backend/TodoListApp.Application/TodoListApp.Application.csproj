@@ -22,10 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Task\Queries\GetTasks\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\TodoListApp.Domain\TodoListApp.Domain.csproj" />
     <ProjectReference Include="..\TodoListApp.Infrastructure\TodoListApp.Infrastructure.csproj" />
   </ItemGroup>
