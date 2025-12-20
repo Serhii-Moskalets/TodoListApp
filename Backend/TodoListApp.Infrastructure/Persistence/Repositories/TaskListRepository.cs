@@ -27,6 +27,11 @@ public class TaskListRepository(TodoListAppDbContext context)
     /// </exception>
     public async Task<bool> ExistsByTitleAsync(string title, Guid userId, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new ArgumentException("Title of the task list cannot be empty.", nameof(title));
+        }
+
         return await this.DbSet.AsNoTracking()
             .AnyAsync(x => EF.Functions.ILike(x.Title, title) && x.OwnerId == userId, cancellationToken);
     }
