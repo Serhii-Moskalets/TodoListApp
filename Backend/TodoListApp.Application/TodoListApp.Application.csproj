@@ -22,7 +22,6 @@
 
   <ItemGroup>
     <Folder Include="Task\Queries\GetTasks\" />
-    <Folder Include="Task\Queries\GetTaskByTitle\" />
   </ItemGroup>
 
   <ItemGroup>
