@@ -1,0 +1,38 @@
+﻿using TinyResult;
+using TodoListApp.Application.Abstractions.Messaging;
+using TodoListApp.Domain.Interfaces.UnitOfWork;
+
+namespace TodoListApp.Application.Tag.Commands.DeleteTag;
+
+/// <summary>
+/// Handles the <see cref="DeleteTagCommand"/> by deleting a tag that belongs to a specific user.
+/// </summary>
+public class DeleteTagCommandHandler(IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteTagCommand>
+{
+    /// <summary>
+    /// Processes the command to delete a user's tag.
+    /// </summary>
+    /// <param name="command">
+    /// The command containing the ID of the tag to delete and the user ID of the owner.
+    /// </param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>
+    /// A <see cref="Result{T}"/> indicating success if the tag was deleted,
+    /// or failure if the tag was not found or the user is not the owner.
+    /// </returns>
+    public async Task<Result<bool>> Handle(DeleteTagCommand command, CancellationToken cancellationToken)
+    {
+        var exists = await this.UnitOfWork.Tags.IsTagOwnerAsync(command.TagId, command.UserId, cancellationToken);
+
+        if (!exists)
+        {
+            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Tag not found.");
+        }
+
+        await this.UnitOfWork.Tags.DeleteAsync(command.TagId, cancellationToken);
+        await this.UnitOfWork.SaveChangesAsync(cancellationToken);
+
+        return await Result<bool>.SuccessAsync(true);
+    }
+}
