@@ -1,4 +1,6 @@
-﻿namespace TodoListApp.Application.Abstractions.Messaging;
+﻿using TinyResult;
+
+namespace TodoListApp.Application.Abstractions.Messaging;
 
 /// <summary>
 /// Handles a query of type <typeparamref name="TQuery"/> and returns a result of type <typeparamref name="TResult"/>.
@@ -15,5 +17,5 @@ public interface IQueryHandler<in TQuery, TResult>
     /// <param name="query">The query to handle.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains the query result of type <typeparamref name="TResult"/>.</returns>
-    Task<TResult> Handle(TQuery query, CancellationToken cancellationToken);
+    Task<Result<TResult>> Handle(TQuery query, CancellationToken cancellationToken);
 }

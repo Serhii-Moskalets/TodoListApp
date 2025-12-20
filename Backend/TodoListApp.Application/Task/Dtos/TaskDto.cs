@@ -56,5 +56,5 @@ public class TaskDto
     /// <summary>
     /// Gets the collection of comments associated with the task.
     /// </summary>
-    public IReadOnlyCollection<CommentDto> Comments { get; init; } = [];
+    public IEnumerable<CommentDto> Comments { get; init; } = Enumerable.Empty<CommentDto>();
 }
