@@ -45,7 +45,7 @@ public class TaskListRepository(TodoListAppDbContext context)
     /// A read-only collection of <see cref="TaskListEntity"/> instances owned by the user.
     /// </returns>
     public async Task<IReadOnlyCollection<TaskListEntity>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-        => await this.DbSet.AsNoTracking().Where(x => x.OwnerId == userId).ToListAsync(cancellationToken);
+        => await this.DbSet.AsNoTracking().OrderBy(x => x.Title).Where(x => x.OwnerId == userId).ToListAsync(cancellationToken);
 
     /// <summary>
     /// Retrieves a paged list of task lists owned by the specified user.
@@ -60,7 +60,11 @@ public class TaskListRepository(TodoListAppDbContext context)
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when <paramref name="page"/> or <paramref name="pageSize"/> is less than or equal to zero.
     /// </exception>
-    public async Task<(IReadOnlyCollection<TaskListEntity> Items, int TotalCount)> GetPagedByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<(IReadOnlyCollection<TaskListEntity> Items, int TotalCount)> GetPagedByUserIdAsync(
+        Guid userId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(page);
 
@@ -82,7 +86,7 @@ public class TaskListRepository(TodoListAppDbContext context)
     /// <summary>
     /// Retrieves a task list by its unique identifier for a specific user.
     /// </summary>
-    /// <param name="taskId">The unique identifier of the task list.</param>
+    /// <param name="taskListId">The unique identifier of the task list.</param>
     /// <param name="userId">The unique identifier of the user who owns the task list.</param>
     /// <param name="cancellationToken">
     /// A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
@@ -90,10 +94,10 @@ public class TaskListRepository(TodoListAppDbContext context)
     /// <returns>
     /// A <see cref="Task{TResult}"/> containing the <see cref="TaskListEntity"/> if found; otherwise, <c>null</c>.
     /// </returns>
-    public async Task<TaskListEntity?> GetByIdForUserAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<TaskListEntity?> GetByIdForUserAsync(Guid taskListId, Guid userId, CancellationToken cancellationToken = default)
         => await this.DbSet
         .AsNoTracking()
-        .FirstOrDefaultAsync(x => x.Id == taskId && x.OwnerId == userId, cancellationToken);
+        .FirstOrDefaultAsync(x => x.Id == taskListId && x.OwnerId == userId, cancellationToken);
 
     /// <summary>
     /// Determines whether the specified user is the owner of the given task list.
