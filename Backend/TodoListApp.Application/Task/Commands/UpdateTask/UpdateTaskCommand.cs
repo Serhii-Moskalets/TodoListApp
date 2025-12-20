@@ -7,4 +7,4 @@ namespace TodoListApp.Application.Task.Commands.UpdateTask;
 /// Command to update an existing task using a DTO.
 /// </summary>
 public record UpdateTaskCommand(UpdateTaskDto Dto)
-    : ICommand { }
+    : ICommand;

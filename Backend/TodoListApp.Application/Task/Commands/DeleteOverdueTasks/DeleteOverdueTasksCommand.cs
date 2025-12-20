@@ -6,4 +6,4 @@ namespace TodoListApp.Application.Task.Commands.DeleteOverdueTasks;
 /// Command to delete all overdue tasks for a given task list and user.
 /// </summary>
 public record DeleteOverdueTasksCommand(Guid TaskListId, Guid UserId)
-    : ICommand { }
+    : ICommand;

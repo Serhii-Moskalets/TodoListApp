@@ -7,4 +7,4 @@ namespace TodoListApp.Application.TaskList.Queries.GetAllTaskList;
 /// Represents a query to retrieve all task lists for a specific user.
 /// </summary>
 public record GetAllTaskListQuery(Guid UserId)
-    : IQuery<IEnumerable<TaskListDto>> { }
+    : IQuery<IEnumerable<TaskListDto>>;

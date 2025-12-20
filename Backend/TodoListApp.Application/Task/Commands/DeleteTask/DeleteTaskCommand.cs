@@ -6,4 +6,4 @@ namespace TodoListApp.Application.Task.Commands.DeleteTask;
 /// Command to delete a specific task for a given user.
 /// </summary>
 public record DeleteTaskCommand(Guid TaskId, Guid UserId)
-    : ICommand { }
+    : ICommand;

@@ -6,4 +6,4 @@ namespace TodoListApp.Application.Task.Commands.RemoveTagFromTask;
 /// Command to remove a tag from a specific task.
 /// </summary>
 public record RemoveTagFromTaskCommand(Guid TaskId, Guid UserId)
-    : ICommand { }
+    : ICommand;

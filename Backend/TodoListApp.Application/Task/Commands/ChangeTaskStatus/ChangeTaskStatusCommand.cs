@@ -7,4 +7,4 @@ namespace TodoListApp.Application.Task.Commands.ChangeTaskStatus;
 /// Command to change the status of a specific task.
 /// </summary>
 public record ChangeTaskStatusCommand(Guid TaskId, Guid UserId, StatusTask Status)
-    : ICommand { }
+    : ICommand;
