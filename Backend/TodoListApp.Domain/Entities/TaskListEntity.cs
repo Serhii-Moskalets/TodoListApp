@@ -8,6 +8,8 @@ namespace TodoListApp.Domain.Entities;
 [Table("Task_Lists")]
 public class TaskListEntity : BaseEntity
 {
+    private readonly List<TaskEntity> _tasks = new();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="TaskListEntity"/> class.
     /// </summary>
@@ -31,19 +33,19 @@ public class TaskListEntity : BaseEntity
     /// Gets the title of the task list.
     /// </summary>
     [Column("Title")]
-    required public string Title { get; init; }
+    public string Title { get; private set; } = null!;
 
     /// <summary>
     /// Gets the creation date of the task list.
     /// </summary>
     [Column("Created_Date")]
-    required public DateTime CreatedDate { get; init; }
+    public DateTime CreatedDate { get; init; }
 
     /// <summary>
     /// Gets the ID of the user who owns this task list.
     /// </summary>
     [Column("Owner_Id")]
-    required public Guid OwnerId { get; init; }
+    public Guid OwnerId { get; init; }
 
     /// <summary>
     /// Gets the user who owns this task list.
@@ -53,5 +55,20 @@ public class TaskListEntity : BaseEntity
     /// <summary>
     /// Gets the collection of tasks contained in this task list.
     /// </summary>
-    public ICollection<TaskEntity> Tasks { get; private set; } = new HashSet<TaskEntity>();
+    public IReadOnlyCollection<TaskEntity> Tasks => this._tasks.AsReadOnly();
+
+    /// <summary>
+    /// Updates the taskList title.
+    /// </summary>
+    /// <param name="title">The new title of the taskList.</param>
+    /// <exception cref="ArgumentException">Thrown when the title is empty.</exception>
+    public void UpdateTitle(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new ArgumentException("Title of the task list cannot be empty.", nameof(title));
+        }
+
+        this.Title = title.Trim();
+    }
 }
