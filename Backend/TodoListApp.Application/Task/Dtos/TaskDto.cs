@@ -4,7 +4,6 @@ namespace TodoListApp.Application.Task.Dtos;
 
 /// <summary>
 /// Data Transfer Object representing a task.
-/// Used for transferring task data between layers (Application → API → UI).
 /// </summary>
 public class TaskDto
 {

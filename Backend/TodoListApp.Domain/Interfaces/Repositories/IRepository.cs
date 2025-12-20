@@ -40,25 +40,10 @@ public interface IRepository
     Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Updates an existing entity in the repository.
-    /// </summary>
-    /// <param name="entity">The entity to update.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>Generic type constraints should be on their own line.</returns>
-    Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Deletes an entity from the repository by its unique identifier.
     /// </summary>
     /// <param name="id">The unique identifier of the entity to delete.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>Generic type constraints should be on their own line.</returns>
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Persists all pending changes to the database asynchronously.
-    /// </summary>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>The number of state entries written to the database.</returns>
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
