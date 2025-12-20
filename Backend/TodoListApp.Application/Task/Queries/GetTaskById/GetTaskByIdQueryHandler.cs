@@ -2,6 +2,7 @@
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Task.Dtos;
+using TodoListApp.Application.Task.Mappers;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.Task.Queries.GetTaskById;
@@ -31,36 +32,7 @@ public class GetTaskByIdQueryHandler(IUnitOfWork unitOfWork)
             return await Result<TaskDto>.FailureAsync(ErrorCode.NotFound, "Task not found.");
         }
 
-        var commentDtoList = taskEntity.Comments
-            .Select(c => new CommentDto
-            {
-                Id = c.Id,
-                Text = c.Text,
-                CreatedDate = c.CreatedDate,
-                User = new UserDto
-                {
-                    Id = c.User.Id,
-                    UserName = c.User.UserName,
-                },
-            });
-
-        var tagDto = taskEntity.Tag is not null
-            ? new TagDto { Id = taskEntity.Tag.Id, Name = taskEntity.Tag.Name }
-            : null;
-
-        var taskDto = new TaskDto
-        {
-            Id = taskEntity.Id,
-            Title = taskEntity.Title,
-            Description = taskEntity.Description,
-            CreatedDate = taskEntity.CreatedDate,
-            DueDate = taskEntity.DueDate,
-            Status = taskEntity.Status,
-            OwnerId = taskEntity.OwnerId,
-            TaskListId = taskEntity.TaskListId,
-            Tag = tagDto,
-            Comments = commentDtoList,
-        };
+        var taskDto = TaskMapper.Map(taskEntity);
 
         return await Result<TaskDto>.SuccessAsync(taskDto);
     }

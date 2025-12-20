@@ -9,4 +9,4 @@ namespace TodoListApp.Application.Task.Queries.GetTaskByTitle;
 /// <param name="UserId">The identifier of the user who owns the task.</param>
 /// <param name="Text">The title or text to search for in the task's title.</param>
 public sealed record GetTaskByTitleQuery(Guid UserId, string Text)
-    : IQuery<TaskDto>;
+    : IQuery<IEnumerable<TaskDto>>;

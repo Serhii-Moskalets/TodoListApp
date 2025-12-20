@@ -38,4 +38,11 @@ public static partial class TaskMapper
     /// <param name="entity">The user entity to map.</param>
     /// <returns>The mapped <see cref="UserDto"/>.</returns>
     public static partial UserDto Map(UserEntity entity);
+
+    /// <summary>
+    /// Maps a collection of <see cref="TaskEntity"/> objects to a list of <see cref="TaskDto"/> objects.
+    /// </summary>
+    /// <param name="entities">The collection of task entities to map.</param>
+    /// <returns>A list of mapped <see cref="TaskDto"/> objects.</returns>
+    public static partial IList<TaskDto> Map(IReadOnlyCollection<TaskEntity> entities);
 }
