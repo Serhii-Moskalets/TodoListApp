@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using TinyResult;
 using TodoListApp.Domain.Entities;
@@ -67,7 +68,8 @@ public class TaskRepository(TodoListAppDbContext context)
         => await this.DbSet.AsNoTracking().AnyAsync(x => x.Id == taskId && x.OwnerId == userId, cancellationToken);
 
     /// <summary>
-    /// Retrieves all overdue tasks for a specific user.
+    /// Retrieves tasks for a user within a specific task list, optionally filtered by statuses, due dates, and sorting.
+    /// Includes Tag and Comments related entities.
     /// </summary>
     /// <param name="userId">The identifier of the user.</param>
     /// <param name="taskListId">The To-Do list identifier.</param>
@@ -82,12 +84,15 @@ public class TaskRepository(TodoListAppDbContext context)
         => await this.DbSet
             .AsNoTracking()
             .Where(x => x.OwnerId == userId && x.TaskListId == taskListId && x.DueDate < now)
+            .OrderBy(x => x.CreatedDate)
             .Include(x => x.Tag)
             .Include(x => x.Comments)
+                .ThenInclude(c => c.User)
             .ToListAsync(cancellationToken);
 
     /// <summary>
     /// Retrieves a paginated list of tasks for a user within a specific task list, optionally filtered by a predicate.
+    /// Includes Tag and Comments related entities.
     /// </summary>
     /// <param name="userId">The identifier of the user.</param>
     /// <param name="taskListId">The To-Do list identifier.</param>
@@ -121,13 +126,39 @@ public class TaskRepository(TodoListAppDbContext context)
             .Take(pageSize)
             .Include(x => x.Tag)
             .Include(x => x.Comments)
+                .ThenInclude(c => c.User)
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);
     }
 
     /// <summary>
+    /// Retrieves a task entity by its identifier for a specific user.
+    /// Includes the Tag and Comments (with User) related entities.
+    /// </summary>
+    /// <param name="taskId">The unique identifier of the task.</param>
+    /// <param name="userId">The unique identifier of the user who owns the task.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation.</param>
+    /// <returns>
+    /// The task entity with the specified ID for the given user, or <c>null</c> if not found.
+    /// </returns>
+    public async Task<TaskEntity?> GetTaskByIdForUserAsync(
+        Guid taskId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        return await this.DbSet
+            .OrderBy(x => x.CreatedDate)
+            .Include(x => x.Tag)
+            .Include(x => x.Comments)
+                .ThenInclude(c => c.User)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == taskId && x.OwnerId == userId, cancellationToken);
+    }
+
+    /// <summary>
     /// Retrieves tasks for a user within a specific task list, optionally filtered by statuses, due dates, and sorting.
+    /// Includes Tag and Comments related entities.
     /// </summary>
     /// <param name="userId">The identifier of the user.</param>
     /// <param name="todoListId">The identifier of the task list.</param>
@@ -189,6 +220,7 @@ public class TaskRepository(TodoListAppDbContext context)
         return await tasksQuery
             .Include(x => x.Tag)
             .Include(x => x.Comments)
+                .ThenInclude(c => c.User)
             .ToListAsync(cancellationToken);
     }
 
@@ -211,6 +243,7 @@ public class TaskRepository(TodoListAppDbContext context)
 
     /// <summary>
     /// Searches tasks by title for a specific user.
+    /// Includes Tag and Comments related entities.
     /// </summary>
     /// <param name="userId">The identifier of the user.</param>
     /// <param name="searchText">The text to search in task titles.</param>
@@ -219,7 +252,9 @@ public class TaskRepository(TodoListAppDbContext context)
     public async Task<IReadOnlyCollection<TaskEntity>> SearchByTitleAsync(Guid userId, string searchText, CancellationToken cancellationToken = default)
         => await this.DbSet
             .Where(x => x.OwnerId == userId && EF.Functions.Like(x.Title, $"%{searchText}%"))
+            .OrderBy(x => x.CreatedDate)
             .Include(x => x.Tag)
             .Include(x => x.Comments)
+                .ThenInclude(c => c.User)
             .ToListAsync(cancellationToken);
 }

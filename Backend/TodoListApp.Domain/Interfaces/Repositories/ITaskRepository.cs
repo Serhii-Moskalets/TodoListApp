@@ -129,4 +129,19 @@ public interface ITaskRepository : IRepository<TaskEntity>
         int pageSize,
         Expression<Func<TaskEntity, bool>>? filter = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves a task entity by its identifier for a specific user.
+    /// Includes the Tag and Comments (with User) related entities.
+    /// </summary>
+    /// <param name="taskId">The unique identifier of the task.</param>
+    /// <param name="userId">The unique identifier of the user who owns the task.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation.</param>
+    /// <returns>
+    /// The task entity with the specified ID for the given user, or <c>null</c> if not found.
+    /// </returns>
+    Task<TaskEntity?> GetTaskByIdForUserAsync(
+        Guid taskId,
+        Guid userId,
+        CancellationToken cancellationToken = default);
 }
