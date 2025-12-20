@@ -80,6 +80,22 @@ public class TaskListRepository(TodoListAppDbContext context)
     }
 
     /// <summary>
+    /// Retrieves a task list by its unique identifier for a specific user.
+    /// </summary>
+    /// <param name="taskId">The unique identifier of the task list.</param>
+    /// <param name="userId">The unique identifier of the user who owns the task list.</param>
+    /// <param name="cancellationToken">
+    /// A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
+    /// </param>
+    /// <returns>
+    /// A <see cref="Task{TResult}"/> containing the <see cref="TaskListEntity"/> if found; otherwise, <c>null</c>.
+    /// </returns>
+    public async Task<TaskListEntity?> GetByIdForUserAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
+        => await this.DbSet
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x => x.Id == taskId && x.OwnerId == userId, cancellationToken);
+
+    /// <summary>
     /// Determines whether the specified user is the owner of the given task list.
     /// </summary>
     /// <param name="taskListId">The identifier of the task list.</param>

@@ -147,7 +147,6 @@ public class TaskRepository(TodoListAppDbContext context)
         CancellationToken cancellationToken = default)
     {
         return await this.DbSet
-            .OrderBy(x => x.CreatedDate)
             .Include(x => x.Tag)
             .Include(x => x.Comments)
                 .ThenInclude(c => c.User)
