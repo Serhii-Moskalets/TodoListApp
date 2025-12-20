@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using TodoListApp.Domain.Enums;
+using TodoListApp.Domain.Exceptions;
 
 namespace TodoListApp.Domain.Entities;
 
@@ -140,45 +141,6 @@ public class TaskEntity : BaseEntity
     }
 
     /// <summary>
-    /// Sets the task status to <see cref="StatusTask.NotStarted"/>.
-    /// </summary>
-    public void NotStarted()
-    {
-        if (this.Status == StatusTask.NotStarted)
-        {
-            return;
-        }
-
-        this.Status = StatusTask.NotStarted;
-    }
-
-    /// <summary>
-    /// Sets the task status to <see cref="StatusTask.InProgress"/>.
-    /// </summary>
-    public void InProgress()
-    {
-        if (this.Status == StatusTask.InProgress)
-        {
-            return;
-        }
-
-        this.Status = StatusTask.InProgress;
-    }
-
-    /// <summary>
-    /// Sets the task status to <see cref="StatusTask.Done"/>.
-    /// </summary>
-    public void Complete()
-    {
-        if (this.Status == StatusTask.Done)
-        {
-            return;
-        }
-
-        this.Status = StatusTask.Done;
-    }
-
-    /// <summary>
     /// Updates the task title, description, and due date.
     /// </summary>
     /// <param name="title">The new title of the task.</param>
@@ -208,5 +170,70 @@ public class TaskEntity : BaseEntity
     {
         this.Tag = tag;
         this.TagId = tag?.Id;
+    }
+
+    /// <summary>
+    /// Changes the status of the task to the specified value.
+    /// If the new status is the same as the current one, no action is taken.
+    /// </summary>
+    /// <param name="newStatus">The new status to apply to the task.</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the provided <paramref name="newStatus"/> is not a valid <see cref="StatusTask"/> value.
+    /// </exception>
+    public void ChangeStatus(StatusTask newStatus)
+    {
+        if (this.Status == newStatus)
+        {
+            return;
+        }
+
+        if (!Enum.IsDefined(typeof(StatusTask), newStatus))
+        {
+            throw new DomainException("Invalid task status.");
+        }
+
+        switch (newStatus)
+        {
+            case StatusTask.NotStarted:
+                this.SetNotStarted(); break;
+            case StatusTask.InProgress:
+                this.SetInProgress(); break;
+            case StatusTask.Done:
+                this.Complete(); break;
+        }
+    }
+
+    /// <summary>
+    /// Sets the task status to <see cref="StatusTask.NotStarted"/>.
+    /// </summary>
+    private void SetNotStarted()
+    {
+        this.Status = StatusTask.NotStarted;
+    }
+
+    /// <summary>
+    /// Sets the task status to <see cref="StatusTask.InProgress"/>.
+    /// </summary>
+    private void SetInProgress()
+    {
+        if (this.Status == StatusTask.Done)
+        {
+            throw new DomainException("Cannot move from Done to InProgress.");
+        }
+
+        this.Status = StatusTask.InProgress;
+    }
+
+    /// <summary>
+    /// Sets the task status to <see cref="StatusTask.Done"/>.
+    /// </summary>
+    private void Complete()
+    {
+        if (this.Status != StatusTask.InProgress)
+        {
+            throw new DomainException("Task must be InProgress to complete.");
+        }
+
+        this.Status = StatusTask.Done;
     }
 }
