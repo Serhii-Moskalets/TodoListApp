@@ -30,18 +30,18 @@ public class TagEntity : BaseEntity
     /// Gets the name of the tag.
     /// </summary>
     [Column("Name")]
-    required public string Name { get; init; }
+    public string Name { get; init; } = null!;
 
     /// <summary>
     /// Gets the ID of the user who owns this tag.
     /// </summary>
     [Column("User_Id")]
-    required public Guid UserId { get; init; }
+    public Guid UserId { get; init; }
 
     /// <summary>
     /// Gets the user who owns this tag.
     /// </summary>
-    public virtual UserEntity User { get; init; } = null!;
+    public virtual UserEntity User { get; } = null!;
 
     /// <summary>
     /// Gets the collection of tasks associated with this tag.
