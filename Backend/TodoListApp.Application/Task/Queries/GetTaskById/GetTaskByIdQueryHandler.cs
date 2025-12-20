@@ -57,7 +57,7 @@ public class GetTaskByIdQueryHandler(IUnitOfWork unitOfWork)
             DueDate = taskEntity.DueDate,
             Status = taskEntity.Status,
             OwnerId = taskEntity.OwnerId,
-            TodoListId = taskEntity.TaskListId,
+            TaskListId = taskEntity.TaskListId,
             Tag = tagDto,
             Comments = commentDtoList,
         };

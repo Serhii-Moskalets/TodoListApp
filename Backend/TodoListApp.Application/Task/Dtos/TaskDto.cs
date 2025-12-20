@@ -46,7 +46,7 @@ public class TaskDto
     /// <summary>
     /// Gets the ID of the task list this task belongs to.
     /// </summary>
-    public Guid TodoListId { get; init; }
+    public Guid TaskListId { get; init; }
 
     /// <summary>
     /// Gets the tag associated with the task, if any.
