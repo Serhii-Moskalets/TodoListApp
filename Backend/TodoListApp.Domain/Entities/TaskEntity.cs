@@ -160,16 +160,13 @@ public class TaskEntity : BaseEntity
     }
 
     /// <summary>
-    /// Sets or removes the tag associated with the task.
+    /// Sets or removes the tag associated with the task by ID.
     /// </summary>
-    /// <param name="tag">
-    /// The <see cref="TagEntity"/> to associate with the task,
-    /// or <c>null</c> to remove the current tag.
-    /// </param>
-    public void SetTag(TagEntity? tag)
+    /// <param name="tagId">The ID of the tag to associate, or null to remove it.</param>
+    public void SetTag(Guid? tagId)
     {
-        this.Tag = tag;
-        this.TagId = tag?.Id;
+        this.TagId = tagId;
+        this.Tag = null;
     }
 
     /// <summary>
