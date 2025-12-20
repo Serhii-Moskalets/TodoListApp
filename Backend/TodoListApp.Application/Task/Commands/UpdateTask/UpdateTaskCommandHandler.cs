@@ -24,14 +24,8 @@ public class UpdateTaskCommandHandler(IUnitOfWork unitOfWork)
     public async Task<Result<bool>> Handle(UpdateTaskCommand command, CancellationToken cancellationToken)
     {
         var taskDto = command.Dto;
-        var exists = await this.UnitOfWork.Tasks.ExistsForUserAsync(taskDto.TaskId, taskDto.OwnerId, cancellationToken);
 
-        if (!exists)
-        {
-            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
-        }
-
-        var taskEntity = await this.UnitOfWork.Tasks.GetByIdAsync(taskDto.TaskId, cancellationToken: cancellationToken);
+        var taskEntity = await this.UnitOfWork.Tasks.GetTaskByIdForUserAsync(taskDto.TaskId, taskDto.OwnerId, cancellationToken: cancellationToken);
         if (taskEntity == null)
         {
             return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");

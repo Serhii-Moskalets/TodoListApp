@@ -99,18 +99,6 @@ public interface ITaskRepository : IRepository<TaskEntity>
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Removes a tag from the specified task.
-    /// </summary>
-    /// <param name="userId">The user identifier.</param>
-    /// <param name="taskId">The task identifier.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    Task RemoveTagAsync(
-        Guid userId,
-        Guid taskId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Retrieves paginated tasks with optional filtering.
     /// </summary>
     /// <param name="userId">The user identifier.</param>

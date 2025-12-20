@@ -223,23 +223,6 @@ public class TaskRepository(TodoListAppDbContext context)
     }
 
     /// <summary>
-    /// Removes a tag from a task.
-    /// </summary>
-    /// <param name="userId">The identifier of the user.</param>
-    /// <param name="taskId">The identifier of the task.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A task representing the asynchronous remove operation.</returns>
-    /// <remarks>
-    /// Changes are not automatically saved. Call SaveChangesAsync in service if needed.
-    /// </remarks>
-    public async Task RemoveTagAsync(Guid userId, Guid taskId, CancellationToken cancellationToken = default)
-    {
-        var task = await this.DbSet.FirstOrDefaultAsync(t => t.Id == taskId && t.OwnerId == userId, cancellationToken);
-
-        task?.SetTag(null);
-    }
-
-    /// <summary>
     /// Searches tasks by title for a specific user.
     /// Includes Tag and Comments related entities.
     /// </summary>

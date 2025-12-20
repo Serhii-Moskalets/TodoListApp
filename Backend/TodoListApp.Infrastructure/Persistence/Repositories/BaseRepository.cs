@@ -98,30 +98,4 @@ public abstract class BaseRepository<TEntity> : IRepository<TEntity>
     /// <returns>A task that returns <c>true</c> if the entity exists; otherwise, <c>false</c>.</returns>
     public virtual async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
         => await this.DbSet.AsNoTracking().AnyAsync(e => e.Id == id, cancellationToken);
-
-    /// <summary>
-    /// Updates an existing entity in the repository.
-    /// </summary>
-    /// <param name="entity">The entity to update.</param>
-    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>A task representing the asynchronous update operation.</returns>
-    /// <remarks>
-    /// Changes are not automatically saved. Call SaveChangesAsync in service if needed.
-    /// </remarks>
-    public virtual Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(entity);
-        this.DbSet.Update(entity);
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Persists all pending changes to the database asynchronously.
-    /// </summary>
-    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>A task that returns the number of state entries written to the database.</returns>
-    public virtual async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        return await this.Context.SaveChangesAsync(cancellationToken);
-    }
 }
