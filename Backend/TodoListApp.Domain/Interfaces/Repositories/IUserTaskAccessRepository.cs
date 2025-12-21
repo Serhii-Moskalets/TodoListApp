@@ -49,7 +49,7 @@ public interface IUserTaskAccessRepository
     /// <param name="userId">The user identifier.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A task representing the asynchronous delete operation.</returns>
-    Task DeleteByIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default);
+    Task DeleteByTaskAndUserIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes all user task access records associated with a specific task.

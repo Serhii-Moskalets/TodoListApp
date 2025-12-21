@@ -69,7 +69,7 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// <param name="userId">The ID of the user.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task representing the asynchronous delete operation.</returns>
-    public async Task DeleteByIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task DeleteByTaskAndUserIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
     {
         var entity = await this._dbSet.FirstOrDefaultAsync(x => x.TaskId == taskId && x.UserId == userId, cancellationToken);
         if (entity is not null)
