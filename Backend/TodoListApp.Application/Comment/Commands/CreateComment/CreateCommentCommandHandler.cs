@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
@@ -13,9 +14,13 @@ namespace TodoListApp.Application.Comment.Commands.CreateComment;
 /// persists it using the unit of work,
 /// and returns a success result if the operation completes successfully.
 /// </remarks>
-public class CreateCommentCommandHandler(IUnitOfWork unitOfWork)
+public class CreateCommentCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<CreateCommentCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<CreateCommentCommand>
 {
+    private readonly IValidator<CreateCommentCommand> _validator = validator;
+
     /// <summary>
     /// Handles the specified <see cref="CreateCommentCommand"/>.
     /// </summary>
@@ -30,6 +35,12 @@ public class CreateCommentCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> Handle(CreateCommentCommand command, CancellationToken cancellationToken)
     {
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
+        {
+            return validation;
+        }
+
         var commentEntity = new CommentEntity(command.TaskId, command.UserId, command.Text);
 
         await this.UnitOfWork.Comments.AddAsync(commentEntity, cancellationToken);

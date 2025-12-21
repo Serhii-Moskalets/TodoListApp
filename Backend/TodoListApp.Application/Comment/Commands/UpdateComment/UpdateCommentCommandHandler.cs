@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
@@ -7,9 +8,13 @@ namespace TodoListApp.Application.Comment.Commands.UpdateComment;
 /// <summary>
 /// Handles updating the text of an existing comment.
 /// </summary>
-public class UpdateCommentCommandHandler(IUnitOfWork unitOfWork)
+public class UpdateCommentCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<UpdateCommentCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<UpdateCommentCommand>
 {
+    private readonly IValidator<UpdateCommentCommand> _validator = validator;
+
     /// <summary>
     /// Handles the specified <see cref="UpdateCommentCommand"/>.
     /// </summary>
@@ -25,11 +30,18 @@ public class UpdateCommentCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> Handle(UpdateCommentCommand command, CancellationToken cancellationToken)
     {
-        var comment = await this.UnitOfWork.Comments.GetByIdAsync(command.CommentId, cancellationToken: cancellationToken);
-
-        if (comment is null || comment.UserId != command.UserId)
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
         {
-            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Comment not found.");
+            return validation;
+        }
+
+        var comment = await this.UnitOfWork.Comments.GetByIdAsync(command.CommentId, cancellationToken: cancellationToken);
+        if (comment is null)
+        {
+            return await Result<bool>.FailureAsync(
+                TinyResult.Enums.ErrorCode.NotFound,
+                "Comment not found.");
         }
 
         comment.Update(command.NewText);

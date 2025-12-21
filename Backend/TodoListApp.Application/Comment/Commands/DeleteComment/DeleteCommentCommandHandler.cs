@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
@@ -7,9 +8,13 @@ namespace TodoListApp.Application.Comment.Commands.DeleteComment;
 /// <summary>
 /// Handles the deletion of an existing comment.
 /// </summary>
-public class DeleteCommentCommandHandler(IUnitOfWork unitOfWork)
+public class DeleteCommentCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<DeleteCommentCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<DeleteCommentCommand>
 {
+    private readonly IValidator<DeleteCommentCommand> _validator = validator;
+
     /// <summary>
     /// Handles the specified <see cref="DeleteCommentCommand"/>.
     /// </summary>
@@ -25,11 +30,10 @@ public class DeleteCommentCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> Handle(DeleteCommentCommand command, CancellationToken cancellationToken)
     {
-        var exists = await this.UnitOfWork.Comments.IsCommentOwnerAsync(command.CommentId, command.UserId, cancellationToken);
-
-        if (!exists)
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
         {
-            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Comment not found.");
+            return validation;
         }
 
         await this.UnitOfWork.Comments.DeleteAsync(command.CommentId, cancellationToken);
