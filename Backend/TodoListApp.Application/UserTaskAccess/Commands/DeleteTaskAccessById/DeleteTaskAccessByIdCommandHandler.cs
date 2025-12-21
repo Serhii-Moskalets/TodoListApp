@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
@@ -7,9 +8,13 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessById;
 /// <summary>
 /// Handles the <see cref="DeleteTaskAccessByIdCommand"/> to remove a user-task access entry.
 /// </summary>
-public class DeleteTaskAccessByIdCommandHandler(IUnitOfWork unitOfWork)
+public class DeleteTaskAccessByIdCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<DeleteTaskAccessByIdCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskAccessByIdCommand>
 {
+    private readonly IValidator<DeleteTaskAccessByIdCommand> _validator = validator;
+
     /// <summary>
     /// Processes the command to delete a user-task access entry.
     /// </summary>
@@ -23,11 +28,10 @@ public class DeleteTaskAccessByIdCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> Handle(DeleteTaskAccessByIdCommand command, CancellationToken cancellationToken)
     {
-        var exists = await this.UnitOfWork.UserTaskAccesses.ExistsAsync(command.TaskId, command.UserId, cancellationToken);
-
-        if (!exists)
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
         {
-            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "User task access not found.");
+            return validation;
         }
 
         await this.UnitOfWork.UserTaskAccesses.DeleteByTaskAndUserIdAsync(command.TaskId, command.UserId, cancellationToken);

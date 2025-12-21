@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
@@ -7,11 +8,15 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteByTaskAccessByUs
 /// <summary>
 /// Handles the deletion of a user-task access entry based on the task ID and the user's email.
 /// </summary>
-public class DeleteByTaskAccessByUserEmailCommandHandler(IUnitOfWork unitOfWork)
-    : HandlerBase(unitOfWork), ICommandHandler<DeleteByTaskAccessByUserEmailCommand>
+public class DeleteTaskAccessByUserEmailCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<DeleteTaskAccessByUserEmailCommand> validator)
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskAccessByUserEmailCommand>
 {
+    private readonly IValidator<DeleteTaskAccessByUserEmailCommand> _validator = validator;
+
     /// <summary>
-    /// Handles the <see cref="DeleteByTaskAccessByUserEmailCommand"/> by checking if the access exists,
+    /// Handles the <see cref="DeleteTaskAccessByUserEmailCommand"/> by checking if the access exists,
     /// deleting it if present, and returning the operation result.
     /// </summary>
     /// <param name="command">The command containing the task ID and user email.</param>
@@ -20,13 +25,12 @@ public class DeleteByTaskAccessByUserEmailCommandHandler(IUnitOfWork unitOfWork)
     /// A <see cref="Result{T}"/> indicating success if the access was deleted,
     /// or failure if the access was not found.
     /// </returns>
-    public async Task<Result<bool>> Handle(DeleteByTaskAccessByUserEmailCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(DeleteTaskAccessByUserEmailCommand command, CancellationToken cancellationToken)
     {
-        var accessExist = await this.UnitOfWork.UserTaskAccesses.ExistsTaskAccessWithEmail(command.TaskId, command.Email, cancellationToken);
-
-        if (!accessExist)
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
         {
-            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Task access is not found.");
+            return validation;
         }
 
         await this.UnitOfWork.UserTaskAccesses.DeleteByUserEmailAsync(command.TaskId, command.Email, cancellationToken);

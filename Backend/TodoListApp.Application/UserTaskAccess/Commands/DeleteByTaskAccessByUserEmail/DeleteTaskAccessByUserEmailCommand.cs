@@ -5,5 +5,5 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteByTaskAccessByUs
 /// <summary>
 /// Command to delete a user-task access entry based on the task ID and the user's email.
 /// </summary>
-public record DeleteByTaskAccessByUserEmailCommand(Guid TaskId, string Email)
+public record DeleteTaskAccessByUserEmailCommand(Guid TaskId, Guid UserId, string Email)
     : ICommand;

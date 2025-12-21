@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
@@ -8,9 +9,13 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
 /// <summary>
 /// Handles the creation of a user-task access relationship.
 /// </summary>
-public class CreateUserTaskAccessCommandHandler(IUnitOfWork unitOfWork)
+public class CreateUserTaskAccessCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<CreateUserTaskAccessCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<CreateUserTaskAccessCommand>
 {
+    private readonly IValidator<CreateUserTaskAccessCommand> _validator = validator;
+
     /// <summary>
     /// Handles the <see cref="CreateUserTaskAccessCommand"/> to grant a user access to a task.
     /// </summary>
@@ -22,16 +27,10 @@ public class CreateUserTaskAccessCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> Handle(CreateUserTaskAccessCommand command, CancellationToken cancellationToken)
     {
-        var exists = await this.UnitOfWork.UserTaskAccesses.ExistsAsync(command.TaskId, command.UserId, cancellationToken);
-
-        if (exists)
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
         {
-            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.InvalidOperation, "User already has access to this task.");
-        }
-
-        if (await this.UnitOfWork.Tasks.IsTaskOwnerAsync(command.TaskId, command.UserId, cancellationToken))
-        {
-            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.InvalidOperation, "User is owner in this task.");
+            return validation;
         }
 
         var userTaskAccess = new UserTaskAccessEntity(command.TaskId, command.UserId);
