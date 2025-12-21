@@ -26,7 +26,7 @@ public static partial class TaskAccessForOwnerMapper
     /// </summary>
     /// <param name="entities">The collection of user-task access entities.</param>
     /// <returns>A list of <see cref="UserAccessDto"/> objects.</returns>
-    public static partial IList<UserAccessDto> MapToUserAccessDtoList(IReadOnlyCollection<UserTaskAccessEntity> entities);
+    public static partial IList<UserAccessDto> Map(IReadOnlyCollection<UserTaskAccessEntity> entities);
 
     /// <summary>
     /// Maps a collection of <see cref="UserTaskAccessEntity"/> to a <see cref="TaskAccessListDto"/>,
@@ -39,6 +39,6 @@ public static partial class TaskAccessForOwnerMapper
         {
             Id = entities.FirstOrDefault()?.TaskId ?? Guid.Empty,
             Title = entities.FirstOrDefault()?.Task.Title ?? string.Empty,
-            Users = MapToUserAccessDtoList(entities) ?? [],
+            Users = Map(entities) ?? [],
         };
 }
