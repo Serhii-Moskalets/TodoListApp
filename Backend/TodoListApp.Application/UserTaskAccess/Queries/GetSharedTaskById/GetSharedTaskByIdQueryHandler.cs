@@ -1,0 +1,43 @@
+﻿using TinyResult;
+using TodoListApp.Application.Abstractions.Messaging;
+using TodoListApp.Application.UserTaskAccess.Dto.ForUser;
+using TodoListApp.Application.UserTaskAccess.Mappers;
+using TodoListApp.Domain.Interfaces.UnitOfWork;
+
+namespace TodoListApp.Application.UserTaskAccess.Queries.GetSharedTaskById;
+
+/// <summary>
+/// Handles retrieval of a task shared with a specific user.
+/// </summary>
+public class GetSharedTaskByIdQueryHandler(IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), IQueryHandler<GetSharedTaskByIdQuery, TaskDto>
+{
+    /// <summary>
+    /// Handles the <see cref="GetSharedTaskByIdQuery"/> request.
+    /// </summary>
+    /// <param name="query">
+    /// The query containing the task identifier and the user identifier.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
+    /// </param>
+    /// <returns>
+    /// A <see cref="Result{T}"/> containing the shared task data if the user has access;
+    /// otherwise, a failure result indicating that the task was not found or access is denied.
+    /// </returns>
+    public async Task<Result<TaskDto>> Handle(GetSharedTaskByIdQuery query, CancellationToken cancellationToken)
+    {
+        var entity = await this.UnitOfWork.UserTaskAccesses
+            .GetByTaskAndUserIdAsync(query.TaskId, query.UserId, cancellationToken);
+
+        if (entity is null)
+        {
+            return await Result<TaskDto>.FailureAsync(
+                TinyResult.Enums.ErrorCode.NotFound,
+                "Task not found.");
+        }
+
+        return await Result<TaskDto>.SuccessAsync(
+            TaskAccessForUserMapper.Map(entity));
+    }
+}
