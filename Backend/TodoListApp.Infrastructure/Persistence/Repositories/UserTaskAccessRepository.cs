@@ -71,11 +71,9 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// <returns>A task representing the asynchronous delete operation.</returns>
     public async Task DeleteByTaskAndUserIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
     {
-        var entity = await this._dbSet.FirstOrDefaultAsync(x => x.TaskId == taskId && x.UserId == userId, cancellationToken);
-        if (entity is not null)
-        {
-            this._dbSet.Remove(entity);
-        }
+        await this._dbSet
+        .Where(x => x.TaskId == taskId && x.UserId == userId)
+        .ExecuteDeleteAsync(cancellationToken);
     }
 
     /// <summary>
