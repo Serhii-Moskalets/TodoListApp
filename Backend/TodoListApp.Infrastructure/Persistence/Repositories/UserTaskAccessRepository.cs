@@ -44,9 +44,9 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// <returns>A task representing the asynchronous delete operation.</returns>
     public async Task DeleteAllByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default)
     {
-        var query = await this._dbSet.Where(x => x.TaskId == taskId).ToListAsync(cancellationToken);
-
-        this._dbSet.RemoveRange(query);
+        await this._dbSet
+        .Where(x => x.TaskId == taskId)
+        .ExecuteDeleteAsync(cancellationToken);
     }
 
     /// <summary>
@@ -57,9 +57,9 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// <returns>A task representing the asynchronous delete operation.</returns>
     public async Task DeleteAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var query = await this._dbSet.Where(x => x.UserId == userId).ToListAsync(cancellationToken);
-
-        this._dbSet.RemoveRange(query);
+        await this._dbSet
+        .Where(x => x.UserId == userId)
+        .ExecuteDeleteAsync(cancellationToken);
     }
 
     /// <summary>
