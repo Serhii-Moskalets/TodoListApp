@@ -23,7 +23,7 @@ public interface IUserTaskAccessRepository
     /// <param name="userId">The user identifier.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>The <see cref="UserTaskAccessEntity"/> if found; otherwise, <c>null</c>.</returns>
-    Task<UserTaskAccessEntity?> GetByIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default);
+    Task<UserTaskAccessEntity?> GetByTaskAndUserIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves all user-task access entries for a specific task, including user details.

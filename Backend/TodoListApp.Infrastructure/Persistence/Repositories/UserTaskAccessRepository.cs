@@ -126,8 +126,15 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// <returns>
     /// A task that returns the <see cref="UserTaskAccessEntity"/> if found; otherwise, <c>null</c>.
     /// </returns>
-    public async Task<UserTaskAccessEntity?> GetByIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
-        => await this._dbSet.Include(x => x.Task).FirstOrDefaultAsync(x => x.TaskId == taskId && x.UserId == userId, cancellationToken);
+    public async Task<UserTaskAccessEntity?> GetByTaskAndUserIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
+        => await this._dbSet
+        .Include(x => x.User)
+        .Include(x => x.Task)
+        .Include(x => x.Task)
+            .ThenInclude(t => t.Comments)
+        .Include(x => x.Task)
+            .ThenInclude(t => t.Tag)
+        .FirstOrDefaultAsync(x => x.TaskId == taskId && x.UserId == userId, cancellationToken);
 
     /// <summary>
     /// Retrieves all user-task access entries for a specific task, including user details.
@@ -142,6 +149,7 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     public async Task<IReadOnlyCollection<UserTaskAccessEntity>> GetTaskAccessesForOwnerTaskAsync(Guid taskId, CancellationToken cancellationToken = default)
         => await this._dbSet
         .Include(x => x.User)
+        .Include(x => x.Task)
         .Where(x => x.TaskId == taskId)
         .ToListAsync(cancellationToken);
 
@@ -156,7 +164,11 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// </returns>
     public async Task<IReadOnlyCollection<UserTaskAccessEntity>> GetSharedTasksForUserAsync(Guid userId, CancellationToken cancellationToken = default)
         => await this._dbSet
+        .Include(x => x.User)
         .Include(x => x.Task)
+            .ThenInclude(t => t.Comments)
+        .Include(x => x.Task)
+            .ThenInclude(t => t.Tag)
         .Where(x => x.UserId == userId)
         .ToListAsync(cancellationToken);
 }
