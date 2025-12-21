@@ -3,7 +3,7 @@ using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
-namespace TodoListApp.Application.UserTaskAccess.CreateUserTaskAccess;
+namespace TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
 
 /// <summary>
 /// Handles the creation of a user-task access relationship.

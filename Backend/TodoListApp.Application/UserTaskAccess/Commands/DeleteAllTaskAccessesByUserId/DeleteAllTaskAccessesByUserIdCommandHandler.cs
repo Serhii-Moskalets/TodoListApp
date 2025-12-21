@@ -2,7 +2,7 @@
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
-namespace TodoListApp.Application.UserTaskAccess.DeleteAllTaskAccessesByUserId;
+namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteAllTaskAccessesByUserId;
 
 /// <summary>
 /// Handles the <see cref="DeleteAllTaskAccessesByUserIdCommand"/> to remove all user-task access entries for a specific user.

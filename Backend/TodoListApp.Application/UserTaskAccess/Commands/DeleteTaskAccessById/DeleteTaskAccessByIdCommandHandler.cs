@@ -1,9 +1,8 @@
 ﻿using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Application.UserTaskAccess.DeleteTaskAccessById;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
-namespace TodoListApp.Application.UserTaskAccess.DeleteTaskAccessById;
+namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessById;
 
 /// <summary>
 /// Handles the <see cref="DeleteTaskAccessByIdCommand"/> to remove a user-task access entry.

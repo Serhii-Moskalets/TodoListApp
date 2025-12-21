@@ -1,6 +1,6 @@
 ﻿using TodoListApp.Application.Abstractions.Messaging;
 
-namespace TodoListApp.Application.UserTaskAccess.DeleteTaskAccessById;
+namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessById;
 
 /// <summary>
 /// Represents a command to delete a user-task access entry by task and user IDs.

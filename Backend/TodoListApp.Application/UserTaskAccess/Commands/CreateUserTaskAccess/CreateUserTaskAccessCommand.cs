@@ -1,6 +1,6 @@
 ﻿using TodoListApp.Application.Abstractions.Messaging;
 
-namespace TodoListApp.Application.UserTaskAccess.CreateUserTaskAccess;
+namespace TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
 
 /// <summary>
 /// Command to create a user-task access relationship.
