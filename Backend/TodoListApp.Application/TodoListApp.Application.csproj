@@ -9,6 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="UserTaskAccess\DeleteUsetTaskAccess\**" />
+    <EmbeddedResource Remove="UserTaskAccess\DeleteUsetTaskAccess\**" />
+    <None Remove="UserTaskAccess\DeleteUsetTaskAccess\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Riok.Mapperly" Version="4.3.0" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.15.0">
       <PrivateAssets>all</PrivateAssets>

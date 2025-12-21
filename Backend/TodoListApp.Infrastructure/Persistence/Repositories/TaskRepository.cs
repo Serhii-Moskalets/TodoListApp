@@ -238,4 +238,7 @@ public class TaskRepository(TodoListAppDbContext context)
             .Include(x => x.Comments)
                 .ThenInclude(c => c.User)
             .ToListAsync(cancellationToken);
+
+    public async Task<bool> IsTaskOwnerAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
+        => await this.DbSet.AsNoTracking().AnyAsync(x => x.Id == taskId && x.OwnerId == userId, cancellationToken);
 }

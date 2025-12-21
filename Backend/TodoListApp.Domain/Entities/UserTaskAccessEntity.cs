@@ -11,8 +11,8 @@ public class UserTaskAccessEntity
     /// <summary>
     /// Initializes a new instance of the <see cref="UserTaskAccessEntity"/> class.
     /// </summary>
-    /// <param name="taskId">The ID of the task the access relationship between a user and a task belongs to.</param>
-    /// <param name="userId">The ID of the user the access relationship between a user and a task belongs to.</param>
+    /// <param name="taskId">The ID of the task.</param>
+    /// <param name="userId">The ID of the user.</param>
     public UserTaskAccessEntity(Guid taskId, Guid userId)
     {
         this.TaskId = taskId;
@@ -25,13 +25,13 @@ public class UserTaskAccessEntity
     /// Gets the ID of the task.
     /// </summary>
     [Column("Task_Id")]
-    required public Guid TaskId { get; init; }
+    public Guid TaskId { get; init; }
 
     /// <summary>
     /// Gets the ID of the user.
     /// </summary>
     [Column("User_Id")]
-    required public Guid UserId { get; init; }
+    public Guid UserId { get; init; }
 
     /// <summary>
     /// Gets the task associated with this access.

@@ -11,7 +11,6 @@ namespace TodoListApp.Infrastructure.Persistence.Repositories;
 /// </summary>
 public class UserTaskAccessRepository : IUserTaskAccessRepository
 {
-    private readonly TodoListAppDbContext _context;
     private readonly DbSet<UserTaskAccessEntity> _dbSet;
 
     /// <summary>
@@ -19,11 +18,9 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// with the specified database context.
     /// </summary>
     /// <param name="context">The database context used for data operations.</param>
-    /// <param name="dbSet">The DbSet for <see cref="UserTaskAccessEntity"/>.</param>
-    public UserTaskAccessRepository(TodoListAppDbContext context, DbSet<UserTaskAccessEntity> dbSet)
+    public UserTaskAccessRepository(TodoListAppDbContext context)
     {
-        this._context = context;
-        this._dbSet = dbSet;
+        this._dbSet = context.UserTaskAccesses;
     }
 
     /// <summary>
@@ -103,7 +100,7 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// A task that returns the <see cref="UserTaskAccessEntity"/> if found; otherwise, <c>null</c>.
     /// </returns>
     public async Task<UserTaskAccessEntity?> GetByIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
-        => await this._dbSet.FirstOrDefaultAsync(x => x.TaskId == taskId && x.UserId == userId, cancellationToken);
+        => await this._dbSet.Include(x => x.Task).FirstOrDefaultAsync(x => x.TaskId == taskId && x.UserId == userId, cancellationToken);
 
     /// <summary>
     /// Retrieves all user-task access entries for a specific user.
@@ -115,15 +112,5 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// entries representing the tasks shared with the user.
     /// </returns>
     public async Task<IReadOnlyCollection<UserTaskAccessEntity>> GetSharedTasksForUserAsync(Guid userId, CancellationToken cancellationToken = default)
-        => await this._dbSet.Where(x => x.UserId == userId).ToListAsync(cancellationToken);
-
-    /// <summary>
-    /// Persists all pending changes to the database asynchronously.
-    /// </summary>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>
-    /// A task that returns the number of state entries written to the database.
-    /// </returns>
-    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => await this._context.SaveChangesAsync(cancellationToken);
+        => await this._dbSet.Include(x => x.Task).Where(x => x.UserId == userId).ToListAsync(cancellationToken);
 }

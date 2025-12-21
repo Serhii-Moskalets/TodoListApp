@@ -132,4 +132,6 @@ public interface ITaskRepository : IRepository<TaskEntity>
         Guid taskId,
         Guid userId,
         CancellationToken cancellationToken = default);
+
+    Task<bool> IsTaskOwnerAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
 }
