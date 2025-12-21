@@ -22,9 +22,9 @@ public class CreateUserTaskAccessCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> Handle(CreateUserTaskAccessCommand command, CancellationToken cancellationToken)
     {
-        var userTaskAccess = await this.UnitOfWork.UserTaskAccesses.GetByIdAsync(command.TaskId, command.UserId, cancellationToken);
+        var exists = await this.UnitOfWork.UserTaskAccesses.ExistsAsync(command.TaskId, command.UserId, cancellationToken);
 
-        if (userTaskAccess is not null)
+        if (exists)
         {
             return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.InvalidOperation, "User already has access to this task.");
         }
@@ -34,7 +34,7 @@ public class CreateUserTaskAccessCommandHandler(IUnitOfWork unitOfWork)
             return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.InvalidOperation, "User is owner in this task.");
         }
 
-        userTaskAccess = new UserTaskAccessEntity(command.TaskId, command.UserId);
+        var userTaskAccess = new UserTaskAccessEntity(command.TaskId, command.UserId);
 
         await this.UnitOfWork.UserTaskAccesses.AddAsync(userTaskAccess, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);

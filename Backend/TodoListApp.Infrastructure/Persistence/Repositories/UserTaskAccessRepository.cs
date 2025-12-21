@@ -146,7 +146,7 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// A task that returns a read-only collection of <see cref="UserTaskAccessEntity"/> entries
     /// representing all users who currently have access to the task.
     /// </returns>
-    public async Task<IReadOnlyCollection<UserTaskAccessEntity>> GetTaskAccessesForOwnerTaskAsync(Guid taskId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<UserTaskAccessEntity>> GetTaskAccessListForOwnerAsync(Guid taskId, CancellationToken cancellationToken = default)
         => await this._dbSet
         .Include(x => x.User)
         .Include(x => x.Task)

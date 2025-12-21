@@ -35,7 +35,7 @@ public interface IUserTaskAccessRepository
     /// A task that returns a read-only collection of <see cref="UserTaskAccessEntity"/> entries
     /// representing all users who currently have access to the task.
     /// </returns>
-    Task<IReadOnlyCollection<UserTaskAccessEntity>> GetTaskAccessesForOwnerTaskAsync(Guid taskId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<UserTaskAccessEntity>> GetTaskAccessListForOwnerAsync(Guid taskId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves all tasks shared with a specific user.

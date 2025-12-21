@@ -133,5 +133,14 @@ public interface ITaskRepository : IRepository<TaskEntity>
         Guid userId,
         CancellationToken cancellationToken = default);
 
-    Task<bool> IsTaskOwnerAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Checks if a specific user is the owner of a task.
+    /// </summary>
+    /// <param name="taskId">The unique identifier of the task.</param>
+    /// <param name="userId">The unique identifier of the user.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+    /// <returns>
+    /// A task that returns <c>true</c> if the user is the owner of the task; otherwise, <c>false</c>.
+    /// </returns>
+    Task<bool> IsTaskOwnerAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default);
 }
