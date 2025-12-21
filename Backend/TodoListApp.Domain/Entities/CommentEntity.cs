@@ -42,7 +42,7 @@ public class CommentEntity : BaseEntity
     /// Gets the date and time when the comment was created.
     /// </summary>
     [Column("Created_Date")]
-    public DateTime CreatedDate { get; private set;  }
+    public DateTime CreatedDate { get; }
 
     /// <summary>
     /// Gets the ID of the task that this comment belongs to.
