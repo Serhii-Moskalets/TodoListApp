@@ -22,10 +22,10 @@ public class GetAllTagsQueryHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<IEnumerable<TagDto>>> Handle(GetAllTagsQuery query, CancellationToken cancellationToken)
     {
-        var tagEntities = await this.UnitOfWork.Tags.GetByUserIdAsync(query.UserId, cancellationToken);
+        var tagEntities = await this.UnitOfWork.Tags
+            .GetByUserIdAsync(query.UserId, cancellationToken);
 
-        var tagDtoList = TagMapper.Map(tagEntities);
-
-        return await Result<IEnumerable<TagDto>>.SuccessAsync(tagDtoList);
+        return await Result<IEnumerable<TagDto>>.SuccessAsync(
+            TagMapper.Map(tagEntities));
     }
 }

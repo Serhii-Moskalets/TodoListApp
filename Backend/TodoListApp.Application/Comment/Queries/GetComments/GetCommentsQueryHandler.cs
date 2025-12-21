@@ -22,10 +22,10 @@ public class GetCommentsQueryHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<IEnumerable<CommentDto>>> Handle(GetCommentsQuery query, CancellationToken cancellationToken)
     {
-        var commentEntityList = await this.UnitOfWork.Comments.GetByTaskIdAsync(query.TaskId, cancellationToken);
+        var commentEntityList = await this.UnitOfWork.Comments
+            .GetByTaskIdAsync(query.TaskId, cancellationToken);
 
-        var commentDtoList = CommentMapper.Map(commentEntityList);
-
-        return await Result<IEnumerable<CommentDto>>.SuccessAsync(commentDtoList);
+        return await Result<IEnumerable<CommentDto>>.SuccessAsync(
+            CommentMapper.Map(commentEntityList));
     }
 }
