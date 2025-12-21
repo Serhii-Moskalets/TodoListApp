@@ -16,14 +16,12 @@ public class TaskEntity : BaseEntity
     /// <param name="ownerId">The ID of the user who created the task.</param>
     /// <param name="taskListId">The ID of the task list the task belongs to.</param>
     /// <param name="title">The title of the task.</param>
-    /// <param name="createdAt">The date and time when the task was created.</param>
     /// <param name="dueDate">The due date of the task.</param>
     /// <param name="description">The Description of the task.</param>
     public TaskEntity(
         Guid ownerId,
         Guid taskListId,
         string title,
-        DateTime createdAt,
         DateTime? dueDate = null,
         string? description = null)
     {
@@ -37,7 +35,7 @@ public class TaskEntity : BaseEntity
         this.Title = title.Trim();
         this.Description = description;
         this.Status = StatusTask.NotStarted;
-        this.CreatedDate = createdAt;
+        this.CreatedDate = DateTime.UtcNow;
         this.DueDate = dueDate;
     }
 
@@ -59,7 +57,7 @@ public class TaskEntity : BaseEntity
     /// Gets the time when the task was created.
     /// </summary>
     [Column("Created_Date")]
-    public DateTime CreatedDate { get; private set; }
+    public DateTime CreatedDate { get; init; }
 
     /// <summary>
     /// Gets the due date of the task.
@@ -77,13 +75,13 @@ public class TaskEntity : BaseEntity
     /// Gets the ID of the user who owns the task.
     /// </summary>
     [Column("Owner_Id")]
-    public Guid OwnerId { get; private set; }
+    public Guid OwnerId { get; init; }
 
     /// <summary>
     /// Gets the ID of the task list that this task belongs to.
     /// </summary>
     [Column("Task_List_Id")]
-    public Guid TaskListId { get; private set; }
+    public Guid TaskListId { get; init; }
 
     /// <summary>
     /// Gets the ID of the tag associated with the task, if any.
@@ -99,46 +97,22 @@ public class TaskEntity : BaseEntity
     /// <summary>
     /// Gets the task list to which this task belongs.
     /// </summary>
-    public virtual TaskListEntity TaskList { get; private set; } = null!;
+    public virtual TaskListEntity TaskList { get; init; } = null!;
 
     /// <summary>
     /// Gets the owner of the task.
     /// </summary>
-    public virtual UserEntity Owner { get; private set; } = null!;
+    public virtual UserEntity Owner { get; init; } = null!;
 
     /// <summary>
     /// Gets the collection of comments associated with this task.
     /// </summary>
-    public virtual ICollection<CommentEntity> Comments { get; private set; } = new HashSet<CommentEntity>();
+    public virtual ICollection<CommentEntity> Comments { get; init; } = new HashSet<CommentEntity>();
 
     /// <summary>
     /// Gets the collection of user accesses associated with this task.
     /// </summary>
-    public virtual ICollection<UserTaskAccessEntity> UserAccesses { get; private set; } = new HashSet<UserTaskAccessEntity>();
-
-    /// <summary>
-    /// Creates a new <see cref="TaskEntity"/> instance with the specified parameters.
-    /// </summary>
-    /// <param name="ownerId">The ID of the user who created the task.</param>
-    /// <param name="taskListId">The ID of the task list the task belongs to.</param>
-    /// <param name="title">The title of the task.</param>
-    /// <param name="createdAt">The date and time when the task was created.</param>
-    /// <param name="dueDate">The optional due date of the task.</param>
-    /// <returns>A new instance of <see cref="TaskEntity"/>.</returns>
-    public static TaskEntity Create(
-        Guid ownerId,
-        Guid taskListId,
-        string title,
-        DateTime createdAt,
-        DateTime? dueDate = null)
-    {
-        return new TaskEntity(
-            ownerId,
-            taskListId,
-            title,
-            createdAt,
-            dueDate);
-    }
+    public virtual ICollection<UserTaskAccessEntity> UserAccesses { get; init; } = new HashSet<UserTaskAccessEntity>();
 
     /// <summary>
     /// Updates the task title, description, and due date.

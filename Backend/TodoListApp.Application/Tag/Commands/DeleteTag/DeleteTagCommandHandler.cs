@@ -9,7 +9,7 @@ namespace TodoListApp.Application.Tag.Commands.DeleteTag;
 /// Handles the <see cref="DeleteTagCommand"/> by deleting a tag that belongs to a specific user.
 /// </summary>
 public class DeleteTagCommandHandler(
-    IUnitOfWork unitOfWork, 
+    IUnitOfWork unitOfWork,
     IValidator<DeleteTagCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<DeleteTagCommand>
 {

@@ -1,5 +1,5 @@
-﻿using TinyResult;
-using TinyResult.Enums;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
@@ -8,13 +8,13 @@ namespace TodoListApp.Application.Task.Commands.DeleteTask;
 /// <summary>
 /// Handles the <see cref="DeleteTaskCommand"/> to delete an existing task.
 /// </summary>
-/// <remarks>
-/// Initializes a new instance of the <see cref="DeleteTaskCommandHandler"/> class.
-/// </remarks>
-/// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
-public class DeleteTaskCommandHandler(IUnitOfWork unitOfWork)
+public class DeleteTaskCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<DeleteTaskCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskCommand>
 {
+    private readonly IValidator<DeleteTaskCommand> _validator = validator;
+
     /// <summary>
     /// Handles the deletion of a task for a specific user.
     /// </summary>
@@ -23,11 +23,10 @@ public class DeleteTaskCommandHandler(IUnitOfWork unitOfWork)
     /// <returns>A <see cref="Result{Boolean}"/> indicating success or failure of the operation.</returns>
     public async Task<Result<bool>> Handle(DeleteTaskCommand command, CancellationToken cancellationToken)
     {
-        bool exists = await this.UnitOfWork.Tasks.ExistsForUserAsync(command.TaskId, command.UserId, cancellationToken);
-
-        if (!exists)
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
         {
-            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
+            return validation;
         }
 
         await this.UnitOfWork.Tasks.DeleteAsync(command.TaskId, cancellationToken);

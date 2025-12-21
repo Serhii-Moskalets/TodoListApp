@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
@@ -8,13 +9,13 @@ namespace TodoListApp.Application.Task.Commands.UpdateTask;
 /// <summary>
 /// Handles the <see cref="UpdateTaskCommand"/> to update an existing task.
 /// </summary>
-/// <remarks>
-/// Initializes a new instance of the <see cref="UpdateTaskCommandHandler"/> class.
-/// </remarks>
-/// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
-public class UpdateTaskCommandHandler(IUnitOfWork unitOfWork)
+public class UpdateTaskCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<UpdateTaskCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<UpdateTaskCommand>
 {
+    private readonly IValidator<UpdateTaskCommand> _validator = validator;
+
     /// <summary>
     /// Handles updating a task for a specific user.
     /// </summary>
@@ -23,6 +24,12 @@ public class UpdateTaskCommandHandler(IUnitOfWork unitOfWork)
     /// <returns>A <see cref="Result{Boolean}"/> indicating success or failure of the operation.</returns>
     public async Task<Result<bool>> Handle(UpdateTaskCommand command, CancellationToken cancellationToken)
     {
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
+        {
+            return validation;
+        }
+
         var taskDto = command.Dto;
 
         var taskEntity = await this.UnitOfWork.Tasks.GetTaskByIdForUserAsync(taskDto.TaskId, taskDto.OwnerId, cancellationToken: cancellationToken);

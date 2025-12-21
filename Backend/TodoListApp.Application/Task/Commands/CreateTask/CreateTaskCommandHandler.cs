@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
@@ -11,10 +12,13 @@ namespace TodoListApp.Application.Task.Commands.CreateTask;
 /// <remarks>
 /// Initializes a new instance of the <see cref="CreateTaskCommandHandler"/> class.
 /// </remarks>
-/// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
-public class CreateTaskCommandHandler(IUnitOfWork unitOfWork)
+public class CreateTaskCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<CreateTaskCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<CreateTaskCommand>
 {
+    private readonly IValidator<CreateTaskCommand> _validator = validator;
+
     /// <summary>
     /// Handles the creation of a new task based on the provided command.
     /// </summary>
@@ -23,11 +27,17 @@ public class CreateTaskCommandHandler(IUnitOfWork unitOfWork)
     /// <returns>A <see cref="Result{Boolean}"/> indicating success or failure of the operation.</returns>
     public async Task<Result<bool>> Handle(CreateTaskCommand command, CancellationToken cancellationToken)
     {
-        var task = TaskEntity.Create(
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
+        {
+            return validation;
+        }
+
+        var task = new TaskEntity(
             command.Dto.OwnerId,
             command.Dto.TaskListId,
             command.Dto.Title,
-            DateTime.UtcNow);
+            command.Dto.DueDate);
 
         await this.UnitOfWork.Tasks.AddAsync(task, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);

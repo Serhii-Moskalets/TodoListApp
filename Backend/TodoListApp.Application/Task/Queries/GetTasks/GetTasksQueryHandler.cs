@@ -19,7 +19,7 @@ public class GetTasksQueryHandler(IUnitOfWork unitOfWork)
     /// <param name="query">The query containing user ID, optional task statuses, due date filters, and sorting options.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.</param>
     /// <returns>
-    /// A <see cref="TinyResult.Result{T}"/> representing the outcome of the operation.
+    /// A <see cref="Result{T}"/> representing the outcome of the operation.
     /// </returns>
     public async Task<Result<IEnumerable<TaskDto>>> Handle(GetTasksQuery query, CancellationToken cancellationToken)
     {

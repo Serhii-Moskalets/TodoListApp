@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
@@ -8,13 +9,13 @@ namespace TodoListApp.Application.Task.Commands.DeleteOverdueTasks;
 /// Handles the <see cref="DeleteOverdueTasksCommand"/> and deletes all overdue tasks.
 /// in a specified task list for a given user.
 /// </summary>
-/// <remarks>
-/// Initializes a new instance of the <see cref="DeleteOverdueTasksCommandHandler"/> class.
-/// </remarks>
-/// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
-public class DeleteOverdueTasksCommandHandler(IUnitOfWork unitOfWork)
+public class DeleteOverdueTasksCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<DeleteOverdueTasksCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<DeleteOverdueTasksCommand>
 {
+    private readonly IValidator<DeleteOverdueTasksCommand> _validator = validator;
+
     /// <summary>
     /// Handles the deletion of overdue tasks in the specified task list for a given user.
     /// </summary>
@@ -23,6 +24,12 @@ public class DeleteOverdueTasksCommandHandler(IUnitOfWork unitOfWork)
     /// <returns>A <see cref="Result{Boolean}"/> indicating success or failure of the operation.</returns>
     public async Task<Result<bool>> Handle(DeleteOverdueTasksCommand command, CancellationToken cancellationToken)
     {
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
+        {
+            return validation;
+        }
+
         await this.UnitOfWork.Tasks.DeleteOverdueTasksAsync(command.UserId, command.TaskListId, DateTime.UtcNow, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
         return await Result<bool>.SuccessAsync(true);
