@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
@@ -8,9 +9,13 @@ namespace TodoListApp.Application.TaskList.Commands.UpdateTaskList;
 /// Handles the <see cref="UpdateTaskListCommand"/> by updating the title of a task list
 /// that belongs to a specific user.
 /// </summary>
-public class UpdateTaskListCommandHandler(IUnitOfWork unitOfWork)
+public class UpdateTaskListCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<UpdateTaskListCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<UpdateTaskListCommand>
 {
+    private readonly IValidator<UpdateTaskListCommand> _validator = validator;
+
     /// <summary>
     /// Handles the command to update the title of a task list.
     /// </summary>
@@ -22,6 +27,12 @@ public class UpdateTaskListCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> Handle(UpdateTaskListCommand command, CancellationToken cancellationToken)
     {
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
+        {
+            return validation;
+        }
+
         var taskListEntity = await this.UnitOfWork.TaskLists.GetByIdForUserAsync(command.TaskListId, command.UserId, cancellationToken);
 
         if (taskListEntity is null)

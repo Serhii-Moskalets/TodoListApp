@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
@@ -8,9 +9,13 @@ namespace TodoListApp.Application.TaskList.Commands.DeleteTaskList;
 /// Handles the <see cref="DeleteTaskListCommand"/> by deleting a task list
 /// that belongs to a specific user.
 /// </summary>
-public class DeleteTaskListCommandHandler(IUnitOfWork unitOfWork)
+public class DeleteTaskListCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<DeleteTaskListCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskListCommand>
 {
+    private readonly IValidator<DeleteTaskListCommand> _validator = validator;
+
     /// <summary>
     /// Handles the command to delete a task list.
     /// </summary>
@@ -22,11 +27,10 @@ public class DeleteTaskListCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> Handle(DeleteTaskListCommand command, CancellationToken cancellationToken)
     {
-        var exists = await this.UnitOfWork.TaskLists.IsTodoListOwnerAsync(command.TaskListId, command.UserId, cancellationToken);
-
-        if (!exists)
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
         {
-            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Task list not found.");
+            return validation;
         }
 
         await this.UnitOfWork.TaskLists.DeleteAsync(command.TaskListId);

@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
@@ -10,9 +11,13 @@ namespace TodoListApp.Application.TaskList.Commands.CreateTaskList;
 /// for a specific user. If a task list with the same title already exists for
 /// the user, a numeric suffix is appended to make the title unique.
 /// </summary>
-public class CreateTaskListCommandHandler(IUnitOfWork unitOfWork)
+public class CreateTaskListCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<CreateTaskListCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<CreateTaskListCommand>
 {
+    private readonly IValidator<CreateTaskListCommand> _validator = validator;
+
     /// <summary>
     /// Processes the command to create a new task list.
     /// </summary>
@@ -21,6 +26,12 @@ public class CreateTaskListCommandHandler(IUnitOfWork unitOfWork)
     /// <returns>A <see cref="Result{T}"/> indicating whether the operation was successful.</returns>
     public async Task<Result<bool>> Handle(CreateTaskListCommand command, CancellationToken cancellationToken)
     {
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
+        {
+            return validation;
+        }
+
         var newTitle = command.Title;
         int suffix = 1;
 
