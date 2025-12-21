@@ -14,6 +14,9 @@ public class CommentEntity : BaseEntity
     /// <param name="taskId">The ID of the task the comment belongs to.</param>
     /// <param name="userId">The ID of the user who created the comment.</param>
     /// <param name="text">The text content of the comment.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="text"/> is null, empty, or consists only of white-space characters.
+    /// </exception>
     public CommentEntity(Guid taskId, Guid userId, string text)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -33,33 +36,50 @@ public class CommentEntity : BaseEntity
     /// Gets the text content of the comment.
     /// </summary>
     [Column("Text")]
-    required public string Text { get; init; }
+    public string Text { get; private set; } = null!;
 
     /// <summary>
     /// Gets the date and time when the comment was created.
     /// </summary>
     [Column("Created_Date")]
-    required public DateTime CreatedDate { get; init; }
+    public DateTime CreatedDate { get; private set;  }
 
     /// <summary>
     /// Gets the ID of the task that this comment belongs to.
     /// </summary>
     [Column("Task_Id")]
-    required public Guid TaskId { get; init; }
+    public Guid TaskId { get; }
 
     /// <summary>
     /// Gets the ID of the user who created the comment.
     /// </summary>
     [Column("User_Id")]
-    required public Guid UserId { get; init; }
+    public Guid UserId { get; }
 
     /// <summary>
     /// Gets the user who created the comment.
     /// </summary>
-    public virtual UserEntity User { get; init; } = null!;
+    public virtual UserEntity User { get; } = null!;
 
     /// <summary>
     /// Gets the task to which this comment belongs.
     /// </summary>
-    public virtual TaskEntity Task { get; init; } = null!;
+    public virtual TaskEntity Task { get; } = null!;
+
+    /// <summary>
+    /// Updates the text content of the comment.
+    /// </summary>
+    /// <param name="text">The new text content of the comment.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="text"/> is null, empty, or consists only of white-space characters.
+    /// </exception>
+    public void Update(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new ArgumentException("Comment text cannot be empty", nameof(text));
+        }
+
+        this.Text = text;
+    }
 }
