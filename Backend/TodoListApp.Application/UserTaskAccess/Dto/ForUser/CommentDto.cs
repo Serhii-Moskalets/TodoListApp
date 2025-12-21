@@ -16,7 +16,7 @@ public class CommentDto
     public string? Text { get; init; }
 
     /// <summary>
-    /// Gets othe date and time when the comment was created.
+    /// Gets the date and time when the comment was created.
     /// </summary>
     public DateTime CreatedDate { get; init; }
 
