@@ -283,7 +283,7 @@ public class UserEntity : BaseEntity
     /// <param name="newLastName">The new last name (optional).</param>
     public void UpdateFirstAndLastName(string newFirstName, string? newLastName = null)
     {
-        if (string.IsNullOrWhiteSpace(newFirstName.Trim()))
+        if (string.IsNullOrWhiteSpace(newFirstName))
         {
             throw new ArgumentException("First name cannot be empty.", nameof(newFirstName));
         }
