@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TodoListApp.Infrastructure.Persistence;
+using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 
 #nullable disable

@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TodoListApp.Domain.Entities;
 
-namespace TodoListApp.Infrastructure.Persistence;
+namespace TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 /// <summary>
 /// Represents the database context for the TodoList application.

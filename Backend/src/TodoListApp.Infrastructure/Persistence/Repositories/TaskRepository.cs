@@ -4,6 +4,7 @@ using TinyResult;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Enums;
 using TodoListApp.Domain.Interfaces.Repositories;
+using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 namespace TodoListApp.Infrastructure.Persistence.Repositories;
 
@@ -179,7 +180,7 @@ public class TaskRepository(TodoListAppDbContext context)
     {
         var tasksQuery = this.DbSet.AsNoTracking().Where(x => x.OwnerId == userId && x.TaskListId == todoListId);
 
-        if (statuses?.Any() == true)
+        if (statuses is { Count: > 0 })
         {
             tasksQuery = tasksQuery.Where(x => statuses.Contains(x.Status));
         }

@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 
-namespace TodoListApp.Infrastructure.Persistence;
+namespace TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 /// <summary>
 /// Provides a design-time factory for creating instances of <see cref="TodoListAppDbContext"/>.
