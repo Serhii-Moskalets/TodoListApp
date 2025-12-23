@@ -1,4 +1,4 @@
-﻿namespace TodoListApp.Tests;
+﻿namespace TodoListApp.Domain.Test;
 
 public class UnitTest1
 {
