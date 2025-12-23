@@ -8,8 +8,6 @@ namespace TodoListApp.Domain.Entities;
 [Table("Task_Lists")]
 public class TaskListEntity : BaseEntity
 {
-    private readonly List<TaskEntity> _tasks = new();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="TaskListEntity"/> class.
     /// </summary>
@@ -55,7 +53,7 @@ public class TaskListEntity : BaseEntity
     /// <summary>
     /// Gets the collection of tasks contained in this task list.
     /// </summary>
-    public IReadOnlyCollection<TaskEntity> Tasks => this._tasks.AsReadOnly();
+    public virtual ICollection<TaskEntity> Tasks { get; init; } = new HashSet<TaskEntity>();
 
     /// <summary>
     /// Updates the taskList title.

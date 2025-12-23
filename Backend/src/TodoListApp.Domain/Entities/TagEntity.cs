@@ -41,10 +41,10 @@ public class TagEntity : BaseEntity
     /// <summary>
     /// Gets the user who owns this tag.
     /// </summary>
-    public virtual UserEntity User { get; } = null!;
+    public virtual UserEntity User { get; init; } = null!;
 
     /// <summary>
     /// Gets the collection of tasks associated with this tag.
     /// </summary>
-    public virtual ICollection<TaskEntity> Tasks { get; private set; } = new HashSet<TaskEntity>();
+    public virtual ICollection<TaskEntity> Tasks { get; init; } = new HashSet<TaskEntity>();
 }
