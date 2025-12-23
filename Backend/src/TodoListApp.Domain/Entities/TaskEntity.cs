@@ -33,7 +33,7 @@ public class TaskEntity : BaseEntity
         this.OwnerId = ownerId;
         this.TaskListId = taskListId;
         this.Title = title.Trim();
-        this.Description = description;
+        this.Description = description?.Trim();
         this.Status = StatusTask.NotStarted;
         this.CreatedDate = DateTime.UtcNow;
         this.DueDate = dueDate;
@@ -121,7 +121,7 @@ public class TaskEntity : BaseEntity
     /// <param name="description">The new description of the task.</param>
     /// <param name="dueDate">The new due date of the task.</param>
     /// <exception cref="ArgumentException">Thrown when the title is empty.</exception>
-    public void UpdateDetails(string title, string? description, DateTime? dueDate)
+    public void UpdateDetails(string title, string? description = null, DateTime? dueDate = null)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -129,7 +129,7 @@ public class TaskEntity : BaseEntity
         }
 
         this.Title = title.Trim();
-        this.Description = description;
+        this.Description = description?.Trim();
         this.DueDate = dueDate;
     }
 

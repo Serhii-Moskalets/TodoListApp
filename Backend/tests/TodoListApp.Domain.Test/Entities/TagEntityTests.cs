@@ -19,7 +19,7 @@ public class TagEntityTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Constructor_ShouldThrow_ThenTextInvalid(string? invalidText)
+    public void Constructor_ShouldThrow_WhenTextInvalid(string? invalidText)
     {
         var userId = Guid.NewGuid();
 

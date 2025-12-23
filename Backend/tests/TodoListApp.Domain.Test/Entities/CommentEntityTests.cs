@@ -1,4 +1,5 @@
-﻿using TodoListApp.Domain.Entities;
+﻿using System.Threading.Tasks;
+using TodoListApp.Domain.Entities;
 
 namespace TodoListApp.Domain.Test.Entities;
 
@@ -16,14 +17,14 @@ public class CommentEntityTests
         Assert.Equal(taskId, comment.TaskId);
         Assert.Equal(userId, comment.UserId);
         Assert.Equal(text, comment.Text);
-        Assert.True((DateTime.UtcNow - comment.CreatedDate).TotalSeconds < 1);
+        Assert.True(comment.CreatedDate <= DateTime.UtcNow);
     }
 
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Constructor_ShouldThrow_ThenTextInvalid(string? invalidText)
+    public void Constructor_ShouldThrow_WhenTextInvalid(string? invalidText)
     {
         var taskId = Guid.NewGuid();
         var userId = Guid.NewGuid();
