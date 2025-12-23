@@ -1,5 +1,5 @@
 ﻿using Riok.Mapperly.Abstractions;
-using TodoListApp.Application.Tag.Dtos;
+using TodoListApp.Application.Common.Dtos;
 using TodoListApp.Domain.Entities;
 
 namespace TodoListApp.Application.Tag.Mappers;

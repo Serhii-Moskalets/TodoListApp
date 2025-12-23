@@ -1,9 +1,9 @@
-﻿namespace TodoListApp.Application.Comment.Dtos;
+﻿namespace TodoListApp.Application.Common.Dtos;
 
 /// <summary>
-/// Data Transfer Object (DTO) representing a user in the application layer.
+/// Data Transfer Object (DTO) representing a brief view of a user.
 /// </summary>
-public class UserDto
+public class UserBriefDto
 {
     /// <summary>
     /// Gets the unique identifier of the user.

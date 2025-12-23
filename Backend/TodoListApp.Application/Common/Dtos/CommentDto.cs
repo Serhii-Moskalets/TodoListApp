@@ -1,7 +1,7 @@
-﻿namespace TodoListApp.Application.Task.Dtos;
+﻿namespace TodoListApp.Application.Common.Dtos;
 
 /// <summary>
-/// Data Transfer Object representing a comment on a task.
+/// Data Transfer Object (DTO) representing a comment in the application layer.
 /// </summary>
 public class CommentDto
 {
@@ -13,7 +13,7 @@ public class CommentDto
     /// <summary>
     /// Gets the text content of the comment.
     /// </summary>
-    public string? Text { get; init; }
+    public string Text { get; init; } = null!;
 
     /// <summary>
     /// Gets the date and time when the comment was created.
@@ -21,7 +21,8 @@ public class CommentDto
     public DateTime CreatedDate { get; init; }
 
     /// <summary>
-    /// Gets the user who created the comment.
+    /// Gets the owner of the comment.
+    /// Uses <see cref="UserBriefDto"/> to provide only the essential user information.
     /// </summary>
-    public UserDto User { get; init; } = null!;
+    public UserBriefDto User { get; init; } = null!;
 }

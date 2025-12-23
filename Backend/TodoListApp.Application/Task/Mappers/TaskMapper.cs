@@ -1,5 +1,5 @@
 ﻿using Riok.Mapperly.Abstractions;
-using TodoListApp.Application.Task.Dtos;
+using TodoListApp.Application.Common.Dtos;
 using TodoListApp.Domain.Entities;
 
 namespace TodoListApp.Application.Task.Mappers;
@@ -33,11 +33,11 @@ public static partial class TaskMapper
     public static partial CommentDto Map(CommentEntity entity);
 
     /// <summary>
-    /// Maps a <see cref="UserEntity"/> to a <see cref="UserDto"/>.
+    /// Maps a <see cref="UserEntity"/> to a <see cref="UserBriefDto"/>.
     /// </summary>
     /// <param name="entity">The user entity to map.</param>
-    /// <returns>The mapped <see cref="UserDto"/>.</returns>
-    public static partial UserDto Map(UserEntity entity);
+    /// <returns>The mapped <see cref="UserBriefDto"/>.</returns>
+    public static partial UserBriefDto Map(UserEntity entity);
 
     /// <summary>
     /// Maps a collection of <see cref="TaskEntity"/> objects to a list of <see cref="TaskDto"/> objects.

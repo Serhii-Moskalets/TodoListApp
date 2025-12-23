@@ -1,6 +1,6 @@
 ﻿using TodoListApp.Domain.Enums;
 
-namespace TodoListApp.Application.Task.Dtos;
+namespace TodoListApp.Application.Common.Dtos;
 
 /// <summary>
 /// Data Transfer Object representing a task.

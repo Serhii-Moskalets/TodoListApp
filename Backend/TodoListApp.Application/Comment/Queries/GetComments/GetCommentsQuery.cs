@@ -1,5 +1,5 @@
 ﻿using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Application.Comment.Dtos;
+using TodoListApp.Application.Common.Dtos;
 
 namespace TodoListApp.Application.Comment.Queries.GetComments;
 

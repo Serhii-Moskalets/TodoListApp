@@ -1,5 +1,5 @@
 ﻿using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Application.Task.Dtos;
+using TodoListApp.Application.Common.Dtos;
 using TodoListApp.Domain.Enums;
 
 namespace TodoListApp.Application.Task.Queries.GetTasks;

@@ -8,7 +8,7 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteByTaskAccessByUs
 /// a user-task access entry can be deleted only if it exists
 /// and the requesting user is the owner of the task.
 /// </summary>
-public class DeleteTaskAccessByUserEmailCommandValidator 
+public class DeleteTaskAccessByUserEmailCommandValidator
     : AbstractValidator<DeleteTaskAccessByUserEmailCommand>
 {
     /// <summary>
