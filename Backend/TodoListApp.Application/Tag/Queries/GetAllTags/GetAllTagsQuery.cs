@@ -1,5 +1,5 @@
 ﻿using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Application.Tag.Dtos;
+using TodoListApp.Application.Common.Dtos;
 
 namespace TodoListApp.Application.Tag.Queries.GetAllTags;
 

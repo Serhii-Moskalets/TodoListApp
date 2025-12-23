@@ -1,5 +1,5 @@
 ﻿using Riok.Mapperly.Abstractions;
-using TodoListApp.Application.UserTaskAccess.Dto.ForUser;
+using TodoListApp.Application.Common.Dtos;
 using TodoListApp.Domain.Entities;
 
 namespace TodoListApp.Application.UserTaskAccess.Mappers;
@@ -12,11 +12,11 @@ namespace TodoListApp.Application.UserTaskAccess.Mappers;
 public static partial class TaskAccessForUserMapper
 {
     /// <summary>
-    /// Maps a <see cref="UserEntity"/> to a <see cref="UserDto"/>.
+    /// Maps a <see cref="UserEntity"/> to a <see cref="UserBriefDto"/>.
     /// </summary>
     /// <param name="user">The user entity.</param>
-    /// <returns>A <see cref="UserDto"/>.</returns>
-    public static partial UserDto Map(UserEntity user);
+    /// <returns>A <see cref="UserBriefDto"/>.</returns>
+    public static partial UserBriefDto Map(UserEntity user);
 
     /// <summary>
     /// Maps a <see cref="CommentEntity"/> to a <see cref="CommentDto"/>.

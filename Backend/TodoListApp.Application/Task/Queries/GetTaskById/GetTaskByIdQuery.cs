@@ -1,5 +1,5 @@
 ﻿using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Application.Task.Dtos;
+using TodoListApp.Application.Common.Dtos;
 
 namespace TodoListApp.Application.Task.Queries.GetTaskById;
 

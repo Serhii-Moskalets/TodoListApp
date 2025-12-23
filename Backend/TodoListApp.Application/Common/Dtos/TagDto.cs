@@ -1,4 +1,4 @@
-﻿namespace TodoListApp.Application.Tag.Dtos;
+﻿namespace TodoListApp.Application.Common.Dtos;
 
 /// <summary>
 /// Data Transfer Object (DTO) representing a Tag.

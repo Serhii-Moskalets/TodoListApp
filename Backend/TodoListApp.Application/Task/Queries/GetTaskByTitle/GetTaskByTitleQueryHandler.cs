@@ -1,6 +1,6 @@
 ﻿using TinyResult;
 using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Application.Task.Dtos;
+using TodoListApp.Application.Common.Dtos;
 using TodoListApp.Application.Task.Mappers;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
