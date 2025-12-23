@@ -26,7 +26,7 @@ public class CommentEntity : BaseEntity
 
         this.TaskId = taskId;
         this.UserId = userId;
-        this.Text = text;
+        this.Text = text.Trim();
         this.CreatedDate = DateTime.UtcNow;
     }
 
@@ -80,6 +80,6 @@ public class CommentEntity : BaseEntity
             throw new ArgumentException("Comment text cannot be empty", nameof(text));
         }
 
-        this.Text = text;
+        this.Text = text.Trim();
     }
 }
