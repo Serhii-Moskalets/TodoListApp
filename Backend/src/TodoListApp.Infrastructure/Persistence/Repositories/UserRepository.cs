@@ -27,7 +27,7 @@ public class UserRepository(TodoListAppDbContext context)
     public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await this.DbSet.AsNoTracking()
-            .AnyAsync(x => EF.Functions.ILike(x.Email, email), cancellationToken);
+            .AnyAsync(x => x.Email.ToLowerInvariant() == email.ToLowerInvariant(), cancellationToken);
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public class UserRepository(TodoListAppDbContext context)
     public async Task<bool> ExistsByUserNameAsync(string userName, CancellationToken cancellationToken = default)
     {
         return await this.DbSet.AsNoTracking()
-            .AnyAsync(x => EF.Functions.ILike(x.UserName, userName), cancellationToken);
+            .AnyAsync(x => x.UserName.ToLowerInvariant() == userName.ToLowerInvariant(), cancellationToken);
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ public class UserRepository(TodoListAppDbContext context)
     public async Task<UserEntity?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await this.DbSet.AsNoTracking()
-            .FirstOrDefaultAsync(x => EF.Functions.ILike(x.Email, email), cancellationToken);
+            .FirstOrDefaultAsync(x => x.Email.ToLowerInvariant() == email.ToLowerInvariant(), cancellationToken);
     }
 
     /// <summary>
@@ -63,6 +63,6 @@ public class UserRepository(TodoListAppDbContext context)
     public async Task<UserEntity?> GetByUserNameAsync(string userName, CancellationToken cancellationToken = default)
     {
         return await this.DbSet.AsNoTracking()
-            .FirstOrDefaultAsync(x => EF.Functions.ILike(x.Email, userName), cancellationToken);
+            .FirstOrDefaultAsync(x => x.UserName.ToLowerInvariant() == userName.ToLowerInvariant(), cancellationToken);
     }
 }
