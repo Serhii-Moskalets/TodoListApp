@@ -18,10 +18,12 @@ public class CommentRepository(TodoListAppDbContext context)
     /// <param name="taskId">The ID of the task for which to retrieve comments.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A read-only collection of comments for the specified task.</returns>
-    public async Task<IReadOnlyCollection<CommentEntity>> GetByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyCollection<CommentEntity>> GetByTaskIdAsync(
+        Guid taskId,
+        CancellationToken cancellationToken = default)
         => await this.DbSet
             .AsNoTracking()
-            .Include(x => x.UserId)
+            .Include(x => x.User)
             .Where(x => x.TaskId == taskId)
             .ToListAsync(cancellationToken);
 
@@ -33,7 +35,11 @@ public class CommentRepository(TodoListAppDbContext context)
     /// <param name="pageSize">The number of comments per page.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A tuple containing the paged comments and the total count of comments.</returns>
-    public async Task<(IReadOnlyCollection<CommentEntity> Items, int TotalCount)> GetPagedCommentsByTaskIdAsync(Guid taskId, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<(IReadOnlyCollection<CommentEntity> Items, int TotalCount)> GetPagedCommentsByTaskIdAsync(
+        Guid taskId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(page);
 
@@ -59,6 +65,11 @@ public class CommentRepository(TodoListAppDbContext context)
     /// <param name="userId">The ID of the user.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns><c>true</c> if the user is the owner of the comment; otherwise, <c>false</c>.</returns>
-    public async Task<bool> IsCommentOwnerAsync(Guid commentId, Guid userId, CancellationToken cancellationToken = default)
-        => await this.DbSet.AsNoTracking().AnyAsync(x => x.Id == commentId && x.UserId == userId, cancellationToken);
+    public async Task<bool> IsCommentOwnerAsync(
+        Guid commentId,
+        Guid userId,
+        CancellationToken cancellationToken = default)
+        => await this.DbSet
+        .AsNoTracking()
+        .AnyAsync(x => x.Id == commentId && x.UserId == userId, cancellationToken);
 }
