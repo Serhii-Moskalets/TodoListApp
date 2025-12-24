@@ -95,5 +95,5 @@ public interface IUserTaskAccessRepository
     /// <param name="email">The email of the user whose access should be deleted.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task representing the asynchronous delete operation.</returns>
-    Task DeleteByUserEmailAsync(Guid taskId, string email, CancellationToken cancellationToken = default);
+    Task DeleteByUserEmailAndTaskIdAsync(Guid taskId, string email, CancellationToken cancellationToken = default);
 }

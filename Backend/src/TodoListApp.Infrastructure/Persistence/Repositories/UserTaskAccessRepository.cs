@@ -84,11 +84,10 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// <param name="email">The email of the user whose access should be deleted.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task representing the asynchronous delete operation.</returns>
-    public async Task DeleteByUserEmailAsync(Guid taskId, string email, CancellationToken cancellationToken = default)
+    public async Task DeleteByUserEmailAndTaskIdAsync(Guid taskId, string email, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
         await this._dbSet
-            .Include(x => x.User)
             .Where(x => x.TaskId == taskId && x.User.Email == email)
             .ExecuteDeleteAsync(cancellationToken);
     }
@@ -103,7 +102,7 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     public async Task<bool> ExistsTaskAccessWithEmail(Guid taskId, string email, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
-        return await this._dbSet.Include(x => x.User).AnyAsync(x => x.TaskId == taskId && x.User.Email == email, cancellationToken);
+        return await this._dbSet.AnyAsync(x => x.TaskId == taskId && x.User.Email == email, cancellationToken);
     }
 
     /// <summary>
@@ -130,7 +129,6 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     public async Task<UserTaskAccessEntity?> GetByTaskAndUserIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
         => await this._dbSet
         .Include(x => x.User)
-        .Include(x => x.Task)
         .Include(x => x.Task)
             .ThenInclude(t => t.Comments)
         .Include(x => x.Task)

@@ -33,7 +33,7 @@ public class DeleteTaskAccessByUserEmailCommandHandler(
             return validation;
         }
 
-        await this.UnitOfWork.UserTaskAccesses.DeleteByUserEmailAsync(command.TaskId, command.Email, cancellationToken);
+        await this.UnitOfWork.UserTaskAccesses.DeleteByUserEmailAndTaskIdAsync(command.TaskId, command.Email, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);
