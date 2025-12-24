@@ -34,7 +34,7 @@ public class TaskListRepository(TodoListAppDbContext context)
         }
 
         return await this.DbSet.AsNoTracking()
-            .AnyAsync(x => EF.Functions.ILike(x.Title, title) && x.OwnerId == userId, cancellationToken);
+            .AnyAsync(x => x.Title.ToLowerInvariant() == title.ToLowerInvariant() && x.OwnerId == userId, cancellationToken);
     }
 
     /// <summary>
@@ -45,8 +45,13 @@ public class TaskListRepository(TodoListAppDbContext context)
     /// <returns>
     /// A read-only collection of <see cref="TaskListEntity"/> instances owned by the user.
     /// </returns>
-    public async Task<IReadOnlyCollection<TaskListEntity>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-        => await this.DbSet.AsNoTracking().OrderBy(x => x.Title).Where(x => x.OwnerId == userId).ToListAsync(cancellationToken);
+    public async Task<IReadOnlyCollection<TaskListEntity>> GetByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+        => await this.DbSet.AsNoTracking()
+        .OrderBy(x => x.Title)
+        .Where(x => x.OwnerId == userId)
+        .ToListAsync(cancellationToken);
 
     /// <summary>
     /// Retrieves a paged list of task lists owned by the specified user.
@@ -109,6 +114,6 @@ public class TaskListRepository(TodoListAppDbContext context)
     /// <returns>
     /// <c>true</c> if the user is the owner of the task list; otherwise, <c>false</c>.
     /// </returns>
-    public async Task<bool> IsTodoListOwnerAsync(Guid taskListId, Guid userId, CancellationToken cancellationToken = default)
+    public async Task<bool> IsTaskListOwnerAsync(Guid taskListId, Guid userId, CancellationToken cancellationToken = default)
         => await this.DbSet.AsNoTracking().AnyAsync(x => x.Id == taskListId && x.OwnerId == userId, cancellationToken);
 }

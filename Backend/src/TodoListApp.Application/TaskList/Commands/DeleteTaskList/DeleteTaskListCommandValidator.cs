@@ -17,7 +17,7 @@ public class DeleteTaskListCommandValidator : AbstractValidator<DeleteTaskListCo
     {
         this.RuleFor(x => x.TaskListId)
             .MustAsync(async (command, id, ct) =>
-                await unitOfWork.TaskLists.IsTodoListOwnerAsync(id, command.UserId, ct))
+                await unitOfWork.TaskLists.IsTaskListOwnerAsync(id, command.UserId, ct))
             .WithMessage("Task list not found or does not belong to the user.");
     }
 }

@@ -50,7 +50,7 @@ public interface ITaskListRepository : IRepository<TaskListEntity>
     /// <param name="userId">The identifier of the user.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns><c>true</c> if the user is the owner of the task list; otherwise, <c>false</c>.</returns>
-    Task<bool> IsTodoListOwnerAsync(Guid taskListId, Guid userId, CancellationToken cancellationToken = default);
+    Task<bool> IsTaskListOwnerAsync(Guid taskListId, Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Checks whether a task list with the specified title exists for a specific user.

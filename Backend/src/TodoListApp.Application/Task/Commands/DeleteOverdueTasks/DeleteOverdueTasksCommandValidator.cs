@@ -19,7 +19,7 @@ public class DeleteOverdueTasksCommandValidator : AbstractValidator<DeleteOverdu
     {
         this.RuleFor(x => x.TaskListId)
             .MustAsync(async (command, id, ct) =>
-                await unitOfWork.TaskLists.IsTodoListOwnerAsync(id, command.UserId, ct))
+                await unitOfWork.TaskLists.IsTaskListOwnerAsync(id, command.UserId, ct))
             .WithMessage("TaskList not found or does not belong to the user.");
     }
 }

@@ -213,6 +213,7 @@ public class TaskEntityTests
     /// <summary>
     /// Verifies that task details are updated when valid title, description,
     /// and due date are provided.
+    /// </summary>
     [Fact]
     public void Update_ShouldChangeDetails_WhenValidWithDueDateAndDescription()
     {
