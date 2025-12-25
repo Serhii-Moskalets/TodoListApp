@@ -10,7 +10,7 @@ public class UpdateTaskCommandValidator : AbstractValidator<UpdateTaskCommand>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="UpdateTaskCommandValidator"/> class
-    /// and sets up validation rules for updateing a task.
+    /// and sets up validation rules for updating a task.
     /// </summary>
     public UpdateTaskCommandValidator()
     {

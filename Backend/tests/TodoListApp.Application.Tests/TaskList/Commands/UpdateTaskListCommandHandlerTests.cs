@@ -15,7 +15,7 @@ public class UpdateTaskListCommandHandlerTests
 {
     /// <summary>
     /// Tests that the handler returns a failure result when validation fails.
-    /// </summary>
+    /// </summary>[
     /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
     public async Task Handle_ShouldReturnFailure_WhenValidationFails()
