@@ -43,7 +43,7 @@ public class UpdateTaskListCommandHandlerTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Handle_ShoulReturnFailure_WhenTaskListNowFound()
+    public async Task Handle_ShouldReturnFailure_WhenTaskListNotFound()
     {
         var validatorMock = new Mock<IValidator<UpdateTaskListCommand>>();
         validatorMock.Setup(x => x.ValidateAsync(It.IsAny<UpdateTaskListCommand>(), default))

@@ -15,10 +15,9 @@ namespace TodoListApp.Application.Tests.TaskList.Commands;
 public class CreateTaskListCommandHandlerTests
 {
     /// <summary>
-    /// Ensures that the handler returns a failure result
-    /// when command validation fails.
+    /// Ensures that the handler returns a failure result when command validation fails.
     /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     /// <remarks>
     /// The validator mock is configured with <c>ReturnsAsync</c> to simulate
     /// a failed validation result with a "Required" error for the Title property.
@@ -46,10 +45,9 @@ public class CreateTaskListCommandHandlerTests
     }
 
     /// <summary>
-    /// Ensures that a new task list is created successfully
-    /// when the provided title is unique for the user.
+    /// Ensures that a new task list is created successfully when the provided title is unique for the user.
     /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     /// <remarks>
     /// The task list repository mock returns <c>false</c> for <c>ExistsByTitleAsync</c>,
     /// simulating that the title is unique. The <c>ReturnsAsync(1)</c> on
@@ -83,10 +81,9 @@ public class CreateTaskListCommandHandlerTests
     }
 
     /// <summary>
-    /// Ensures that a numeric suffix is appended to the task list title
-    /// when a list with the same title already exists for the user.
+    /// Ensures that a numeric suffix is appended to the task list title when a list with the same title already exists for the user.
     /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     /// <remarks>
     /// The repository mock uses <c>SetupSequence(...).ReturnsAsync(...)</c> to simulate:
     /// <list type="bullet">
