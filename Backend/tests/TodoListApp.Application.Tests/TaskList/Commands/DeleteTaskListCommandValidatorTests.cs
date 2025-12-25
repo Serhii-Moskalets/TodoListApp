@@ -16,7 +16,7 @@ public class DeleteTaskListCommandValidatorTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenUSerIsNotOwner()
+    public async Task Validate_ShouldHaveError_WhenUserIsNotOwner()
     {
         var taskListId = Guid.NewGuid();
         var userId = Guid.NewGuid();

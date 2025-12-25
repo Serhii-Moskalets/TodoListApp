@@ -31,7 +31,7 @@ public class CreateTaskListCommandValidatorTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task ShouldNotHaveErro_WhenTitleISNotEmpty()
+    public async Task ShouldNotHaveError_WhenTitleIsNotEmpty()
     {
         var command = new CreateTaskListCommand(Guid.NewGuid(), "Task List");
 

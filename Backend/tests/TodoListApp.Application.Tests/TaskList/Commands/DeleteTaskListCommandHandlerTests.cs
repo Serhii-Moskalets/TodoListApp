@@ -43,7 +43,7 @@ public class DeleteTaskListCommandHandlerTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Handle_ShoudDeleteTaskList_WhenValidatiobPasses()
+    public async Task Handle_ShoudDeleteTaskList_WhenValidationPasses()
     {
         var validatorMock = new Mock<IValidator<DeleteTaskListCommand>>();
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskListCommand>(), default))

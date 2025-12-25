@@ -42,7 +42,7 @@ public class CreateTaskListCommandHandlerTests
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
-        Assert.Equal("Required", result.Error!.Message);
+        Assert.Equal("Required", result.Error.Message);
     }
 
     /// <summary>
