@@ -21,7 +21,7 @@ public class UpdateTaskListCommandHandlerTests
     public async Task Handle_ShouldReturnFailure_WhenValidationFails()
     {
         var validatorMock = new Mock<IValidator<UpdateTaskListCommand>>();
-        validatorMock.Setup(x => x.ValidateAsync(It.IsAny<UpdateTaskListCommand>(), default))
+        validatorMock.Setup(x => x.ValidateAsync(It.IsAny<UpdateTaskListCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FluentValidation.Results.ValidationResult(
                 [new FluentValidation.Results.ValidationFailure("Title", "Required")]));
 
@@ -31,7 +31,8 @@ public class UpdateTaskListCommandHandlerTests
 
         var command = new UpdateTaskListCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
 
-        var result = await handler.Handle(command, default);
+        var ct = CancellationToken.None;
+        var result = await handler.Handle(command, ct);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -46,7 +47,7 @@ public class UpdateTaskListCommandHandlerTests
     public async Task Handle_ShouldReturnFailure_WhenTaskListNotFound()
     {
         var validatorMock = new Mock<IValidator<UpdateTaskListCommand>>();
-        validatorMock.Setup(x => x.ValidateAsync(It.IsAny<UpdateTaskListCommand>(), default))
+        validatorMock.Setup(x => x.ValidateAsync(It.IsAny<UpdateTaskListCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FluentValidation.Results.ValidationResult());
 
         var taskListRespository = new Mock<ITaskListRepository>();
@@ -59,7 +60,8 @@ public class UpdateTaskListCommandHandlerTests
         var handler = new UpdateTaskListCommandHandler(uowMock.Object, validatorMock.Object);
         var command = new UpdateTaskListCommand(Guid.NewGuid(), Guid.NewGuid(), "New Title");
 
-        var result = await handler.Handle(command, default);
+        var ct = CancellationToken.None;
+        var result = await handler.Handle(command, ct);
 
         Assert.False(result.IsSuccess);
         Assert.Equal("Task list not found.", result.Error?.Message);
@@ -76,7 +78,7 @@ public class UpdateTaskListCommandHandlerTests
         var taskListId = Guid.NewGuid();
 
         var validatorMock = new Mock<IValidator<UpdateTaskListCommand>>();
-        validatorMock.Setup(x => x.ValidateAsync(It.IsAny<UpdateTaskListCommand>(), default))
+        validatorMock.Setup(x => x.ValidateAsync(It.IsAny<UpdateTaskListCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FluentValidation.Results.ValidationResult());
 
         var taskListEntity = new TaskListEntity(userId, "Old Title");
@@ -91,7 +93,8 @@ public class UpdateTaskListCommandHandlerTests
         var handler = new UpdateTaskListCommandHandler(uowMock.Object, validatorMock.Object);
         var command = new UpdateTaskListCommand(taskListId, userId, "New Title");
 
-        var result = await handler.Handle(command, default);
+        var ct = CancellationToken.None;
+        var result = await handler.Handle(command, ct);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("New Title", taskListEntity.Title);

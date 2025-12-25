@@ -26,7 +26,7 @@ public class CreateTaskCommandHandlerTests
     public async Task Handle_ShouldReturnFailure_WhenValidationFails()
     {
         var validatorMock = new Mock<IValidator<CreateTaskCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskCommand>(), default))
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FluentValidation.Results.ValidationResult(
                 [new FluentValidation.Results.ValidationFailure("Task title", "Required")]));
 
@@ -41,7 +41,8 @@ public class CreateTaskCommandHandlerTests
             TaskListId = Guid.NewGuid(),
         });
 
-        var result = await handler.Handle(command, default);
+        var ct = CancellationToken.None;
+        var result = await handler.Handle(command, ct);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -61,14 +62,14 @@ public class CreateTaskCommandHandlerTests
     public async Task Handle_ShouldAddTask()
     {
         var validatorMock = new Mock<IValidator<CreateTaskCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskCommand>(), default))
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FluentValidation.Results.ValidationResult());
 
         var taskRepoMock = new Mock<ITaskRepository>();
 
         var uowMock = new Mock<IUnitOfWork>();
         uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var handler = new CreateTaskCommandHandler(uowMock.Object, validatorMock.Object);
 
@@ -81,7 +82,8 @@ public class CreateTaskCommandHandlerTests
             TaskListId = taskListId,
         });
 
-        var result = await handler.Handle(command, default);
+        var ct = CancellationToken.None;
+        var result = await handler.Handle(command, ct);
 
         Assert.True(result.IsSuccess);
         taskRepoMock.Verify(
@@ -90,8 +92,8 @@ public class CreateTaskCommandHandlerTests
                     t => t.OwnerId == userId
                     && t.TaskListId == taskListId
                     && t.Title == "Task"),
-                default),
+                It.IsAny<CancellationToken>()),
             Times.Once);
-        uowMock.Verify(u => u.SaveChangesAsync(default), Times.Once());
+        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once());
     }
 }

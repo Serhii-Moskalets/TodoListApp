@@ -27,7 +27,7 @@ public class CreateTaskListCommandHandlerTests
     public async Task Handle_ShouldReturnFailure_WhenValidationFails()
     {
         var validatorMock = new Mock<IValidator<CreateTaskListCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskListCommand>(), default))
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskListCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FluentValidation.Results.ValidationResult(
                 [new FluentValidation.Results.ValidationFailure("Title", "Required")]));
 
@@ -37,7 +37,8 @@ public class CreateTaskListCommandHandlerTests
 
         var command = new CreateTaskListCommand(Guid.NewGuid(), string.Empty);
 
-        var result = await handler.Handle(command, default);
+        var ct = CancellationToken.None;
+        var result = await handler.Handle(command, ct);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -57,27 +58,28 @@ public class CreateTaskListCommandHandlerTests
     public async Task Handle_ShouldAddTaskList_WhenTitleIsUnique()
     {
         var validatorMock = new Mock<IValidator<CreateTaskListCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskListCommand>(), default))
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskListCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FluentValidation.Results.ValidationResult());
 
         var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock.Setup(r => r.ExistsByTitleAsync(It.IsAny<string>(), It.IsAny<Guid>(), default))
+        taskListRepoMock.Setup(r => r.ExistsByTitleAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var uowMock = new Mock<IUnitOfWork>();
         uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var handler = new CreateTaskListCommandHandler(uowMock.Object, validatorMock.Object);
 
         var userId = Guid.NewGuid();
         var command = new CreateTaskListCommand(userId, "My List");
 
-        var result = await handler.Handle(command, default);
+        var ct = CancellationToken.None;
+        var result = await handler.Handle(command, ct);
 
         Assert.True(result.IsSuccess);
-        taskListRepoMock.Verify(r => r.AddAsync(It.Is<TaskListEntity>(t => t.OwnerId == userId && t.Title == "My List"), default));
-        uowMock.Verify(u => u.SaveChangesAsync(default), Times.Once);
+        taskListRepoMock.Verify(r => r.AddAsync(It.Is<TaskListEntity>(t => t.OwnerId == userId && t.Title == "My List"), It.IsAny<CancellationToken>()));
+        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
@@ -99,26 +101,27 @@ public class CreateTaskListCommandHandlerTests
     public async Task Handle_ShouldAppendSuffix_WhenTitleExists()
     {
         var validatorMock = new Mock<IValidator<CreateTaskListCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskListCommand>(), default))
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskListCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FluentValidation.Results.ValidationResult());
 
         var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock.SetupSequence(u => u.ExistsByTitleAsync(It.IsAny<string>(), It.IsAny<Guid>(), default))
+        taskListRepoMock.SetupSequence(u => u.ExistsByTitleAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true)
             .ReturnsAsync(false);
 
         var uowMock = new Mock<IUnitOfWork>();
         uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(default)).ReturnsAsync(1);
+        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var handler = new CreateTaskListCommandHandler(uowMock.Object, validatorMock.Object);
 
         var userId = Guid.NewGuid();
         var command = new CreateTaskListCommand(userId, "My List");
 
-        var result = await handler.Handle(command, default);
+        var ct = CancellationToken.None;
+        var result = await handler.Handle(command, ct);
 
         Assert.True(result.IsSuccess);
-        taskListRepoMock.Verify(r => r.AddAsync(It.Is<TaskListEntity>(t => t.Title == "My List (1)"), default), Times.Once());
+        taskListRepoMock.Verify(r => r.AddAsync(It.Is<TaskListEntity>(t => t.Title == "My List (1)"), It.IsAny<CancellationToken>()), Times.Once());
     }
 }

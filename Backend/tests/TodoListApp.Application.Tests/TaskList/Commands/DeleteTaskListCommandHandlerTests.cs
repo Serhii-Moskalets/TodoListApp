@@ -20,7 +20,7 @@ public class DeleteTaskListCommandHandlerTests
     public async Task Handle_ShouldReturnFailure_WhenValidationFails()
     {
         var validatorMock = new Mock<IValidator<DeleteTaskListCommand>>();
-        validatorMock.Setup(x => x.ValidateAsync(It.IsAny<DeleteTaskListCommand>(), default))
+        validatorMock.Setup(x => x.ValidateAsync(It.IsAny<DeleteTaskListCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FluentValidation.Results.ValidationResult(
                 [new FluentValidation.Results.ValidationFailure("TaskListId", "Invalid Id")]));
 
@@ -30,7 +30,8 @@ public class DeleteTaskListCommandHandlerTests
 
         var command = new DeleteTaskListCommand(Guid.NewGuid(), Guid.NewGuid());
 
-        var result = await handler.Handle(command, default);
+        var ct = CancellationToken.None;
+        var result = await handler.Handle(command, ct);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -60,7 +61,8 @@ public class DeleteTaskListCommandHandlerTests
         var taskListId = Guid.NewGuid();
         var command = new DeleteTaskListCommand(taskListId, Guid.NewGuid());
 
-        var result = await handler.Handle(command, default);
+        var ct = CancellationToken.None;
+        var result = await handler.Handle(command, ct);
 
         Assert.True(result.IsSuccess);
         taskListRespository.Verify(r => r.DeleteAsync(taskListId), Times.Once);
