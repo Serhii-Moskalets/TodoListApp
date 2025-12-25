@@ -1,6 +1,6 @@
 ﻿using TodoListApp.Application.Tasks.Commands.UpdateTask;
 
-namespace TodoListApp.Application.Tests.Tasks;
+namespace TodoListApp.Application.Tests.Tasks.Commands;
 
 /// <summary>
 /// Contains unit tests for <see cref="UpdateTaskCommandValidator"/>.

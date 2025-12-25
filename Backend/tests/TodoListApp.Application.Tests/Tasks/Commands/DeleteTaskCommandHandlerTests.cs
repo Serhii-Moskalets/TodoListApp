@@ -4,7 +4,7 @@ using TodoListApp.Application.Tasks.Commands.DeleteTask;
 using TodoListApp.Domain.Interfaces.Repositories;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
-namespace TodoListApp.Application.Tests.Tasks;
+namespace TodoListApp.Application.Tests.Tasks.Commands;
 
 /// <summary>
 /// Unit tests for <see cref="DeleteTaskCommandHandler"/>.

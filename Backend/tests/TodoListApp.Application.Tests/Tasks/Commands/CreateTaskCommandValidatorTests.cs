@@ -1,7 +1,7 @@
 ﻿using TodoListApp.Application.Tasks.Commands.CreateTask;
 using TodoListApp.Application.Tasks.Dtos;
 
-namespace TodoListApp.Application.Tests.Tasks;
+namespace TodoListApp.Application.Tests.Tasks.Commands;
 
 /// <summary>
 /// Unit tests for <see cref="CreateTaskCommandValidator"/>.
