@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\TodoListApp.Infrastructure\TodoListApp.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\TodoListApp.Infrastructure\TodoListApp.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

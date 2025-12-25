@@ -5,7 +5,7 @@ using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Interfaces.Repositories;
 using TodoListApp.Domain.Interfaces.UnitOfWork;
 
-namespace TodoListApp.Application.Tests.TaskList.Commands.CreateTaskList;
+namespace TodoListApp.Application.Tests.TaskList.Commands;
 
 /// <summary>
 /// Unit tests for <see cref="CreateTaskListCommandHandler"/>.
