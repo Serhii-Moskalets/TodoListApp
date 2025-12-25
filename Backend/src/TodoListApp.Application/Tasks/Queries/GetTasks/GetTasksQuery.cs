@@ -10,9 +10,9 @@ namespace TodoListApp.Application.Tasks.Queries.GetTasks;
 public sealed record GetTasksQuery(
     Guid UserId,
     Guid TaskListId,
-    IReadOnlyCollection<StatusTask>? TaskStatuses,
-    DateTime? DueBefore,
-    DateTime? DueAfter,
-    TaskSortBy? TaskSortBy,
-    bool Ascending)
+    IReadOnlyCollection<StatusTask>? TaskStatuses = null,
+    DateTime? DueBefore = null,
+    DateTime? DueAfter = null,
+    TaskSortBy? TaskSortBy = null,
+    bool Ascending = true)
     : IQuery<IEnumerable<TaskDto>>;
