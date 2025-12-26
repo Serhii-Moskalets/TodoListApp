@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using Moq;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Comment.Commands.CreateComment;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Interfaces.Repositories;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.Tests.Comment.Commands;
 

@@ -1,10 +1,10 @@
 ﻿using Moq;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Common.Dtos;
 using TodoListApp.Application.Tasks.Queries.GetTasks;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Enums;
 using TodoListApp.Domain.Interfaces.Repositories;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.Tests.Tasks.Queries;
 

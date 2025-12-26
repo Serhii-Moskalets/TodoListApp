@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.TaskList.Commands.DeleteTaskList;
 

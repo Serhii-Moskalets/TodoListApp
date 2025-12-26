@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using Moq;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Tag.Commands.CreateTag;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Interfaces.Repositories;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.Tests.Tag.Commands;
 

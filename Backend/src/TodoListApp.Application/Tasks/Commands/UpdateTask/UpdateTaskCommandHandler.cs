@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
 using TinyResult;
 using TinyResult.Enums;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.Tasks.Commands.UpdateTask;
 

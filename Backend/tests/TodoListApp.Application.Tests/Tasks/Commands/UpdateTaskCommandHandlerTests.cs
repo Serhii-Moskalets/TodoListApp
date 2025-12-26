@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using Moq;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Tasks.Commands.UpdateTask;
 using TodoListApp.Application.Tasks.Dtos;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Interfaces.Repositories;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.Tests.Tasks.Commands;
 

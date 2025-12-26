@@ -1,7 +1,7 @@
 ﻿using Moq;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
 using TodoListApp.Domain.Interfaces.Repositories;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.Tests.UserTaskAccess.Commands;
 

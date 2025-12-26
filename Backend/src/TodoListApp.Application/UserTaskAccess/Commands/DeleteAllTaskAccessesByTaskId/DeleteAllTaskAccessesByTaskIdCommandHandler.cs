@@ -1,6 +1,6 @@
 ﻿using TinyResult;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteAllTaskAccessesByTaskId;
 

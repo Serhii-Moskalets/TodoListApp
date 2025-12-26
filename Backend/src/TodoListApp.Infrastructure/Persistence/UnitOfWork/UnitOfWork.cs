@@ -1,5 +1,5 @@
-﻿using TodoListApp.Domain.Interfaces.Repositories;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
+﻿using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+using TodoListApp.Domain.Interfaces.Repositories;
 using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 using TodoListApp.Infrastructure.Persistence.Repositories;
 

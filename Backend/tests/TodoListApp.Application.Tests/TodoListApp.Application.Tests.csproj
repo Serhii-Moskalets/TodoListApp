@@ -29,6 +29,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\TodoListApp.Application\TodoListApp.Application.csproj" />
+    <ProjectReference Include="..\..\src\TodoListApp.Domain\TodoListApp.Domain.csproj" />
+    <ProjectReference Include="..\..\src\TodoListApp.Infrastructure\TodoListApp.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

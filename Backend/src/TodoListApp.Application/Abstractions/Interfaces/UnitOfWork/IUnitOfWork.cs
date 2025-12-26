@@ -1,6 +1,6 @@
 ﻿using TodoListApp.Domain.Interfaces.Repositories;
 
-namespace TodoListApp.Domain.Interfaces.UnitOfWork;
+namespace TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 
 /// <summary>
 /// Represents a unit of work that groups one or more operations
