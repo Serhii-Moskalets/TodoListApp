@@ -13,9 +13,8 @@ public class CreateTagCommandValidatorTests
     /// <summary>
     /// Tests that validation fails when the tag name is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenNameIsEmpty()
+    public void Validate_ShouldHaveError_WhenNameIsEmpty()
     {
         var command = new CreateTagCommand(Guid.NewGuid(), string.Empty);
 
@@ -29,9 +28,8 @@ public class CreateTagCommandValidatorTests
     /// <summary>
     /// Tests that validation fails when the tag name exceeds the maximum length (50 characters).
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenNameIsTooLong()
+    public void Validate_ShouldHaveError_WhenNameIsTooLong()
     {
         var longName = new string('a', 51);
         var command = new CreateTagCommand(Guid.NewGuid(), longName);
@@ -46,9 +44,8 @@ public class CreateTagCommandValidatorTests
     /// <summary>
     /// Tests that validation passes when the tag name is not empty and within length limit.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldNotHaveError_WhenNameIsValid()
+    public void Validate_ShouldNotHaveError_WhenNameIsValid()
     {
         var command = new CreateTagCommand(Guid.NewGuid(), "Tag");
 

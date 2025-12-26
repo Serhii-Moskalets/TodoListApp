@@ -14,9 +14,8 @@ public class UpdateTaskCommandValidatorTests
     /// Tests that the validator returns an error when
     /// <see cref="Application.Tasks.Dtos.UpdateTaskDto.Title"/> is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenTitleIsEmpty()
+    public void Validate_ShouldHaveError_WhenTitleIsEmpty()
     {
         var command = new UpdateTaskCommand(new Application.Tasks.Dtos.UpdateTaskDto
         {
@@ -36,9 +35,8 @@ public class UpdateTaskCommandValidatorTests
     /// Tests that the validator does not return any error when
     /// <see cref="Application.Tasks.Dtos.UpdateTaskDto.Title"/> is not empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveNotHaveError_WhenTitleIsNotEmpty()
+    public void Validate_ShouldHaveNotHaveError_WhenTitleIsNotEmpty()
     {
         var command = new UpdateTaskCommand(new Application.Tasks.Dtos.UpdateTaskDto
         {

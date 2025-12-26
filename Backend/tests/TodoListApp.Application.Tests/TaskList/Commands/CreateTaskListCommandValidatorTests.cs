@@ -13,9 +13,8 @@ public class CreateTaskListCommandValidatorTests
     /// <summary>
     /// Tests that validation fails when the task list title is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenTitleIsEmpty()
+    public void Validate_ShouldHaveError_WhenTitleIsEmpty()
     {
         var command = new CreateTaskListCommand(Guid.NewGuid(), string.Empty);
 
@@ -29,9 +28,8 @@ public class CreateTaskListCommandValidatorTests
     /// <summary>
     /// Tests that validation passes when the task list title is not empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldNotHaveError_WhenTitleIsNotEmpty()
+    public void Validate_ShouldNotHaveError_WhenTitleIsNotEmpty()
     {
         var command = new CreateTaskListCommand(Guid.NewGuid(), "Task List");
 

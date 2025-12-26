@@ -13,9 +13,8 @@ public class UpdateTaskListCommandValidatorTests
     /// <summary>
     /// Tests that the validator returns an error when <see cref="UpdateTaskListCommand.NewTitle"/> is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenTitleIsEmpty()
+    public void Validate_ShouldHaveError_WhenTitleIsEmpty()
     {
         var command = new UpdateTaskListCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
 
@@ -29,9 +28,8 @@ public class UpdateTaskListCommandValidatorTests
     /// <summary>
     /// Tests that the validator does not return any error when <see cref="UpdateTaskListCommand.NewTitle"/> is not empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveNotHaveError_WhenTitleIsNotEmpty()
+    public void Validate_ShouldHaveNotHaveError_WhenTitleIsNotEmpty()
     {
         var command = new UpdateTaskListCommand(Guid.NewGuid(), Guid.NewGuid(), "New task list");
 
