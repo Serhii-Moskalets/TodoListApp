@@ -30,6 +30,21 @@ public class CommentEntity : BaseEntity
         this.CreatedDate = DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CommentEntity"/> class
+    /// with the specified task ID, user ID, comment text, and the associated user entity.
+    /// </summary>
+    /// <param name="taskId">The ID of the task to which this comment belongs.</param>
+    /// <param name="userId">The ID of the user who created the comment.</param>
+    /// <param name="text">The text content of the comment. Cannot be null or empty.</param>
+    /// <param name="user">The <see cref="UserEntity"/> representing the user who created the comment.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="text"/> is null, empty, or whitespace only.</exception>
+    public CommentEntity(Guid taskId, Guid userId, string text, UserEntity user)
+    : this(taskId, userId, text)
+    {
+        this.User = user;
+    }
+
     private CommentEntity() { }
 
     /// <summary>
