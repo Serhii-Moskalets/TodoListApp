@@ -23,7 +23,7 @@ public class UpdateCommentCommandValidator : AbstractValidator<UpdateCommentComm
             .WithMessage("Comment not found or does not belong to the user.");
 
         this.RuleFor(x => x.NewText)
-            .NotEmpty().NotNull().WithMessage("New text cannot be null or empty.")
+            .NotEmpty().WithMessage("New text cannot be null or empty.")
             .MaximumLength(1000).WithMessage("Comment text cannot exceed 1000 characters.");
     }
 }
