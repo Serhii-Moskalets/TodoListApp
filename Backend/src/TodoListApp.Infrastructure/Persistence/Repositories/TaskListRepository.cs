@@ -23,9 +23,9 @@ public class TaskListRepository(TodoListAppDbContext context)
     /// <c>true</c> if a task list with the specified title exists for the user;
     /// otherwise, <c>false</c>.
     /// </returns>
-    /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="title"/> is null, empty, or consists only of whitespace.
-    /// </exception>
+    /// /// <remarks>
+    /// Uses `EF.Functions.Like` for real databases, and case-insensitive comparison for InMemory provider.
+    /// </remarks>
     public async Task<bool> ExistsByTitleAsync(string title, Guid userId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(title))
@@ -33,8 +33,14 @@ public class TaskListRepository(TodoListAppDbContext context)
             throw new ArgumentException("Title of the task list cannot be empty.", nameof(title));
         }
 
-        return await this.DbSet.AsNoTracking()
+        if (this.Context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
+        {
+            return await this.DbSet.AsNoTracking()
             .AnyAsync(x => x.Title.ToLowerInvariant() == title.ToLowerInvariant() && x.OwnerId == userId, cancellationToken);
+        }
+
+        return await this.DbSet.AsNoTracking()
+            .AnyAsync(x => EF.Functions.Like(x.Title, title) && x.OwnerId == userId, cancellationToken);
     }
 
     /// <summary>
