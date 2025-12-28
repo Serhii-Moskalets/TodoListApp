@@ -1,7 +1,6 @@
 ﻿using TodoListApp.Application.Abstractions.Interfaces.Repositories;
+using TodoListApp.Application.Abstractions.Interfaces.TodoListAppDbContext;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
-using TodoListApp.Infrastructure.Persistence.DatabaseContext;
-using TodoListApp.Infrastructure.Persistence.Repositories;
 
 namespace TodoListApp.Infrastructure.Persistence.UnitOfWork;
 
@@ -10,7 +9,7 @@ namespace TodoListApp.Infrastructure.Persistence.UnitOfWork;
 /// </summary>
 public class UnitOfWork : IUnitOfWork
 {
-    private readonly TodoListAppDbContext _dbContext;
+    private readonly ITodoListAppDbContext _dbContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UnitOfWork"/> class with all required repositories.
@@ -23,13 +22,13 @@ public class UnitOfWork : IUnitOfWork
     /// <param name="userRepository">The repository for users.</param>
     /// <param name="userTaskAccessRepository">The repository for user task access management.</param>
     public UnitOfWork(
-        TodoListAppDbContext context,
-        CommentRepository commentRepository,
-        TagRepository tagRepository,
-        TaskListRepository taskListRepository,
-        TaskRepository taskRepository,
-        UserRepository userRepository,
-        UserTaskAccessRepository userTaskAccessRepository)
+        ITodoListAppDbContext context,
+        ICommentRepository commentRepository,
+        ITagRepository tagRepository,
+        ITaskListRepository taskListRepository,
+        ITaskRepository taskRepository,
+        IUserRepository userRepository,
+        IUserTaskAccessRepository userTaskAccessRepository)
     {
         this._dbContext = context;
         this.Comments = commentRepository;
