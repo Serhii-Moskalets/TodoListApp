@@ -35,9 +35,9 @@ public class UpdateTaskListCommandHandler(
 
         ArgumentNullException.ThrowIfNull(command.NewTitle);
 
-        var taskListEntity = await this.UnitOfWork.TaskLists.GetByIdForUserAsync(command.TaskListId, command.UserId, cancellationToken);
+        var taskListEntity = await this.UnitOfWork.TaskLists.GetByIdAsync(command.TaskListId, false, cancellationToken);
 
-        if (taskListEntity is null)
+        if (taskListEntity is null || taskListEntity.OwnerId != command.UserId)
         {
             return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Task list not found.");
         }
