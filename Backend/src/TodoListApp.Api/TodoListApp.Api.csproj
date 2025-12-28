@@ -36,9 +36,13 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="10.1.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.1.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.0" />
   </ItemGroup>
 	
   <ItemGroup>
+    <ProjectReference Include="..\TodoListApp.Application\TodoListApp.Application.csproj" />
     <ProjectReference Include="..\TodoListApp.Infrastructure\TodoListApp.Infrastructure.csproj" />
   </ItemGroup>
 	
@@ -46,6 +50,12 @@
     <Content Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+    <Folder Include="DTOs\" />
+    <Folder Include="Middleware\" />
   </ItemGroup>
 
 </Project>

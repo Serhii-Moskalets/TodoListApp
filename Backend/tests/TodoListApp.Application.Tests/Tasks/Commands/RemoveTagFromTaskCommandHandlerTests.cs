@@ -1,9 +1,9 @@
 ﻿using Moq;
 using TinyResult.Enums;
+using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Tasks.Commands.RemoveTagFromTask;
 using TodoListApp.Domain.Entities;
-using TodoListApp.Domain.Interfaces.Repositories;
 
 namespace TodoListApp.Application.Tests.Tasks.Commands;
 

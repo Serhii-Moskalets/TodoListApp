@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Domain.Entities;
-using TodoListApp.Domain.Interfaces.Repositories;
 using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 namespace TodoListApp.Infrastructure.Persistence.Repositories;

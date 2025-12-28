@@ -1,9 +1,9 @@
 ﻿using Moq;
+using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Common.Dtos;
 using TodoListApp.Application.Tasks.Queries.GetTaskByTitle;
 using TodoListApp.Domain.Entities;
-using TodoListApp.Domain.Interfaces.Repositories;
 
 namespace TodoListApp.Application.Tests.Tasks.Queries;
 

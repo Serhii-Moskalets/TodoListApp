@@ -1,8 +1,8 @@
 ﻿using Moq;
+using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.UserTaskAccess.Commands.DeleteAllTaskAccessesByTaskId;
 using TodoListApp.Domain.Entities;
-using TodoListApp.Domain.Interfaces.Repositories;
 
 namespace TodoListApp.Application.Tests.UserTaskAccess.Commands;
 

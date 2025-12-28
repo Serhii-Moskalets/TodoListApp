@@ -1,6 +1,6 @@
 ﻿using TodoListApp.Domain.Entities;
 
-namespace TodoListApp.Domain.Interfaces.Repositories;
+namespace TodoListApp.Application.Abstractions.Interfaces.Repositories;
 
 /// <summary>
 /// Generic repository interface providing basic CRUD operations for any entity type.

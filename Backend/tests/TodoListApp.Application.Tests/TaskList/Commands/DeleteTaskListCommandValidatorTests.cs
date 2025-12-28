@@ -1,7 +1,7 @@
 ﻿using Moq;
+using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.TaskList.Commands.DeleteTaskList;
-using TodoListApp.Domain.Interfaces.Repositories;
 
 namespace TodoListApp.Application.Tests.TaskList.Commands;
 

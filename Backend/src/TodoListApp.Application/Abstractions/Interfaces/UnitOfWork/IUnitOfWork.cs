@@ -1,4 +1,4 @@
-﻿using TodoListApp.Domain.Interfaces.Repositories;
+﻿using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 
 namespace TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 

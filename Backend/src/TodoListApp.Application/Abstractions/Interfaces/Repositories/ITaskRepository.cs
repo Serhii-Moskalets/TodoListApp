@@ -2,7 +2,7 @@
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Enums;
 
-namespace TodoListApp.Domain.Interfaces.Repositories;
+namespace TodoListApp.Application.Abstractions.Interfaces.Repositories;
 
 /// <summary>
 /// Repository interface for working with <see cref="TaskEntity"/>.

@@ -1,6 +1,6 @@
 ﻿using TodoListApp.Domain.Entities;
 
-namespace TodoListApp.Domain.Interfaces.Repositories;
+namespace TodoListApp.Application.Abstractions.Interfaces.Repositories;
 
 /// <summary>
 /// Repository interface for managing <see cref="UserTaskAccessEntity"/>.
