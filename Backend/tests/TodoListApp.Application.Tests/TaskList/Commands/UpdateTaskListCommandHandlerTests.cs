@@ -83,7 +83,7 @@ public class UpdateTaskListCommandHandlerTests
 
         var taskListEntity = new TaskListEntity(userId, "Old Title");
         var taskListRespository = new Mock<ITaskListRepository>();
-        taskListRespository.Setup(r => r.GetByIdForUserAsync(taskListId, userId, It.IsAny<CancellationToken>()))
+        taskListRespository.Setup(r => r.GetByIdAsync(taskListId, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(taskListEntity);
 
         var uowMock = new Mock<IUnitOfWork>();

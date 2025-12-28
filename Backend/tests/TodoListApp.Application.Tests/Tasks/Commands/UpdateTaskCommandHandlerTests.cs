@@ -57,7 +57,7 @@ public class UpdateTaskCommandHandlerTests
             .ReturnsAsync(new FluentValidation.Results.ValidationResult());
 
         var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        taskRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskEntity?)null);
 
         var uowMock = new Mock<IUnitOfWork>();
@@ -97,7 +97,7 @@ public class UpdateTaskCommandHandlerTests
 
         var taskEntity = new TaskEntity(userId, taskListId, "Old task");
         var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(taskId, userId, It.IsAny<CancellationToken>()))
+        taskRepoMock.Setup(r => r.GetByIdAsync(taskId, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(taskEntity);
 
         var uowMock = new Mock<IUnitOfWork>();
@@ -140,7 +140,7 @@ public class UpdateTaskCommandHandlerTests
 
         var taskEntity = new TaskEntity(userId, taskListId, "Old task");
         var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(taskId, userId, It.IsAny<CancellationToken>()))
+        taskRepoMock.Setup(r => r.GetByIdAsync(taskId, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(taskEntity);
 
         var uowMock = new Mock<IUnitOfWork>();

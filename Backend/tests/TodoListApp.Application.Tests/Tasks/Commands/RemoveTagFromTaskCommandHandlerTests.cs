@@ -26,7 +26,7 @@ public class RemoveTagFromTaskCommandHandlerTests
         var command = new RemoveTagFromTaskCommand(taskId, userId);
 
         var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(taskId, userId, It.IsAny<CancellationToken>()))
+        taskRepoMock.Setup(r => r.GetByIdAsync(taskId, false, It.IsAny<CancellationToken>()))
                     .ReturnsAsync((TaskEntity?)null);
 
         var uowMock = new Mock<IUnitOfWork>();
@@ -60,7 +60,7 @@ public class RemoveTagFromTaskCommandHandlerTests
         var taskEntity = new TaskEntity(userId, Guid.NewGuid(), "Test Task");
         taskEntity.SetTag(Guid.NewGuid());
         var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(taskId, userId, It.IsAny<CancellationToken>()))
+        taskRepoMock.Setup(r => r.GetByIdAsync(taskId, false, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(taskEntity);
 
         var uowMock = new Mock<IUnitOfWork>();

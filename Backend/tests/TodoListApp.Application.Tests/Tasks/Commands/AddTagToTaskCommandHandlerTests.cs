@@ -60,7 +60,7 @@ public class AddTagToTaskCommandHandlerTests
 
         var taskEntity = new TaskEntity(userId, Guid.NewGuid(), "Test Task");
         var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(taskId, userId, It.IsAny<CancellationToken>()))
+        taskRepoMock.Setup(r => r.GetByIdAsync(taskId, false, It.IsAny<CancellationToken>()))
                     .ReturnsAsync(taskEntity);
 
         var uowMock = new Mock<IUnitOfWork>();

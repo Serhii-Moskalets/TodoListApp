@@ -27,7 +27,7 @@ public class ChangeTaskStatusCommandHandlerTests
         var command = new ChangeTaskStatusCommand(taskId, userId, Domain.Enums.StatusTask.InProgress);
 
         var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(taskId, userId, It.IsAny<CancellationToken>()))
+        taskRepoMock.Setup(r => r.GetByIdAsync(taskId, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskEntity?)null);
 
         var uowMock = new Mock<IUnitOfWork>();
@@ -57,7 +57,7 @@ public class ChangeTaskStatusCommandHandlerTests
 
         var taskEntity = new TaskEntity(userId, Guid.NewGuid(), "Task");
         var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(taskId, userId, It.IsAny<CancellationToken>()))
+        taskRepoMock.Setup(r => r.GetByIdAsync(taskId, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(taskEntity);
 
         var uowMock = new Mock<IUnitOfWork>();

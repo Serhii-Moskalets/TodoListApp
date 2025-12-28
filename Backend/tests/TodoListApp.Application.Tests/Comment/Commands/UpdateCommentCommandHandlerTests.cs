@@ -92,21 +92,22 @@ public class UpdateCommentCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldUpdateComment_WhenValidationPasses()
     {
-        var commentId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
         var validatorMock = new Mock<IValidator<UpdateCommentCommand>>();
         validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<UpdateCommentCommand>(), It.IsAny<CancellationToken>()))
+            .Setup(v => v.ValidateAsync(
+                It.IsAny<UpdateCommentCommand>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
 
-        var commentEntity = new CommentEntity(userId, Guid.NewGuid(), "Old text");
+        var commentEntity = new CommentEntity(Guid.NewGuid(), userId, "Old text");
 
         var commentRepositoryMock = new Mock<ICommentRepository>();
         commentRepositoryMock
             .Setup(r => r.GetByIdAsync(
-                commentId,
-                asNoTracking: true,
+                commentEntity.Id,
+                asNoTracking: false,
                 cancellationToken: It.IsAny<CancellationToken>()))
             .ReturnsAsync(commentEntity);
 
@@ -120,7 +121,7 @@ public class UpdateCommentCommandHandlerTests
             validatorMock.Object);
 
         var command = new UpdateCommentCommand(
-            commentId,
+            commentEntity.Id,
             userId,
             "Updated text");
 
