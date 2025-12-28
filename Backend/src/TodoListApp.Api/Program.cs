@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,8 +10,10 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Sinks.PostgreSQL;
 using TodoListApp.Api.Extensions;
+using TodoListApp.Application.Abstractions.Interfaces.TodoListAppDbContext;
 using TodoListApp.Application.Extensions;
 using TodoListApp.Infrastructure.Extensions;
+using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,15 +41,23 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Logging.ClearProviders();
+
 builder.Host.UseSerilog();
 
 // DI
+builder.Services.AddDbContext<ITodoListAppDbContext, TodoListAppDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
 builder.Services.AddInfrastructure(connectionString);
+
 builder.Services.AddApplicationServices();
+
 builder.Services.AddPersistence();
 
 builder.Services.AddControllers();
+
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
