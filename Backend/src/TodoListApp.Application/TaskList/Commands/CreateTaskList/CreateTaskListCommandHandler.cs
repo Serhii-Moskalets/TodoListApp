@@ -32,6 +32,8 @@ public class CreateTaskListCommandHandler(
             return validation;
         }
 
+        ArgumentNullException.ThrowIfNull(command.Title);
+
         var newTitle = command.Title;
         int suffix = 1;
 

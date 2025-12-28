@@ -14,6 +14,6 @@ public class UpdateTaskListCommandValidator : AbstractValidator<UpdateTaskListCo
     public UpdateTaskListCommandValidator()
     {
         this.RuleFor(x => x.NewTitle)
-            .NotEmpty().WithMessage("New title cannot be empty.");
+            .NotEmpty().WithMessage("New title cannot be null or empty.");
     }
 }

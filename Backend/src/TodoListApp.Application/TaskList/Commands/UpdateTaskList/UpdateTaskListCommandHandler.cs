@@ -33,6 +33,8 @@ public class UpdateTaskListCommandHandler(
             return validation;
         }
 
+        ArgumentNullException.ThrowIfNull(command.NewTitle);
+
         var taskListEntity = await this.UnitOfWork.TaskLists.GetByIdForUserAsync(command.TaskListId, command.UserId, cancellationToken);
 
         if (taskListEntity is null)
