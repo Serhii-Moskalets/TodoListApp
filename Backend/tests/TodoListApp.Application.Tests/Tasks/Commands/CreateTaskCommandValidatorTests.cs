@@ -48,4 +48,44 @@ public class CreateTaskCommandValidatorTests
 
         Assert.True(result.IsValid);
     }
+
+    /// <summary>
+    /// Tests that validation fails when the due date is in the past.
+    /// </summary>
+    [Fact]
+    public void Validate_ShouldHaveError_WhenDueDateInThePast()
+    {
+        var command = new CreateTaskCommand(new CreateTaskDto
+        {
+            OwnerId = Guid.NewGuid(),
+            Title = "Task",
+            TaskListId = Guid.NewGuid(),
+            DueDate = DateTime.UtcNow.AddDays(-1),
+        });
+
+        var result = this._validator.Validate(command);
+
+        Assert.False(result.IsValid);
+        var dueDateError = Assert.Single(result.Errors, e => e.PropertyName == "Dto.DueDate");
+        Assert.Equal("Due date cannot be in the past.", dueDateError.ErrorMessage);
+    }
+
+    /// <summary>
+    /// Tests that validation passes when the due date is in the future.
+    /// </summary>
+    [Fact]
+    public void Validate_ShouldNotHaveError_WhenDueDateInTheFuture()
+    {
+        var command = new CreateTaskCommand(new CreateTaskDto
+        {
+            OwnerId = Guid.NewGuid(),
+            Title = "Task",
+            TaskListId = Guid.NewGuid(),
+            DueDate = DateTime.UtcNow.AddDays(1),
+        });
+
+        var result = this._validator.Validate(command);
+
+        Assert.True(result.IsValid);
+    }
 }
