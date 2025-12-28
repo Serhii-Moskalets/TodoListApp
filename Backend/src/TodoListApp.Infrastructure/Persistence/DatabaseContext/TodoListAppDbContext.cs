@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TodoListApp.Application.Abstractions.Interfaces.TodoListAppDbContext;
 using TodoListApp.Domain.Entities;
 
 namespace TodoListApp.Infrastructure.Persistence.DatabaseContext;
@@ -7,7 +8,7 @@ namespace TodoListApp.Infrastructure.Persistence.DatabaseContext;
 /// Represents the database context for the TodoList application.
 /// Provides access to the database sets for all entities and applies their configurations.
 /// </summary>
-public class TodoListAppDbContext : DbContext
+public class TodoListAppDbContext : DbContext, ITodoListAppDbContext
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TodoListAppDbContext"/> class.
