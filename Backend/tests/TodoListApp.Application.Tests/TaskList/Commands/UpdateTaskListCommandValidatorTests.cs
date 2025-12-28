@@ -22,7 +22,7 @@ public class UpdateTaskListCommandValidatorTests
 
         Assert.False(result.IsValid);
         var titleError = Assert.Single(result.Errors, e => e.PropertyName == "NewTitle");
-        Assert.Equal("New title cannot be empty.", titleError.ErrorMessage);
+        Assert.Equal("New title cannot be null or empty.", titleError.ErrorMessage);
     }
 
     /// <summary>
