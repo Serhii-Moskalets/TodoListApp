@@ -23,9 +23,9 @@ public class RemoveTagFromTaskCommandHandler(IUnitOfWork unitOfWork)
     /// <returns>A <see cref="Result{Boolean}"/> indicating success or failure of the operation.</returns>
     public async Task<Result<bool>> Handle(RemoveTagFromTaskCommand command, CancellationToken cancellationToken)
     {
-        var taskEntity = await this.UnitOfWork.Tasks.GetTaskByIdForUserAsync(command.TaskId, command.UserId, cancellationToken);
+        var taskEntity = await this.UnitOfWork.Tasks.GetByIdAsync(command.TaskId, false, cancellationToken);
 
-        if (taskEntity is null)
+        if (taskEntity is null || taskEntity.OwnerId != command.UserId)
         {
             return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
         }

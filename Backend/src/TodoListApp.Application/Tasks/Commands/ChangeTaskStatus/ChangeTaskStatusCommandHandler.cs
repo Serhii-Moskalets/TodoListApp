@@ -29,9 +29,9 @@ public class ChangeTaskStatusCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> Handle(ChangeTaskStatusCommand command, CancellationToken cancellationToken)
     {
-        var entity = await this.UnitOfWork.Tasks.GetTaskByIdForUserAsync(command.TaskId, command.UserId, cancellationToken);
+        var entity = await this.UnitOfWork.Tasks.GetByIdAsync(command.TaskId, false, cancellationToken);
 
-        if (entity is null)
+        if (entity is null || entity.OwnerId != command.UserId)
         {
             return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
         }

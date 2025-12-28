@@ -36,15 +36,15 @@ public class UpdateCommentCommandHandler(
             return validation;
         }
 
-        var comment = await this.UnitOfWork.Comments.GetByIdAsync(command.CommentId, cancellationToken: cancellationToken);
-        if (comment is null)
+        var commentEntity = await this.UnitOfWork.Comments.GetByIdAsync(command.CommentId, false, cancellationToken);
+        if (commentEntity is null || commentEntity.UserId != command.UserId)
         {
             return await Result<bool>.FailureAsync(
                 TinyResult.Enums.ErrorCode.NotFound,
                 "Comment not found.");
         }
 
-        comment.Update(command.NewText);
+        commentEntity.Update(command.NewText);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);

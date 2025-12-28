@@ -21,14 +21,14 @@ public class AddTagToTaskCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> Handle(AddTagToTaskCommand command, CancellationToken cancellationToken)
     {
-        var task = await this.UnitOfWork.Tasks.GetTaskByIdForUserAsync(command.TaskId, command.UserId, cancellationToken);
+        var taskEntity = await this.UnitOfWork.Tasks.GetByIdAsync(command.TaskId, false, cancellationToken);
 
-        if (task is null)
+        if (taskEntity is null || taskEntity.OwnerId != command.UserId)
         {
             return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Task not found.");
         }
 
-        task.SetTag(command.TagId);
+        taskEntity.SetTag(command.TagId);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);

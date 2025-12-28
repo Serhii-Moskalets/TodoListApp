@@ -33,6 +33,8 @@ public class CreateTaskCommandHandler(
             return validation;
         }
 
+        ArgumentNullException.ThrowIfNull(command.Dto.Title);
+
         var task = new TaskEntity(
             command.Dto.OwnerId,
             command.Dto.TaskListId,

@@ -32,8 +32,10 @@ public class UpdateTaskCommandHandler(
 
         var taskDto = command.Dto;
 
-        var taskEntity = await this.UnitOfWork.Tasks.GetTaskByIdForUserAsync(taskDto.TaskId, taskDto.OwnerId, cancellationToken: cancellationToken);
-        if (taskEntity == null)
+        ArgumentNullException.ThrowIfNull(taskDto.Title);
+
+        var taskEntity = await this.UnitOfWork.Tasks.GetByIdAsync(taskDto.TaskId, false, cancellationToken: cancellationToken);
+        if (taskEntity == null || taskEntity.OwnerId != taskDto.OwnerId)
         {
             return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
         }
