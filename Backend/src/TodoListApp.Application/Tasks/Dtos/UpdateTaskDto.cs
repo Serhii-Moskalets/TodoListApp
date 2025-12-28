@@ -19,7 +19,7 @@ public class UpdateTaskDto
     /// <summary>
     /// Gets the new title of the task.
     /// </summary>
-    public string Title { get; init; } = null!;
+    public string? Title { get; init; }
 
     /// <summary>
     /// Gets the new description of the task.

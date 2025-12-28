@@ -20,8 +20,17 @@ public class GetTaskByTitleQueryHandler(IUnitOfWork unitOfWork)
     /// <returns>
     /// A <see cref="TinyResult.Result{T}"/> representing the outcome of the operation.
     /// </returns>
+    /// /// <remarks>
+    /// If the search text is null, empty, or consists only of whitespace,
+    /// an empty collection is returned.
+    /// </remarks>
     public async Task<Result<IEnumerable<TaskDto>>> Handle(GetTaskByTitleQuery query, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(query.Text))
+        {
+            return await Result<IEnumerable<TaskDto>>.SuccessAsync([]);
+        }
+
         var taskEntityList = await this.UnitOfWork.Tasks.SearchByTitleAsync(query.UserId, query.Text, cancellationToken);
 
         var taskDtoList = TaskMapper.Map(taskEntityList);

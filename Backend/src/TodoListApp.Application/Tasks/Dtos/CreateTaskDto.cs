@@ -13,7 +13,7 @@ public class CreateTaskDto
     /// <summary>
     /// Gets the title of the task.
     /// </summary>
-    public string Title { get; init; } = null!;
+    public string? Title { get; init; }
 
     /// <summary>
     /// Gets the due date of the task.
