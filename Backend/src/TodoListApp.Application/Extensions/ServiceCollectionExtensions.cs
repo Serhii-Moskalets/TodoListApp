@@ -108,6 +108,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICommandHandler<DeleteTaskCommand>, DeleteTaskCommandHandler>();
         services.AddScoped<ICommandHandler<RemoveTagFromTaskCommand>, RemoveTagFromTaskCommandHandler>();
         services.AddScoped<ICommandHandler<UpdateTaskCommand>, UpdateTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateTaskCommand>, CreateTaskCommandHandler>();
         services.AddScoped<IQueryHandler<GetTaskByIdQuery, TaskDto>, GetTaskByIdQueryHandler>();
         services.AddScoped<IQueryHandler<GetTaskByTitleQuery, IEnumerable<TaskDto>>, GetTaskByTitleQueryHandler>();
         services.AddScoped<IQueryHandler<GetTasksQuery, IEnumerable<TaskDto>>, GetTasksQueryHandler>();
