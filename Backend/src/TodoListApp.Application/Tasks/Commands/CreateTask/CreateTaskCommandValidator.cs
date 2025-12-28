@@ -16,5 +16,9 @@ public class CreateTaskCommandValidator : AbstractValidator<CreateTaskCommand>
     {
         this.RuleFor(x => x.Dto.Title)
             .NotEmpty().WithMessage("Task title cannot be empty.");
+
+        this.RuleFor(x => x.Dto.DueDate)
+            .Must((dueDate) => dueDate == null || dueDate.Value >= DateTime.UtcNow)
+            .WithMessage("Due date cannot be in the past.");
     }
 }
