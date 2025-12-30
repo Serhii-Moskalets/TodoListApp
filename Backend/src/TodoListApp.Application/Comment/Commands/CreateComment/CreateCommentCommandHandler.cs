@@ -17,7 +17,7 @@ namespace TodoListApp.Application.Comment.Commands.CreateComment;
 public class CreateCommentCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<CreateCommentCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<CreateCommentCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<CreateCommentCommand, Guid>
 {
     private readonly IValidator<CreateCommentCommand> _validator = validator;
 
@@ -33,12 +33,12 @@ public class CreateCommentCommandHandler(
     /// <returns>
     /// A <see cref="Result{T}"/> indicating whether the comment was created successfully.
     /// </returns>
-    public async Task<Result<bool>> Handle(CreateCommentCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(CreateCommentCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)
         {
-            return validation;
+            return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
         var commentEntity = new CommentEntity(command.TaskId, command.UserId, command.Text);
@@ -46,6 +46,6 @@ public class CreateCommentCommandHandler(
         await this.UnitOfWork.Comments.AddAsync(commentEntity, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
-        return await Result<bool>.SuccessAsync(true);
+        return await Result<Guid>.SuccessAsync(commentEntity.Id);
     }
 }
