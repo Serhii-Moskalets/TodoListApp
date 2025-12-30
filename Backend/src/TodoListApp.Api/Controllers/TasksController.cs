@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using TodoListApp.Api.DTOs.Task;
@@ -30,43 +29,40 @@ namespace TodoListApp.Api.Controllers;
 /// </remarks>
 [ApiController]
 [Route("api/[controller]")]
-public class TaskController : BaseController
+public class TasksController : BaseController
 {
-    private readonly ICommandHandler<CreateTaskCommand> _createTaskHandler;
-    private readonly ICommandHandler<UpdateTaskCommand> _updateTaskHandler;
-    private readonly ICommandHandler<DeleteTaskCommand> _deleteTaskHandler;
-    private readonly ICommandHandler<DeleteOverdueTasksCommand> _deleteOverdueTasksHandler;
-    private readonly ICommandHandler<AddTagToTaskCommand> _addTagToTaskHandler;
-    private readonly ICommandHandler<RemoveTagFromTaskCommand> _removeTagFromTaskHandler;
-    private readonly ICommandHandler<ChangeTaskStatusCommand> _changeTaskStatusHandler;
+    private readonly ICommandHandler<CreateTaskCommand, Guid> _createTaskHandler;
+    private readonly ICommandHandler<UpdateTaskCommand, bool> _updateTaskHandler;
+    private readonly ICommandHandler<DeleteTaskCommand, bool> _deleteTaskHandler;
+    private readonly ICommandHandler<AddTagToTaskCommand, bool> _addTagToTaskHandler;
+    private readonly ICommandHandler<RemoveTagFromTaskCommand, bool> _removeTagFromTaskHandler;
+    private readonly ICommandHandler<ChangeTaskStatusCommand, bool> _changeTaskStatusHandler;
     private readonly IQueryHandler<GetTaskByIdQuery, TaskDto> _getTaskByIdHandler;
     private readonly IQueryHandler<GetTaskByTitleQuery, IEnumerable<TaskDto>> _getTaskByTitleHandler;
     private readonly IQueryHandler<GetTasksQuery, IEnumerable<TaskDto>> _getTasksHandler;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TaskController"/> class.
+    /// Initializes a new instance of the <see cref="TasksController"/> class.
     /// </summary>
-    /// /// <param name="createTaskHandler">Handler to create new tasks.</param>
+    /// <param name="createTaskHandler">Handler to create new tasks.</param>
     /// <param name="getTaskByIdHandler">Handler to get a task by its ID.</param>
     /// <param name="getTaskByTitleHandler">Handler to get tasks by title.</param>
     /// <param name="getTasksHandler">Handler to get all tasks with optional filters.</param>
     /// <param name="updateTaskHandler">Handler to update an existing task.</param>
     /// <param name="deleteTaskHandler">Handler to delete a task.</param>
     /// <param name="removeTagFromTaskHandler">Handler to remove a tag from a task.</param>
-    /// <param name="deleteOverdueTasksHandler">Handler to delete overdue tasks from a task list.</param>
     /// <param name="changeTaskStatusHandler">Handler to change the status of a task.</param>
     /// <param name="addTagToTaskHandler">Handler to add a tag to a task.</param>
-    public TaskController(
-        ICommandHandler<CreateTaskCommand> createTaskHandler,
+    public TasksController(
+        ICommandHandler<CreateTaskCommand, Guid> createTaskHandler,
         IQueryHandler<GetTaskByIdQuery, TaskDto> getTaskByIdHandler,
         IQueryHandler<GetTaskByTitleQuery, IEnumerable<TaskDto>> getTaskByTitleHandler,
         IQueryHandler<GetTasksQuery, IEnumerable<TaskDto>> getTasksHandler,
-        ICommandHandler<UpdateTaskCommand> updateTaskHandler,
-        ICommandHandler<DeleteTaskCommand> deleteTaskHandler,
-        ICommandHandler<RemoveTagFromTaskCommand> removeTagFromTaskHandler,
-        ICommandHandler<DeleteOverdueTasksCommand> deleteOverdueTasksHandler,
-        ICommandHandler<ChangeTaskStatusCommand> changeTaskStatusHandler,
-        ICommandHandler<AddTagToTaskCommand> addTagToTaskHandler)
+        ICommandHandler<UpdateTaskCommand, bool> updateTaskHandler,
+        ICommandHandler<DeleteTaskCommand, bool> deleteTaskHandler,
+        ICommandHandler<RemoveTagFromTaskCommand, bool> removeTagFromTaskHandler,
+        ICommandHandler<ChangeTaskStatusCommand, bool> changeTaskStatusHandler,
+        ICommandHandler<AddTagToTaskCommand, bool> addTagToTaskHandler)
     {
         this._createTaskHandler = createTaskHandler;
         this._getTaskByIdHandler = getTaskByIdHandler;
@@ -75,7 +71,6 @@ public class TaskController : BaseController
         this._updateTaskHandler = updateTaskHandler;
         this._deleteTaskHandler = deleteTaskHandler;
         this._removeTagFromTaskHandler = removeTagFromTaskHandler;
-        this._deleteOverdueTasksHandler = deleteOverdueTasksHandler;
         this._changeTaskStatusHandler = changeTaskStatusHandler;
         this._addTagToTaskHandler = addTagToTaskHandler;
     }
@@ -89,14 +84,8 @@ public class TaskController : BaseController
     public async Task<IActionResult> GetTaskById([FromRoute] Guid taskId)
     {
         var query = new GetTaskByIdQuery(CurrentUserId, taskId);
-
         var result = await this._getTaskByIdHandler.Handle(query, this.HttpContext.RequestAborted);
-        if (!result.IsSuccess)
-        {
-            return this.BadRequest(result.Error);
-        }
-
-        return this.Ok(result.Value);
+        return this.HandleResult(result);
     }
 
     /// <summary>
@@ -117,7 +106,7 @@ public class TaskController : BaseController
             request.Ascending);
 
         var result = await this._getTasksHandler.Handle(query, this.HttpContext.RequestAborted);
-        return this.Ok(result.Value);
+        return this.HandleResult(result);
     }
 
     /// <summary>
@@ -130,45 +119,57 @@ public class TaskController : BaseController
     {
         var query = new GetTaskByTitleQuery(CurrentUserId, request.Title);
         var result = await this._getTaskByTitleHandler.Handle(query, this.HttpContext.RequestAborted);
-        return this.Ok(result.Value);
+        return this.HandleResult(result);
     }
 
     /// <summary>
     /// Creates a new task.
     /// </summary>
+    /// <param name="taskListId">The unique identifier of the task list.</param>
     /// <param name="request">The task creation request.</param>
-    /// <returns>The created task.</returns>
-    [HttpPost]
-    public async Task<IActionResult> CreateTask([FromBody] CreateTaskDtoRequest request)
+    /// <returns>
+    /// An <see cref="OkObjectResult"/> containing the created task identifier
+    /// if the operation succeeds; otherwise, a <see cref="BadRequestObjectResult"/>
+    /// containing error details.
+    /// </returns>
+    [HttpPost("task-lists/{taskListId:guid}/tasks")]
+    public async Task<IActionResult> CreateTask([FromRoute] Guid taskListId, [FromBody] CreateTaskDtoRequest request)
     {
         var command = new CreateTaskCommand(new CreateTaskDto
         {
             OwnerId = CurrentUserId,
             Title = request.Title,
             DueDate = request.DueDate,
-            TaskListId = request.TaskListId,
+            TaskListId = taskListId,
         });
 
         var result = await this._createTaskHandler.Handle(command, this.HttpContext.RequestAborted);
         if (!result.IsSuccess)
         {
-            return this.BadRequest(result.Error);
+            return this.HandleResult(result);
         }
 
-        return this.NoContent();
+        return this.CreatedAtAction(
+            nameof(this.GetAllTasks),
+            new { taskListId },
+            new { id = result.Value });
     }
 
     /// <summary>
     /// Updates an existing task.
     /// </summary>
+    /// <param name="taskId">The unique identifier of the task.</param>
     /// <param name="request">The task update request.</param>
-    /// <returns>The updated tasks.</returns>
-    [HttpPut]
-    public async Task<IActionResult> UpdateTask([FromBody] UpdateTaskDtoRequest request)
+    /// <returns>
+    /// Returns <see cref="NoContentResult"/> if the task was successfully updated;
+    /// otherwise, a <see cref="BadRequestObjectResult"/>.
+    /// </returns>
+    [HttpPut("{taskId:guid}")]
+    public async Task<IActionResult> UpdateTask([FromRoute] Guid taskId, [FromBody] UpdateTaskDtoRequest request)
     {
         var command = new UpdateTaskCommand(new UpdateTaskDto
         {
-            TaskId = request.TaskId,
+            TaskId = taskId,
             OwnerId = CurrentUserId,
             Title = request.Title,
             Description = request.Description,
@@ -176,31 +177,23 @@ public class TaskController : BaseController
         });
 
         var result = await this._updateTaskHandler.Handle(command, this.HttpContext.RequestAborted);
-        if (!result.IsSuccess)
-        {
-            return this.BadRequest(result.Error);
-        }
-
-        return this.NoContent();
+        return this.HandleNoContent(result);
     }
 
     /// <summary>
     /// Deletes a task by its identifier.
     /// </summary>
     /// <param name="taskId">The task identifier.</param>
-    /// <returns>The deleted task.</returns>
+    /// <returns>
+    /// Returns <see cref="NoContentResult"/> if the operation succeeds;
+    /// otherwise, a <see cref="BadRequestObjectResult"/>.
+    /// </returns>
     [HttpDelete("{taskId:guid}")]
     public async Task<IActionResult> DeleteTask([FromRoute] Guid taskId)
     {
         var command = new DeleteTaskCommand(taskId, CurrentUserId);
         var result = await this._deleteTaskHandler.Handle(command, this.HttpContext.RequestAborted);
-
-        if (!result.IsSuccess)
-        {
-            return this.BadRequest(result.Error);
-        }
-
-        return this.NoContent();
+        return this.HandleNoContent(result);
     }
 
     /// <summary>
@@ -208,19 +201,16 @@ public class TaskController : BaseController
     /// </summary>
     /// <param name="taskId">The task identifier..</param>
     /// <param name="tagId">The tag identifier.</param>
-    /// <returns>The added tag to task.</returns>
+    /// <returns>
+    /// Returns <see cref="NoContentResult"/> if the operation succeeds;
+    /// otherwise, a <see cref="BadRequestObjectResult"/>.
+    /// </returns>
     [HttpPut("{taskId:guid}/tags/{tagId:guid}")]
     public async Task<IActionResult> AddTagToTask([FromRoute] Guid taskId, [FromRoute] Guid tagId)
     {
         var command = new AddTagToTaskCommand(taskId, CurrentUserId, tagId);
-
         var result = await this._addTagToTaskHandler.Handle(command, this.HttpContext.RequestAborted);
-        if (!result.IsSuccess)
-        {
-            return this.BadRequest(result.Error);
-        }
-
-        return this.NoContent();
+        return this.HandleNoContent(result);
     }
 
     /// <summary>
@@ -228,19 +218,16 @@ public class TaskController : BaseController
     /// Each task can only have one tag.
     /// </summary>
     /// <param name="taskId">The task identifier.</param>
-    /// <returns>The removed tag from task.</returns>
+    /// <returns>
+    /// Returns <see cref="NoContentResult"/> if the operation succeeds;
+    /// otherwise, a <see cref="BadRequestObjectResult"/>.
+    /// </returns>
     [HttpDelete("{taskId:guid}/tag")]
     public async Task<IActionResult> RemoveTagFromTask([FromRoute] Guid taskId)
     {
         var command = new RemoveTagFromTaskCommand(taskId, CurrentUserId);
-
         var result = await this._removeTagFromTaskHandler.Handle(command, this.HttpContext.RequestAborted);
-        if (!result.IsSuccess)
-        {
-            return this.BadRequest(result.Error);
-        }
-
-        return this.NoContent();
+        return this.HandleNoContent(result);
     }
 
     /// <summary>
@@ -248,37 +235,15 @@ public class TaskController : BaseController
     /// </summary>
     /// <param name="taskId">The task identifier.</param>
     /// <param name="status">The status of task.</param>
-    /// <returns>The changed task status.</returns>
+    /// <returns>
+    /// Returns <see cref="NoContentResult"/> if the operation succeeds;
+    /// otherwise, a <see cref="BadRequestObjectResult"/>.
+    /// </returns>
     [HttpPut("{taskId:guid}/status/{status:int}")]
     public async Task<IActionResult> ChangeTaskStatus([FromRoute] Guid taskId, [FromRoute] StatusTask status)
     {
         var command = new ChangeTaskStatusCommand(taskId, CurrentUserId, status);
-
         var result = await this._changeTaskStatusHandler.Handle(command, this.HttpContext.RequestAborted);
-        if (!result.IsSuccess)
-        {
-            return this.BadRequest(result.Error);
-        }
-
-        return this.NoContent();
-    }
-
-    /// <summary>
-    /// Deletes all overdue tasks in the specified task list.
-    /// </summary>
-    /// <param name="taskListId">The task list identifier.</param>
-    /// <returns>The deleted overdue tasks.</returns>
-    [HttpDelete("/api/task-lists/{taskListId:guid}/tasks/overdue")]
-    public async Task<IActionResult> DeleteOverdueTasks([FromRoute] Guid taskListId)
-    {
-        var command = new DeleteOverdueTasksCommand(taskListId, CurrentUserId);
-
-        var result = await this._deleteOverdueTasksHandler.Handle(command, this.HttpContext.RequestAborted);
-        if (!result.IsSuccess)
-        {
-            return this.BadRequest(result.Error);
-        }
-
-        return this.NoContent();
+        return this.HandleNoContent(result);
     }
 }
