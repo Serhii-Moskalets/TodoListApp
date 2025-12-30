@@ -33,12 +33,10 @@ public class CreateTaskCommandHandler(
             return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
-        ArgumentNullException.ThrowIfNull(command.Dto.Title);
-
         var task = new TaskEntity(
             command.Dto.OwnerId,
             command.Dto.TaskListId,
-            command.Dto.Title,
+            command.Dto.Title!,
             command.Dto.DueDate);
 
         await this.UnitOfWork.Tasks.AddAsync(task, cancellationToken);

@@ -32,17 +32,15 @@ public class CreateTaskListCommandHandler(
             return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
-        ArgumentNullException.ThrowIfNull(command.Title);
-
         var newTitle = command.Title;
         int suffix = 1;
 
-        while (await this.UnitOfWork.TaskLists.ExistsByTitleAsync(newTitle, command.UserId, cancellationToken))
+        while (await this.UnitOfWork.TaskLists.ExistsByTitleAsync(newTitle!, command.UserId, cancellationToken))
         {
             newTitle = $"{command.Title} ({suffix++})";
         }
 
-        var taskListentity = new TaskListEntity(command.UserId, newTitle);
+        var taskListentity = new TaskListEntity(command.UserId, newTitle!);
 
         await this.UnitOfWork.TaskLists.AddAsync(taskListentity, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);

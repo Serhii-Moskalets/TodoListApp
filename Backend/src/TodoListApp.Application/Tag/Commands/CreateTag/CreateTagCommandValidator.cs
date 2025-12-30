@@ -14,7 +14,7 @@ public class CreateTagCommandValidator : AbstractValidator<CreateTagCommand>
     public CreateTagCommandValidator()
     {
         this.RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Tag name cannot be empty.")
+            .NotEmpty().WithMessage("Tag name cannot be null or empty.")
             .MaximumLength(50).WithMessage("Tag name cannot exceed 50 characters.");
     }
 }

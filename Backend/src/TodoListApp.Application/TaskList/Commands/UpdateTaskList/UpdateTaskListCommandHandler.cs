@@ -33,8 +33,6 @@ public class UpdateTaskListCommandHandler(
             return validation;
         }
 
-        ArgumentNullException.ThrowIfNull(command.NewTitle);
-
         var taskListEntity = await this.UnitOfWork.TaskLists.GetByIdAsync(command.TaskListId, false, cancellationToken);
 
         if (taskListEntity is null || taskListEntity.OwnerId != command.UserId)
@@ -42,7 +40,7 @@ public class UpdateTaskListCommandHandler(
             return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Task list not found.");
         }
 
-        taskListEntity.UpdateTitle(command.NewTitle);
+        taskListEntity.UpdateTitle(command.NewTitle!);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);

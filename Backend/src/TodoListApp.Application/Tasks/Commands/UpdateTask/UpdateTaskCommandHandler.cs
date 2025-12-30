@@ -32,15 +32,13 @@ public class UpdateTaskCommandHandler(
 
         var taskDto = command.Dto;
 
-        ArgumentNullException.ThrowIfNull(taskDto.Title);
-
         var taskEntity = await this.UnitOfWork.Tasks.GetByIdAsync(taskDto.TaskId, false, cancellationToken: cancellationToken);
         if (taskEntity == null || taskEntity.OwnerId != taskDto.OwnerId)
         {
             return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
         }
 
-        taskEntity.UpdateDetails(taskDto.Title, taskDto.Description, taskDto.DueDate);
+        taskEntity.UpdateDetails(taskDto.Title!, taskDto.Description, taskDto.DueDate);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);
