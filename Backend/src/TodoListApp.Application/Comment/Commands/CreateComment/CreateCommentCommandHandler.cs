@@ -41,6 +41,7 @@ public class CreateCommentCommandHandler(
             return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(command.Text);
         var commentEntity = new CommentEntity(command.TaskId, command.UserId, command.Text);
 
         await this.UnitOfWork.Comments.AddAsync(commentEntity, cancellationToken);

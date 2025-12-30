@@ -44,6 +44,7 @@ public class UpdateCommentCommandHandler(
                 "Comment not found.");
         }
 
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(command.NewText);
         commentEntity.Update(command.NewText);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 

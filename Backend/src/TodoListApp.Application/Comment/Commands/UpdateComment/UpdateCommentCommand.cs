@@ -9,5 +9,5 @@ public record UpdateCommentCommand(
     Guid TaskId,
     Guid CommentId,
     Guid UserId,
-    string NewText)
+    string? NewText)
     : ICommand;
