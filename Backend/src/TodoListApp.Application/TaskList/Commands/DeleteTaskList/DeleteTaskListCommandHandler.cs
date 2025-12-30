@@ -12,7 +12,7 @@ namespace TodoListApp.Application.TaskList.Commands.DeleteTaskList;
 public class DeleteTaskListCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<DeleteTaskListCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskListCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskListCommand, bool>
 {
     private readonly IValidator<DeleteTaskListCommand> _validator = validator;
 
@@ -33,7 +33,7 @@ public class DeleteTaskListCommandHandler(
             return validation;
         }
 
-        await this.UnitOfWork.TaskLists.DeleteAsync(command.TaskListId);
+        await this.UnitOfWork.TaskLists.DeleteAsync(command.TaskListId, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);
