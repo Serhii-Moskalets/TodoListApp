@@ -32,7 +32,7 @@ public class DeleteCommentCommandHandlerTests
             uowMock.Object,
             validatorMock.Object);
 
-        var command = new DeleteCommentCommand(Guid.NewGuid(), Guid.NewGuid());
+        var command = new DeleteCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         var result = await handler.Handle(command, CancellationToken.None);
 
@@ -69,7 +69,8 @@ public class DeleteCommentCommandHandlerTests
             validatorMock.Object);
 
         var commentId = Guid.NewGuid();
-        var command = new DeleteCommentCommand(commentId, Guid.NewGuid());
+        var taskId = Guid.NewGuid();
+        var command = new DeleteCommentCommand(taskId, commentId, Guid.NewGuid());
 
         var result = await handler.Handle(command, CancellationToken.None);
 

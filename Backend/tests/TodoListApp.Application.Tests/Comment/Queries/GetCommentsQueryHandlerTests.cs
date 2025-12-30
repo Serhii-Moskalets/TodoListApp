@@ -38,7 +38,7 @@ public class GetCommentsQueryHandlerTests
         uowMock.Setup(u => u.Comments).Returns(commentRepoMock.Object);
 
         var handler = new GetCommentsQueryHandler(uowMock.Object);
-        var query = new GetCommentsQuery(task.Id);
+        var query = new GetCommentsQuery(task.Id, user_1.Id);
 
         var result = await handler.Handle(query, CancellationToken.None);
 
@@ -57,6 +57,7 @@ public class GetCommentsQueryHandlerTests
     public async Task Handle_ShouldReturnEmptyList_WhenNoCommentsExist()
     {
         var taskId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
 
         var commentRepoMock = new Mock<ICommentRepository>();
         commentRepoMock.Setup(r => r.GetByTaskIdAsync(taskId, It.IsAny<CancellationToken>()))
@@ -66,7 +67,7 @@ public class GetCommentsQueryHandlerTests
         uowMock.Setup(u => u.Comments).Returns(commentRepoMock.Object);
 
         var handler = new GetCommentsQueryHandler(uowMock.Object);
-        var query = new GetCommentsQuery(taskId);
+        var query = new GetCommentsQuery(taskId, userId);
 
         var result = await handler.Handle(query, CancellationToken.None);
 

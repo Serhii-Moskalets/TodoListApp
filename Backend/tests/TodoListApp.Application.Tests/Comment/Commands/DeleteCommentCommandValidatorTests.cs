@@ -18,18 +18,20 @@ public class DeleteCommentCommandValidatorTests
     public async Task Validate_ShouldPass_WhenUserOwnsComment()
     {
         var commentId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
         var unitOfWorkMock = new Mock<IUnitOfWork>();
         unitOfWorkMock
-            .Setup(u => u.Comments.IsCommentOwnerAsync(
+            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(
+                It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var validator = new DeleteCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new DeleteCommentCommand(commentId, userId);
+        var command = new DeleteCommentCommand(taskId, commentId, userId);
 
         var result = await validator.ValidateAsync(command);
 
@@ -46,14 +48,15 @@ public class DeleteCommentCommandValidatorTests
     {
         var unitOfWorkMock = new Mock<IUnitOfWork>();
         unitOfWorkMock
-            .Setup(u => u.Comments.IsCommentOwnerAsync(
+            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(
+                It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var validator = new DeleteCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new DeleteCommentCommand(Guid.NewGuid(), Guid.NewGuid());
+        var command = new DeleteCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
         var result = await validator.ValidateAsync(command);
 

@@ -38,6 +38,7 @@ public class UpdateCommentCommandHandlerTests
         var command = new UpdateCommentCommand(
             Guid.NewGuid(),
             Guid.NewGuid(),
+            Guid.NewGuid(),
             string.Empty);
 
         var result = await handler.Handle(command, CancellationToken.None);
@@ -75,6 +76,7 @@ public class UpdateCommentCommandHandlerTests
             validatorMock.Object);
 
         var command = new UpdateCommentCommand(
+            Guid.NewGuid(),
             Guid.NewGuid(),
             Guid.NewGuid(),
             "New text");
@@ -121,6 +123,7 @@ public class UpdateCommentCommandHandlerTests
             validatorMock.Object);
 
         var command = new UpdateCommentCommand(
+            commentEntity.TaskId,
             commentEntity.Id,
             userId,
             "Updated text");

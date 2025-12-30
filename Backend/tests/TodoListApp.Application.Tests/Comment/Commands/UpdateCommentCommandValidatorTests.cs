@@ -19,14 +19,15 @@ public class UpdateCommentCommandValidatorTests
     {
         var unitOfWorkMock = new Mock<IUnitOfWork>();
         unitOfWorkMock
-            .Setup(u => u.Comments.IsCommentOwnerAsync(
+            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(
+                It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var validator = new UpdateCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), "Some text");
+        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Some text");
 
         var result = await validator.ValidateAsync(command);
 
@@ -44,11 +45,11 @@ public class UpdateCommentCommandValidatorTests
     {
         var unitOfWorkMock = new Mock<IUnitOfWork>();
         unitOfWorkMock
-            .Setup(u => u.Comments.IsCommentOwnerAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var validator = new UpdateCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), "Some text");
+        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Some text");
 
         var result = await validator.ValidateAsync(command);
 
@@ -64,11 +65,11 @@ public class UpdateCommentCommandValidatorTests
     {
         var unitOfWorkMock = new Mock<IUnitOfWork>();
         unitOfWorkMock
-            .Setup(u => u.Comments.IsCommentOwnerAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var validator = new UpdateCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
+        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), string.Empty);
 
         var result = await validator.ValidateAsync(command);
 
@@ -86,17 +87,43 @@ public class UpdateCommentCommandValidatorTests
     {
         var unitOfWorkMock = new Mock<IUnitOfWork>();
         unitOfWorkMock
-            .Setup(u => u.Comments.IsCommentOwnerAsync(
+            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(
+                It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var validator = new UpdateCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), "Valid comment text");
+        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Valid comment text");
 
         var result = await validator.ValidateAsync(command);
 
         Assert.True(result.IsValid);
+    }
+
+    /// <summary>
+    /// Tests that validation returns an error when <see cref="UpdateCommentCommand.NewText"/> exceeds 1000 characters.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task Validate_ShouldHaveError_WhenNewTextIsTooLong()
+    {
+        var unitOfWorkMock = new Mock<IUnitOfWork>();
+        unitOfWorkMock
+            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(
+                It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var validator = new UpdateCommentCommandValidator(unitOfWorkMock.Object);
+
+        var longText = new string('a', 1001);
+        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), longText);
+
+        var result = await validator.ValidateAsync(command);
+
+        Assert.False(result.IsValid);
+        var error = Assert.Single(result.Errors, e => e.PropertyName == "NewText");
+        Assert.Equal("Comment text cannot exceed 1000 characters.", error.ErrorMessage);
     }
 }

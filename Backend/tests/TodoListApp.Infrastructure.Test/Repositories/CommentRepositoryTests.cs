@@ -37,7 +37,7 @@ public class CommentRepositoryTests
     }
 
     /// <summary>
-    /// Tests that <see cref="CommentRepository.IsCommentOwnerAsync"/> correctly determines
+    /// Tests that <see cref="CommentRepository.ExistsInTaskAndOwnedByUserAsync"/> correctly determines
     /// if a user is the owner of a comment.
     /// </summary>
     /// <returns>A task representing the asynchronous test operation.</returns>
@@ -48,13 +48,14 @@ public class CommentRepositoryTests
         var repo = new CommentRepository(context);
         var userId_1 = Guid.NewGuid();
         var userId_2 = Guid.NewGuid();
-        var comment = new CommentEntity(Guid.NewGuid(), userId_1, "Text");
+        var taskId = Guid.NewGuid();
+        var comment = new CommentEntity(taskId, userId_1, "Text");
 
         await repo.AddAsync(comment);
         await context.SaveChangesAsync();
 
-        Assert.True(await repo.IsCommentOwnerAsync(comment.Id, userId_1));
-        Assert.False(await repo.IsCommentOwnerAsync(comment.Id, userId_2));
+        Assert.True(await repo.ExistsInTaskAndOwnedByUserAsync(comment.Id, taskId, userId_1));
+        Assert.False(await repo.ExistsInTaskAndOwnedByUserAsync(comment.Id, taskId, userId_2));
     }
 
     /// <summary>
