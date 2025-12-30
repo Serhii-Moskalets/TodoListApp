@@ -8,7 +8,7 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteAllTaskAccessesB
 /// Handles the <see cref="DeleteAllTaskAccessesByTaskIdCommand"/> to remove all user-task access entries for a specific task.
 /// </summary>
 public class DeleteAllTaskAccessesByTaskIdCommandHandler(IUnitOfWork unitOfWork)
-    : HandlerBase(unitOfWork), ICommandHandler<DeleteAllTaskAccessesByTaskIdCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteAllTaskAccessesByTaskIdCommand, bool>
 {
     /// <summary>
     /// Processes the command to delete all user-task access entries for a given task.

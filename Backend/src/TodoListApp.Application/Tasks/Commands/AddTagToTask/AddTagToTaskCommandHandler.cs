@@ -8,7 +8,7 @@ namespace TodoListApp.Application.Tasks.Commands.AddTagToTask;
 /// Handles the <see cref="AddTagToTaskCommand"/> by associating a tag with a specific task for a user.
 /// </summary>
 public class AddTagToTaskCommandHandler(IUnitOfWork unitOfWork)
-    : HandlerBase(unitOfWork), ICommandHandler<AddTagToTaskCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<AddTagToTaskCommand, bool>
 {
     /// <summary>
     /// Handles the <see cref="AddTagToTaskCommand"/>.

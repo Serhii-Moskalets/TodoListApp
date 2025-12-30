@@ -11,7 +11,7 @@ namespace TodoListApp.Application.Tag.Commands.DeleteTag;
 public class DeleteTagCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<DeleteTagCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<DeleteTagCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteTagCommand, bool>
 {
     private readonly IValidator<DeleteTagCommand> _validator = validator;
 

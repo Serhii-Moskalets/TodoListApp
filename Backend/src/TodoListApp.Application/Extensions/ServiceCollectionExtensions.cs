@@ -91,40 +91,40 @@ public static class ServiceCollectionExtensions
     private static void AddApplicationHandlers(this IServiceCollection services)
     {
         // --- Tag Handlers ---
-        services.AddScoped<ICommandHandler<CreateTagCommand>, CreateTagCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteTagCommand>, DeleteTagCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateTagCommand, Guid>, CreateTagCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTagCommand, bool>, DeleteTagCommandHandler>();
         services.AddScoped<IQueryHandler<GetAllTagsQuery, IEnumerable<TagDto>>, GetAllTagsQueryHandler>();
 
         // --- Comment Handlers ---
-        services.AddScoped<ICommandHandler<CreateCommentCommand>, CreateCommentCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteCommentCommand>, DeleteCommentCommandHandler>();
-        services.AddScoped<ICommandHandler<UpdateCommentCommand>, UpdateCommentCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateCommentCommand, Guid>, CreateCommentCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteCommentCommand, bool>, DeleteCommentCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateCommentCommand, bool>, UpdateCommentCommandHandler>();
         services.AddScoped<IQueryHandler<GetCommentsQuery, IEnumerable<CommentDto>>, GetCommentsQueryHandler>();
 
         // --- Task Handlers ---
-        services.AddScoped<ICommandHandler<AddTagToTaskCommand>, AddTagToTaskCommandHandler>();
-        services.AddScoped<ICommandHandler<ChangeTaskStatusCommand>, ChangeTaskStatusCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteOverdueTasksCommand>, DeleteOverdueTasksCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteTaskCommand>, DeleteTaskCommandHandler>();
-        services.AddScoped<ICommandHandler<RemoveTagFromTaskCommand>, RemoveTagFromTaskCommandHandler>();
-        services.AddScoped<ICommandHandler<UpdateTaskCommand>, UpdateTaskCommandHandler>();
-        services.AddScoped<ICommandHandler<CreateTaskCommand>, CreateTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateTaskCommand, Guid>, CreateTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskCommand, bool>, DeleteTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateTaskCommand, bool>, UpdateTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<AddTagToTaskCommand, bool>, AddTagToTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<ChangeTaskStatusCommand, bool>, ChangeTaskStatusCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteOverdueTasksCommand, bool>, DeleteOverdueTasksCommandHandler>();
+        services.AddScoped<ICommandHandler<RemoveTagFromTaskCommand, bool>, RemoveTagFromTaskCommandHandler>();
         services.AddScoped<IQueryHandler<GetTaskByIdQuery, TaskDto>, GetTaskByIdQueryHandler>();
         services.AddScoped<IQueryHandler<GetTaskByTitleQuery, IEnumerable<TaskDto>>, GetTaskByTitleQueryHandler>();
         services.AddScoped<IQueryHandler<GetTasksQuery, IEnumerable<TaskDto>>, GetTasksQueryHandler>();
 
         // --- TaskList Handlers ---
-        services.AddScoped<ICommandHandler<CreateTaskListCommand>, CreateTaskListCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteTaskListCommand>, DeleteTaskListCommandHandler>();
-        services.AddScoped<ICommandHandler<UpdateTaskListCommand>, UpdateTaskListCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateTaskListCommand, Guid>, CreateTaskListCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskListCommand, bool>, DeleteTaskListCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateTaskListCommand, bool>, UpdateTaskListCommandHandler>();
         services.AddScoped<IQueryHandler<GetAllTaskListQuery, IEnumerable<TaskListDto>>, GetAllTaskListQueryHandler>();
 
         // --- UserTaskAccess Handlers ---
-        services.AddScoped<ICommandHandler<CreateUserTaskAccessCommand>, CreateUserTaskAccessCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteAllTaskAccessesByTaskIdCommand>, DeleteAllTaskAccessesByTaskIdCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteAllTaskAccessesByUserIdCommand>, DeleteAllTaskAccessesByUserIdCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteTaskAccessByUserEmailCommand>, DeleteTaskAccessByUserEmailCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteTaskAccessByIdCommand>, DeleteTaskAccessByIdCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateUserTaskAccessCommand, bool>, CreateUserTaskAccessCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteAllTaskAccessesByTaskIdCommand, bool>, DeleteAllTaskAccessesByTaskIdCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteAllTaskAccessesByUserIdCommand, bool>, DeleteAllTaskAccessesByUserIdCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskAccessByUserEmailCommand, bool>, DeleteTaskAccessByUserEmailCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskAccessByIdCommand, bool>, DeleteTaskAccessByIdCommandHandler>();
         services.AddScoped<IQueryHandler<GetSharedTaskByIdQuery, TaskDto>, GetSharedTaskByIdQueryHandler>();
         services.AddScoped<IQueryHandler<GetTaskWithSharedUsersQuery, TaskAccessListDto>, GetTaskWithSharedUsersQueryHandler>();
         services.AddScoped<IQueryHandler<GetSharedTasksByUserIdQuery, IEnumerable<TaskDto>>, GetSharedTasksByUserIdQueryHandler>();

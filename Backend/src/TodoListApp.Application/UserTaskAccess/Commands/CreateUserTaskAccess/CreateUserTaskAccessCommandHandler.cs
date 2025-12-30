@@ -12,7 +12,7 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
 public class CreateUserTaskAccessCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<CreateUserTaskAccessCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<CreateUserTaskAccessCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<CreateUserTaskAccessCommand, bool>
 {
     private readonly IValidator<CreateUserTaskAccessCommand> _validator = validator;
 

@@ -12,7 +12,7 @@ namespace TodoListApp.Application.Tasks.Commands.DeleteOverdueTasks;
 public class DeleteOverdueTasksCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<DeleteOverdueTasksCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<DeleteOverdueTasksCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteOverdueTasksCommand, bool>
 {
     private readonly IValidator<DeleteOverdueTasksCommand> _validator = validator;
 

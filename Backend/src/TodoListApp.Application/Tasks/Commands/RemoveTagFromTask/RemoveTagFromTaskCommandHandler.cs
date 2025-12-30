@@ -13,7 +13,7 @@ namespace TodoListApp.Application.Tasks.Commands.RemoveTagFromTask;
 /// </remarks>
 /// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
 public class RemoveTagFromTaskCommandHandler(IUnitOfWork unitOfWork)
-    : HandlerBase(unitOfWork), ICommandHandler<RemoveTagFromTaskCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<RemoveTagFromTaskCommand, bool>
 {
     /// <summary>
     /// Handles the removal of a tag for a specific task and user.

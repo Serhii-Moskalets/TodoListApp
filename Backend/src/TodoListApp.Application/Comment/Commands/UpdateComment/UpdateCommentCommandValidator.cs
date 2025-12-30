@@ -19,7 +19,7 @@ public class UpdateCommentCommandValidator : AbstractValidator<UpdateCommentComm
     {
         this.RuleFor(x => x.CommentId)
             .MustAsync(async (command, id, ct) =>
-                await unitOfWork.Comments.IsCommentOwnerAsync(id, command.UserId, ct))
+                await unitOfWork.Comments.ExistsInTaskAndOwnedByUserAsync(id, command.TaskId, command.UserId, ct))
             .WithMessage("Comment not found or does not belong to the user.");
 
         this.RuleFor(x => x.NewText)

@@ -12,7 +12,7 @@ namespace TodoListApp.Application.TaskList.Commands.UpdateTaskList;
 public class UpdateTaskListCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<UpdateTaskListCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<UpdateTaskListCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<UpdateTaskListCommand, bool>
 {
     private readonly IValidator<UpdateTaskListCommand> _validator = validator;
 

@@ -11,7 +11,7 @@ namespace TodoListApp.Application.Tasks.Commands.ChangeTaskStatus;
 /// that belongs to a specific user.
 /// </summary>
 public class ChangeTaskStatusCommandHandler(IUnitOfWork unitOfWork)
-    : HandlerBase(unitOfWork), ICommandHandler<ChangeTaskStatusCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<ChangeTaskStatusCommand, bool>
 {
     /// <summary>
     /// Processes the command to change the status of an existing task.

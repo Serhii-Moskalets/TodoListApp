@@ -11,7 +11,7 @@ namespace TodoListApp.Application.Comment.Commands.UpdateComment;
 public class UpdateCommentCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<UpdateCommentCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<UpdateCommentCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<UpdateCommentCommand, bool>
 {
     private readonly IValidator<UpdateCommentCommand> _validator = validator;
 
@@ -37,7 +37,7 @@ public class UpdateCommentCommandHandler(
         }
 
         var commentEntity = await this.UnitOfWork.Comments.GetByIdAsync(command.CommentId, false, cancellationToken);
-        if (commentEntity is null || commentEntity.UserId != command.UserId)
+        if (commentEntity is null)
         {
             return await Result<bool>.FailureAsync(
                 TinyResult.Enums.ErrorCode.NotFound,

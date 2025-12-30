@@ -11,7 +11,7 @@ namespace TodoListApp.Application.Tasks.Commands.DeleteTask;
 public class DeleteTaskCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<DeleteTaskCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskCommand, bool>
 {
     private readonly IValidator<DeleteTaskCommand> _validator = validator;
 

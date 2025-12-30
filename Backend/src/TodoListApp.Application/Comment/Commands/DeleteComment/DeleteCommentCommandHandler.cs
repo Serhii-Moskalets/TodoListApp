@@ -11,7 +11,7 @@ namespace TodoListApp.Application.Comment.Commands.DeleteComment;
 public class DeleteCommentCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<DeleteCommentCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<DeleteCommentCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteCommentCommand, bool>
 {
     private readonly IValidator<DeleteCommentCommand> _validator = validator;
 

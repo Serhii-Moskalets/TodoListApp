@@ -11,7 +11,7 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessById;
 public class DeleteTaskAccessByIdCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<DeleteTaskAccessByIdCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskAccessByIdCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskAccessByIdCommand, bool>
 {
     private readonly IValidator<DeleteTaskAccessByIdCommand> _validator = validator;
 
