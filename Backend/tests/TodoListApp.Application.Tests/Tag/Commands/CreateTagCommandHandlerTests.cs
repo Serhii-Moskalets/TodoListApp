@@ -1,10 +1,14 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using Moq;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Tag.Commands.CreateTag;
+using TodoListApp.Application.Tasks.Commands.AddTagToTask;
 using TodoListApp.Domain.Entities;
+using FVResult = FluentValidation.Results.ValidationResult;
 
 namespace TodoListApp.Application.Tests.Tag.Commands;
 
@@ -24,13 +28,18 @@ public class CreateTagCommandHandlerTests
     {
         var validatorMock = new Mock<IValidator<CreateTagCommand>>();
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTagCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult([new ValidationFailure("Name", "Required")]));
+                     .ReturnsAsync(new FVResult([new ValidationFailure("Name", "Required")]));
 
         var uowMock = new Mock<IUnitOfWork>();
 
-        var handler = new CreateTagCommandHandler(uowMock.Object, validatorMock.Object);
+        var addTagToTaskHandlerMock = new Mock<ICommandHandler<AddTagToTaskCommand, bool>>();
 
-        var command = new CreateTagCommand(Guid.NewGuid(), string.Empty);
+        var handler = new CreateTagCommandHandler(
+            uowMock.Object,
+            validatorMock.Object,
+            addTagToTaskHandlerMock.Object);
+
+        var command = new CreateTagCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
 
         var result = await handler.Handle(command, CancellationToken.None);
 
@@ -48,7 +57,7 @@ public class CreateTagCommandHandlerTests
     {
         var validatorMock = new Mock<IValidator<CreateTagCommand>>();
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTagCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult());
+                     .ReturnsAsync(new FVResult());
 
         var tagRepoMock = new Mock<ITagRepository>();
         tagRepoMock.Setup(r => r.ExistsByNameAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -58,10 +67,19 @@ public class CreateTagCommandHandlerTests
         uowMock.Setup(u => u.Tags).Returns(tagRepoMock.Object);
         uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var handler = new CreateTagCommandHandler(uowMock.Object, validatorMock.Object);
+        var addTagToTaskHandlerMock = new Mock<ICommandHandler<AddTagToTaskCommand, bool>>();
+        addTagToTaskHandlerMock
+            .Setup(h => h.Handle(It.IsAny<AddTagToTaskCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(await Result<bool>.SuccessAsync(true));
+
+        var handler = new CreateTagCommandHandler(
+            uowMock.Object,
+            validatorMock.Object,
+            addTagToTaskHandlerMock.Object);
 
         var userId = Guid.NewGuid();
-        var command = new CreateTagCommand(userId, "Tag");
+        var task = new TaskEntity(Guid.NewGuid(), Guid.NewGuid(), "Task");
+        var command = new CreateTagCommand(userId, task.Id, "Tag");
 
         var result = await handler.Handle(command, CancellationToken.None);
 
@@ -79,7 +97,7 @@ public class CreateTagCommandHandlerTests
     {
         var validatorMock = new Mock<IValidator<CreateTagCommand>>();
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTagCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult());
+                     .ReturnsAsync(new FVResult());
 
         var tagRepoMock = new Mock<ITagRepository>();
         tagRepoMock.SetupSequence(r => r.ExistsByNameAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
@@ -90,10 +108,18 @@ public class CreateTagCommandHandlerTests
         uowMock.Setup(u => u.Tags).Returns(tagRepoMock.Object);
         uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var handler = new CreateTagCommandHandler(uowMock.Object, validatorMock.Object);
+        var addTagToTaskHandlerMock = new Mock<ICommandHandler<AddTagToTaskCommand, bool>>();
+        addTagToTaskHandlerMock
+            .Setup(h => h.Handle(It.IsAny<AddTagToTaskCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(await Result<bool>.SuccessAsync(true));
+
+        var handler = new CreateTagCommandHandler(
+            uowMock.Object,
+            validatorMock.Object,
+            addTagToTaskHandlerMock.Object);
 
         var userId = Guid.NewGuid();
-        var command = new CreateTagCommand(userId, "Tag");
+        var command = new CreateTagCommand(userId, Guid.NewGuid(), "Tag");
 
         var result = await handler.Handle(command, CancellationToken.None);
 

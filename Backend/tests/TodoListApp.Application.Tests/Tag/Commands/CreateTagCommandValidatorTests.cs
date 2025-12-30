@@ -16,13 +16,13 @@ public class CreateTagCommandValidatorTests
     [Fact]
     public void Validate_ShouldHaveError_WhenNameIsEmpty()
     {
-        var command = new CreateTagCommand(Guid.NewGuid(), string.Empty);
+        var command = new CreateTagCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
 
         var result = this._validator.Validate(command);
 
         Assert.False(result.IsValid);
         var error = Assert.Single(result.Errors, e => e.PropertyName == "Name");
-        Assert.Equal("Tag name cannot be empty.", error.ErrorMessage);
+        Assert.Equal("Tag name cannot be null or empty.", error.ErrorMessage);
     }
 
     /// <summary>
@@ -32,7 +32,7 @@ public class CreateTagCommandValidatorTests
     public void Validate_ShouldHaveError_WhenNameIsTooLong()
     {
         var longName = new string('a', 51);
-        var command = new CreateTagCommand(Guid.NewGuid(), longName);
+        var command = new CreateTagCommand(Guid.NewGuid(), Guid.NewGuid(), longName);
 
         var result = this._validator.Validate(command);
 
@@ -47,7 +47,7 @@ public class CreateTagCommandValidatorTests
     [Fact]
     public void Validate_ShouldNotHaveError_WhenNameIsValid()
     {
-        var command = new CreateTagCommand(Guid.NewGuid(), "Tag");
+        var command = new CreateTagCommand(Guid.NewGuid(), Guid.NewGuid(), "Tag");
 
         var result = this._validator.Validate(command);
 
