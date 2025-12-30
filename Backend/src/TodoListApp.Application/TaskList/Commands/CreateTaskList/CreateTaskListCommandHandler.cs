@@ -14,7 +14,7 @@ namespace TodoListApp.Application.TaskList.Commands.CreateTaskList;
 public class CreateTaskListCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<CreateTaskListCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<CreateTaskListCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<CreateTaskListCommand, Guid>
 {
     private readonly IValidator<CreateTaskListCommand> _validator = validator;
 
@@ -24,12 +24,12 @@ public class CreateTaskListCommandHandler(
     /// <param name="command">The command containing the user ID and title for the new task list.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A <see cref="Result{T}"/> indicating whether the operation was successful.</returns>
-    public async Task<Result<bool>> Handle(CreateTaskListCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(CreateTaskListCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)
         {
-            return validation;
+            return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
         ArgumentNullException.ThrowIfNull(command.Title);
@@ -47,6 +47,6 @@ public class CreateTaskListCommandHandler(
         await this.UnitOfWork.TaskLists.AddAsync(taskListentity, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
-        return await Result<bool>.SuccessAsync(true);
+        return await Result<Guid>.SuccessAsync(taskListentity.Id);
     }
 }

@@ -14,7 +14,7 @@ namespace TodoListApp.Application.Tag.Commands.CreateTag;
 public class CreateTagCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<CreateTagCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<CreateTagCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<CreateTagCommand, Guid>
 {
     private readonly IValidator<CreateTagCommand> _validator = validator;
 
@@ -24,12 +24,12 @@ public class CreateTagCommandHandler(
     /// <param name="command">The command containing the user ID and name for the new tag.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A <see cref="Result{T}"/> indicating whether the operation was successful.</returns>
-    public async Task<Result<bool>> Handle(CreateTagCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(CreateTagCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)
         {
-            return validation;
+            return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
         var newName = command.Name;
@@ -45,6 +45,6 @@ public class CreateTagCommandHandler(
         await this.UnitOfWork.Tags.AddAsync(tagEntity, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
-        return await Result<bool>.SuccessAsync(true);
+        return await Result<Guid>.SuccessAsync(tagEntity.Id);
     }
 }

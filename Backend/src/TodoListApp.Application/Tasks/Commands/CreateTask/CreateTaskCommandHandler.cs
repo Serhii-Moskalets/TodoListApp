@@ -15,7 +15,7 @@ namespace TodoListApp.Application.Tasks.Commands.CreateTask;
 public class CreateTaskCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<CreateTaskCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<CreateTaskCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<CreateTaskCommand, Guid>
 {
     private readonly IValidator<CreateTaskCommand> _validator = validator;
 
@@ -25,12 +25,12 @@ public class CreateTaskCommandHandler(
     /// <param name="command">The <see cref="CreateTaskCommand"/> containing task details.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A <see cref="Result{Boolean}"/> indicating success or failure of the operation.</returns>
-    public async Task<Result<bool>> Handle(CreateTaskCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(CreateTaskCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)
         {
-            return validation;
+            return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
         ArgumentNullException.ThrowIfNull(command.Dto.Title);
@@ -44,6 +44,6 @@ public class CreateTaskCommandHandler(
         await this.UnitOfWork.Tasks.AddAsync(task, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
-        return await Result<bool>.SuccessAsync(true);
+        return await Result<Guid>.SuccessAsync(task.Id);
     }
 }
