@@ -66,25 +66,14 @@ public class CommentsController : BaseController
     /// if the operation succeeds; otherwise, a <see cref="BadRequestObjectResult"/>
     /// containing error details.
     /// </returns>
-    /// <response code="201">The comment was successfully created.</response>
-    /// <response code="400">The request is invalid.</response>
     [HttpPost]
     public async Task<IActionResult> CreateComment(
         [FromRoute] Guid taskId,
         [FromBody] CommentTextRequest request)
     {
         var command = new CreateCommentCommand(taskId, CurrentUserId, request.Text);
-
         var result = await this._createCommentHandler.Handle(command, this.HttpContext.RequestAborted);
-        if (!result.IsSuccess)
-        {
-            return this.HandleResult(result);
-        }
-
-        return this.CreatedAtAction(
-            nameof(this.GetComments),
-            new { taskId },
-            new { id = result.Value });
+        return this.HandleResult(result);
     }
 
     /// <summary>

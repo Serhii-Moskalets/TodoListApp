@@ -62,9 +62,7 @@ public class TagsController : BaseController
     {
         var command = new CreateTagCommand(CurrentUserId, taskId, request.Name);
         var result = await this._createTagHandler.Handle(command, this.HttpContext.RequestAborted);
-        return this.CreatedAtAction(
-            string.Empty,
-            new { id = result.Value });
+        return this.HandleResult(result);
     }
 
     /// <summary>

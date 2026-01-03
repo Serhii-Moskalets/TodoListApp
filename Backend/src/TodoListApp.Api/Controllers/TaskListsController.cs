@@ -65,22 +65,12 @@ public class TaskListsController : BaseController
     /// if the operation succeeds; otherwise, a <see cref="BadRequestObjectResult"/>
     /// containing error details.
     /// </returns>
-    /// <response code="201">The task list was successfully created.</response>
-    /// <response code="400">The request is invalid.</response>
     [HttpPost]
     public async Task<IActionResult> CreateTaskList([FromBody] TaskListTitleRequest request)
     {
         var command = new CreateTaskListCommand(CurrentUserId, request.Title);
         var result = await this._createTaskListHandler.Handle(command, this.HttpContext.RequestAborted);
-
-        if (!result.IsSuccess)
-        {
-            return this.HandleResult(result);
-        }
-
-        return this.CreatedAtAction(
-            nameof(this.GetAllTaskLists),
-            new { id = result.Value });
+        return this.HandleResult(result);
     }
 
     /// <summary>

@@ -144,15 +144,7 @@ public class TasksController : BaseController
         });
 
         var result = await this._createTaskHandler.Handle(command, this.HttpContext.RequestAborted);
-        if (!result.IsSuccess)
-        {
-            return this.HandleResult(result);
-        }
-
-        return this.CreatedAtAction(
-            nameof(this.GetAllTasks),
-            new { taskListId },
-            new { id = result.Value });
+        return this.HandleResult(result);
     }
 
     /// <summary>
