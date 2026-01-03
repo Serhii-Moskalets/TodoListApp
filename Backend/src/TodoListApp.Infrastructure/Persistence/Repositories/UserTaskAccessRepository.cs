@@ -33,7 +33,6 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     public async Task AddAsync(UserTaskAccessEntity entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
-
         await this._dbSet.AddAsync(entity, cancellationToken);
     }
 
@@ -42,12 +41,19 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// </summary>
     /// <param name="taskId">The ID of the task.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>A task representing the asynchronous delete operation.</returns>
-    public async Task DeleteAllByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default)
+    /// <returns>
+    /// A task that returns the number of deleted user-task access entries.
+    /// </returns>
+    public async Task<int> DeleteAllByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default)
     {
-        await this._dbSet
-        .Where(x => x.TaskId == taskId)
-        .ExecuteDeleteAsync(cancellationToken);
+        if (taskId == Guid.Empty)
+        {
+            return 0;
+        }
+
+        return await this._dbSet
+            .Where(x => x.TaskId == taskId)
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
     /// <summary>
@@ -55,10 +61,17 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// </summary>
     /// <param name="userId">The ID of the user.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>A task representing the asynchronous delete operation.</returns>
-    public async Task DeleteAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    /// <returns>
+    /// A task that returns the number of deleted user-task access entries.
+    /// </returns>
+    public async Task<int> DeleteAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        await this._dbSet
+        if (userId == Guid.Empty)
+        {
+            return 0;
+        }
+
+        return await this._dbSet
         .Where(x => x.UserId == userId)
         .ExecuteDeleteAsync(cancellationToken);
     }
@@ -69,40 +82,19 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// <param name="taskId">The ID of the task.</param>
     /// <param name="userId">The ID of the user.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>A task representing the asynchronous delete operation.</returns>
-    public async Task DeleteByTaskAndUserIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
+    /// <returns>
+    /// A task that returns the number of deleted user-task access entries.
+    /// </returns>
+    public async Task<int> DeleteByIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
     {
-        await this._dbSet
-        .Where(x => x.TaskId == taskId && x.UserId == userId)
-        .ExecuteDeleteAsync(cancellationToken);
-    }
+        if (taskId == Guid.Empty || userId == Guid.Empty)
+        {
+            return 0;
+        }
 
-    /// <summary>
-    /// Deletes a user-task access entry by the user's email for a specific task.
-    /// </summary>
-    /// <param name="taskId">The ID of the task for which access should be removed.</param>
-    /// <param name="email">The email of the user whose access should be deleted.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>A task representing the asynchronous delete operation.</returns>
-    public async Task DeleteByUserEmailAndTaskIdAsync(Guid taskId, string email, CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(email);
-        await this._dbSet
-            .Where(x => x.TaskId == taskId && x.User.Email == email)
+        return await this._dbSet
+            .Where(x => x.TaskId == taskId && x.UserId == userId)
             .ExecuteDeleteAsync(cancellationToken);
-    }
-
-    /// <summary>
-    /// Checks whether a user task access record exists for the given task and user.
-    /// </summary>
-    /// <param name="taskId">The task identifier.</param>
-    /// <param name="email">The user email.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns><c>true</c> if the access record exists; otherwise, <c>false</c>.</returns>
-    public async Task<bool> ExistsTaskAccessWithEmail(Guid taskId, string email, CancellationToken cancellationToken = default)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(email);
-        return await this._dbSet.AnyAsync(x => x.TaskId == taskId && x.User.Email == email, cancellationToken);
     }
 
     /// <summary>
@@ -115,7 +107,14 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// A task that returns <c>true</c> if the user has access; otherwise, <c>false</c>.
     /// </returns>
     public async Task<bool> ExistsAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
-        => await this._dbSet.AnyAsync(x => x.TaskId == taskId && x.UserId == userId, cancellationToken);
+    {
+        if (taskId == Guid.Empty || userId == Guid.Empty)
+        {
+            return false;
+        }
+
+        return await this._dbSet.AnyAsync(x => x.TaskId == taskId && x.UserId == userId, cancellationToken);
+    }
 
     /// <summary>
     /// Retrieves a specific user-task access entry by task ID and user ID.
@@ -127,13 +126,20 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// A task that returns the <see cref="UserTaskAccessEntity"/> if found; otherwise, <c>null</c>.
     /// </returns>
     public async Task<UserTaskAccessEntity?> GetByTaskAndUserIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
-        => await this._dbSet
+    {
+        if (taskId == Guid.Empty || userId == Guid.Empty)
+        {
+            return null;
+        }
+
+        return await this._dbSet
         .Include(x => x.User)
         .Include(x => x.Task)
             .ThenInclude(t => t.Comments)
         .Include(x => x.Task)
             .ThenInclude(t => t.Tag)
         .FirstOrDefaultAsync(x => x.TaskId == taskId && x.UserId == userId, cancellationToken);
+    }
 
     /// <summary>
     /// Retrieves all user-task access entries for a specific task, including user details.
@@ -145,12 +151,20 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// A task that returns a read-only collection of <see cref="UserTaskAccessEntity"/> entries
     /// representing all users who currently have access to the task.
     /// </returns>
-    public async Task<IReadOnlyCollection<UserTaskAccessEntity>> GetSharedTasksByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default)
-        => await this._dbSet
-        .Include(x => x.User)
-        .Include(x => x.Task)
-        .Where(x => x.TaskId == taskId)
-        .ToListAsync(cancellationToken);
+    public async Task<IReadOnlyCollection<UserTaskAccessEntity>> GetUserTaskAccessByTaskIdAsync(
+        Guid taskId,
+        CancellationToken cancellationToken = default)
+    {
+        if (taskId == Guid.Empty)
+        {
+            return Array.Empty<UserTaskAccessEntity>();
+        }
+
+        return await this._dbSet
+            .Include(x => x.User)
+            .Where(x => x.TaskId == taskId)
+            .ToListAsync(cancellationToken);
+    }
 
     /// <summary>
     /// Retrieves all user-task access entries for a specific user.
@@ -162,12 +176,19 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// entries representing the tasks shared with the user.
     /// </returns>
     public async Task<IReadOnlyCollection<UserTaskAccessEntity>> GetSharedTasksByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-        => await this._dbSet
-        .Include(x => x.User)
-        .Include(x => x.Task)
-            .ThenInclude(t => t.Comments)
-        .Include(x => x.Task)
-            .ThenInclude(t => t.Tag)
-        .Where(x => x.UserId == userId)
-        .ToListAsync(cancellationToken);
+    {
+        if (userId == Guid.Empty)
+        {
+            return Array.Empty<UserTaskAccessEntity>();
+        }
+
+        return await this._dbSet
+            .Include(x => x.User)
+            .Include(x => x.Task)
+                .ThenInclude(t => t.Comments)
+            .Include(x => x.Task)
+                .ThenInclude(t => t.Tag)
+            .Where(x => x.UserId == userId)
+            .ToListAsync(cancellationToken);
+    }
 }
