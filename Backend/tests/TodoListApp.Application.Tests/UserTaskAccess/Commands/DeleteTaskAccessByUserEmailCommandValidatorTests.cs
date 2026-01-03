@@ -1,103 +1,63 @@
-﻿using Moq;
-using TodoListApp.Application.Abstractions.Interfaces.Repositories;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
-using TodoListApp.Application.UserTaskAccess.Commands.DeleteByTaskAccessByUserEmail;
-using TodoListApp.Domain.Entities;
+﻿using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessByUserEmail;
 
 namespace TodoListApp.Application.Tests.UserTaskAccess.Commands;
 
 /// <summary>
 /// Unit tests for <see cref="DeleteTaskAccessByUserEmailCommandValidator"/>.
-/// Verifies validation rules for deleting a user-task access entry by user email.
+/// Tests the validation rules for deleting user-task access,
+/// focusing on email requirements and formatting.
 /// </summary>
 public class DeleteTaskAccessByUserEmailCommandValidatorTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<ITaskRepository> _tasksRepoMock = new();
-    private readonly Mock<IUserTaskAccessRepository> _userTaskAccessRepoMock = new();
+    private readonly DeleteTaskAccessByUserEmailCommandValidator _validator = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DeleteTaskAccessByUserEmailCommandValidatorTests"/> class.
-    /// Sets up repository mocks and configures the unit of work to return them.
+    /// Ensures that the validator produces an error when the email is null, empty, or whitespace.
     /// </summary>
-    public DeleteTaskAccessByUserEmailCommandValidatorTests()
+    /// <param name="email">The email value to test.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    [InlineData(" ")]
+    public void Validator_ShouldHaveError_WhenEmailIsNullOrEmpty(string? email)
     {
-        this._unitOfWorkMock.Setup(u => u.Tasks).Returns(this._tasksRepoMock.Object);
-        this._unitOfWorkMock.Setup(u => u.UserTaskAccesses).Returns(this._userTaskAccessRepoMock.Object);
-    }
+        var deleteCommand = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), email);
 
-    /// <summary>
-    /// Tests that validation fails when the user-task access does not exist.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task Validate_ShouldHaveError_WhenAccessDoesNotExist()
-    {
-        var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), "test@example.com");
-
-        this._userTaskAccessRepoMock
-            .Setup(r => r.ExistsTaskAccessWithEmail(command.TaskId, command.Email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        var validator = new DeleteTaskAccessByUserEmailCommandValidator(this._unitOfWorkMock.Object);
-
-        var result = await validator.ValidateAsync(command);
+        var result = this._validator.Validate(deleteCommand);
 
         Assert.False(result.IsValid);
         var error = Assert.Single(result.Errors, e => e.PropertyName == "Email");
-        Assert.Equal("Task access is not found.", error.ErrorMessage);
+        Assert.Equal("Email cannot be null or empty.", error.ErrorMessage);
     }
 
     /// <summary>
-    /// Tests that validation fails when the user is not the owner of the task.
+    /// Ensures that the validator produces an error when the email format is invalid.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task Validate_ShouldHaveError_WhenUserIsNotTaskOwner()
+    /// <param name="email">The email value to test.</param>
+    [Theory]
+    [InlineData("sometext")]
+    [InlineData("test@")]
+    [InlineData("@gsss")]
+    public void Validator_ShouldHaveError_WhenEmailIsInvalid(string? email)
     {
-        var userId = Guid.NewGuid();
-        var taskId = Guid.NewGuid();
-        var command = new DeleteTaskAccessByUserEmailCommand(taskId, userId, "test@example.com");
+        var deleteCommand = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), email);
 
-        this._userTaskAccessRepoMock
-            .Setup(r => r.ExistsTaskAccessWithEmail(taskId, command.Email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        this._tasksRepoMock
-            .Setup(r => r.GetByIdAsync(taskId, true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new TaskEntity(Guid.NewGuid(), Guid.NewGuid(), "Task Title"));
-
-        var validator = new DeleteTaskAccessByUserEmailCommandValidator(this._unitOfWorkMock.Object);
-
-        var result = await validator.ValidateAsync(command);
+        var result = this._validator.Validate(deleteCommand);
 
         Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "TaskId");
-        Assert.Equal("Only task owner can delete access.", error.ErrorMessage);
+        var error = Assert.Single(result.Errors, e => e.PropertyName == "Email");
+        Assert.Equal("Email address is incorrect.", error.ErrorMessage);
     }
 
     /// <summary>
-    /// Tests that validation passes when the user-task access exists and the user is the owner of the task.
+    /// Ensures that the validator passes when a valid email is provided.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldNotHaveError_WhenAccessExistsAndUserIsOwner()
+    public void Validator_ShouldNotHaveError_WhenEmailIsValid()
     {
-        var userId = Guid.NewGuid();
-        var taskId = Guid.NewGuid();
-        var command = new DeleteTaskAccessByUserEmailCommand(taskId, userId, "test@example.com");
+        var deleteCommand = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), "test@test.com");
 
-        this._userTaskAccessRepoMock
-            .Setup(r => r.ExistsTaskAccessWithEmail(taskId, command.Email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        this._tasksRepoMock
-            .Setup(r => r.GetByIdAsync(taskId, true, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new TaskEntity(userId, Guid.NewGuid(), "Task Title"));
-
-        var validator = new DeleteTaskAccessByUserEmailCommandValidator(this._unitOfWorkMock.Object);
-
-        var result = await validator.ValidateAsync(command);
+        var result = this._validator.Validate(deleteCommand);
 
         Assert.True(result.IsValid);
     }
