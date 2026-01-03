@@ -1,4 +1,5 @@
 ﻿using TinyResult;
+using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.UserTaskAccess.Dtos;
@@ -24,17 +25,27 @@ public class GetTaskWithSharedUsersQueryHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<TaskAccessListDto>> Handle(GetTaskWithSharedUsersQuery query, CancellationToken cancellationToken)
     {
-        if (!await this.UnitOfWork.Tasks.IsTaskOwnerAsync(query.TaskId, query.UserId, cancellationToken))
+        var task = await this.UnitOfWork.Tasks.GetByIdAsync(query.TaskId);
+        if (task is null)
+        {
+            return await Result<TaskAccessListDto>.FailureAsync(ErrorCode.NotFound, "Task not found.");
+        }
+
+        if (task.OwnerId != query.OwnerId)
         {
             return await Result<TaskAccessListDto>.FailureAsync(
-                TinyResult.Enums.ErrorCode.InvalidOperation,
+                ErrorCode.InvalidOperation,
                 "Only task owner can retrieve shared access.");
         }
 
         var utaEntityList = await this.UnitOfWork.UserTaskAccesses
-            .GetSharedTasksByTaskIdAsync(query.TaskId, cancellationToken);
+            .GetUserTaskAccessByTaskIdAsync(query.TaskId, cancellationToken);
 
-        return await Result<TaskAccessListDto>.SuccessAsync(
-            TaskAccessForOwnerMapper.MapToTaskAccess(utaEntityList));
+        return await Result<TaskAccessListDto>.SuccessAsync(new TaskAccessListDto
+        {
+            Id = task.Id,
+            Title = task.Title,
+            Users = TaskAccessForOwnerMapper.Map(utaEntityList),
+        });
     }
 }
