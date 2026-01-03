@@ -1,9 +1,9 @@
 ﻿using TodoListApp.Application.Abstractions.Messaging;
 
-namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteAllTaskAccessesByUserId;
+namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessesByUser;
 
 /// <summary>
 /// Represents a command to delete all user-task access entries for a specific user.
 /// </summary>
-public record DeleteAllTaskAccessesByUserIdCommand(Guid UserId)
+public record DeleteTaskAccessesByUserCommand(Guid UserId)
     : ICommand;
