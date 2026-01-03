@@ -34,12 +34,13 @@ public class GetTaskWithSharedUsersQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnFailure_WhenUserIsNotTaskOwner()
     {
-        var taskId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var query = new GetTaskWithSharedUsersQuery(taskId, userId);
+        var taskOwnerId = Guid.NewGuid();
+        var requestingUserId = Guid.NewGuid();
+        var task = new TaskEntity(taskOwnerId, Guid.NewGuid(), "Task");
+        var query = new GetTaskWithSharedUsersQuery(task.Id, requestingUserId);
 
-        this._tasksRepoMock.Setup(r => r.IsTaskOwnerAsync(taskId, userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        this._tasksRepoMock.Setup(r => r.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
 
         var handler = new GetTaskWithSharedUsersQueryHandler(this._unitOfWorkMock.Object);
         var result = await handler.Handle(query, CancellationToken.None);
@@ -55,37 +56,33 @@ public class GetTaskWithSharedUsersQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnSharedUsers_WhenUserIsTaskOwner()
     {
-        var taskId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var query = new GetTaskWithSharedUsersQuery(taskId, userId);
+        // Arrange
+        var ownerId = Guid.NewGuid();
+        var task = new TaskEntity(ownerId, Guid.NewGuid(), "Task");
 
-        this._tasksRepoMock.Setup(r => r.IsTaskOwnerAsync(taskId, userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        this._tasksRepoMock.Setup(r => r.GetByIdAsync(task.Id))
+            .ReturnsAsync(task);
 
         var sharedAccessList = new List<UserTaskAccessEntity>
         {
-            new(taskId, Guid.NewGuid())
-            {
-                User = new UserEntity("John1", "john1", "john1@example.com", "hash"),
-                Task = new TaskEntity(userId, Guid.NewGuid(), "Task 1"),
-            },
-            new(taskId, Guid.NewGuid())
-            {
-                User = new UserEntity("John2", "john2", "john2@example.com", "hash"),
-                Task = new TaskEntity(userId, Guid.NewGuid(), "Task 1"),
-            },
+            new(task.Id, Guid.NewGuid()) { User = new UserEntity("John1", "john1", "john1@example.com", "hash") },
+            new(task.Id, Guid.NewGuid()) { User = new UserEntity("John2", "john2", "john2@example.com", "hash") },
         };
 
-        this._userTaskAccessRepoMock.Setup(r => r.GetSharedTasksByTaskIdAsync(taskId, It.IsAny<CancellationToken>()))
+        this._userTaskAccessRepoMock.Setup(r => r.GetUserTaskAccessByTaskIdAsync(task.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(sharedAccessList);
 
+        var query = new GetTaskWithSharedUsersQuery(task.Id, ownerId);
         var handler = new GetTaskWithSharedUsersQueryHandler(this._unitOfWorkMock.Object);
+
         var result = await handler.Handle(query, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        var mapped = TaskAccessForOwnerMapper.MapToTaskAccess(sharedAccessList);
-        Assert.Contains(mapped.Users, u => u.Email == "john1@example.com");
-        Assert.Contains(mapped.Users, u => u.Email == "john2@example.com");
+        Assert.Equal(task.Id, result.Value!.Id);
+        Assert.Equal("Task", result.Value.Title);
+        Assert.Equal(2, result.Value.Users.Count);
+        Assert.Contains(result.Value.Users, u => u.Email == "john1@example.com");
+        Assert.Contains(result.Value.Users, u => u.Email == "john2@example.com");
     }
 }
