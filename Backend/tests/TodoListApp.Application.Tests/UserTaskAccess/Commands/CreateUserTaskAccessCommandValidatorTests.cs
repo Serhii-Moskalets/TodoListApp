@@ -1,92 +1,63 @@
-﻿using Moq;
-using TodoListApp.Application.Abstractions.Interfaces.Repositories;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
-using TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
+﻿using TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
 
 namespace TodoListApp.Application.Tests.UserTaskAccess.Commands;
 
 /// <summary>
 /// Unit tests for <see cref="CreateUserTaskAccessCommandValidator"/>.
-/// Tests validation rules for creating user-task access.
+/// Tests the validation rules for creating user-task access,
+/// focusing on email requirements and formatting.
 /// </summary>
 public class CreateUserTaskAccessCommandValidatorTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly CreateUserTaskAccessCommandValidator _validator = new();
 
     /// <summary>
-    /// Tests that validation fails when the user already has access to the task.
+    /// Ensures that the validator produces an error when the email is null, empty, or whitespace.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task Validate_ShouldHaveError_WhenUserAlreadyHasAccess()
+    /// <param name="email">The email value to test.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    [InlineData(" ")]
+    public void Validator_ShouldHaveError_WhenEmailIsNullOrEmpty(string? email)
     {
-        var command = new CreateUserTaskAccessCommand(Guid.NewGuid(), Guid.NewGuid());
+        var createCommand = new CreateUserTaskAccessCommand(Guid.NewGuid(), email);
 
-        var userTaskAccessRepoMock = new Mock<IUserTaskAccessRepository>();
-        userTaskAccessRepoMock
-            .Setup(r => r.ExistsAsync(command.TaskId, command.UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        var tasksRepoMock = new Mock<ITaskRepository>();
-
-        this._unitOfWorkMock.Setup(u => u.UserTaskAccesses).Returns(userTaskAccessRepoMock.Object);
-        this._unitOfWorkMock.Setup(u => u.Tasks).Returns(tasksRepoMock.Object);
-
-        var validator = new CreateUserTaskAccessCommandValidator(this._unitOfWorkMock.Object);
-
-        var result = await validator.ValidateAsync(command);
+        var result = this._validator.Validate(createCommand);
 
         Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "TaskId");
-        Assert.Equal("User already has access to this task.", error.ErrorMessage);
+        var error = Assert.Single(result.Errors, e => e.PropertyName == "Email");
+        Assert.Equal("Email cannot be null or empty.", error.ErrorMessage);
     }
 
     /// <summary>
-    /// Tests that validation fails when the user is the owner of the task.
+    /// Ensures that the validator produces an error when the email format is invalid.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task Validate_ShouldHaveError_WhenUserIsTaskOwner()
+    /// <param name="email">The email value to test.</param>
+    [Theory]
+    [InlineData("sometext")]
+    [InlineData("test@")]
+    [InlineData("@gsss")]
+    public void Validator_ShouldHaveError_WhenEmailIsInvalid(string? email)
     {
-        var command = new CreateUserTaskAccessCommand(Guid.NewGuid(), Guid.NewGuid());
+        var createCommand = new CreateUserTaskAccessCommand(Guid.NewGuid(), email);
 
-        this._unitOfWorkMock.Setup(u => u.UserTaskAccesses.ExistsAsync(
-                command.TaskId, command.UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        this._unitOfWorkMock.Setup(u => u.Tasks.IsTaskOwnerAsync(
-                command.TaskId, command.UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        var validator = new CreateUserTaskAccessCommandValidator(this._unitOfWorkMock.Object);
-
-        var result = await validator.ValidateAsync(command);
+        var result = this._validator.Validate(createCommand);
 
         Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "TaskId");
-        Assert.Equal("User is owner in this task.", error.ErrorMessage);
+        var error = Assert.Single(result.Errors, e => e.PropertyName == "Email");
+        Assert.Equal("Email address is incorrect.", error.ErrorMessage);
     }
 
     /// <summary>
-    /// Tests that validation passes when the user does not have access and is not the owner.
+    /// Ensures that the validator passes when a valid email is provided.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldNotHaveError_WhenUserCanBeGrantedAccess()
+    public void Validator_ShouldNotHaveError_WhenEmailIsValid()
     {
-        var command = new CreateUserTaskAccessCommand(Guid.NewGuid(), Guid.NewGuid());
+        var createCommand = new CreateUserTaskAccessCommand(Guid.NewGuid(), "test@test.com");
 
-        this._unitOfWorkMock.Setup(u => u.UserTaskAccesses.ExistsAsync(
-                command.TaskId, command.UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        this._unitOfWorkMock.Setup(u => u.Tasks.IsTaskOwnerAsync(
-                command.TaskId, command.UserId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        var validator = new CreateUserTaskAccessCommandValidator(this._unitOfWorkMock.Object);
-
-        var result = await validator.ValidateAsync(command);
+        var result = this._validator.Validate(createCommand);
 
         Assert.True(result.IsValid);
     }
