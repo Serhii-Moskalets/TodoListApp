@@ -2,7 +2,8 @@
 using FluentValidation.Results;
 using Moq;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
-using TodoListApp.Application.UserTaskAccess.Commands.DeleteByTaskAccessByUserEmail;
+using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessByUserEmail;
+using TodoListApp.Domain.Entities;
 
 namespace TodoListApp.Application.Tests.UserTaskAccess.Commands;
 
@@ -22,7 +23,7 @@ public class DeleteTaskAccessByUserEmailCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnFailure_WhenValidationFails()
     {
-        var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), "test@example.com");
+        var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
 
         this._validatorMock
             .Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskAccessByUserEmailCommand>(), It.IsAny<CancellationToken>()))
@@ -48,15 +49,31 @@ public class DeleteTaskAccessByUserEmailCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldDeleteAccess_WhenValidationPasses()
     {
-        var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), "user@example.com");
+        var email = "test@test.com";
+        var user = new UserEntity("Test", "test", email, "hash");
+        var taskId = Guid.NewGuid();
+        var userId = user.Id;
+
+        var command = new DeleteTaskAccessByUserEmailCommand(taskId, userId, email);
 
         this._validatorMock
             .Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskAccessByUserEmailCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
 
-        this._unitOfWorkMock.Setup(u => u.UserTaskAccesses.DeleteByUserEmailAndTaskIdAsync(
-                command.TaskId, command.Email, It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        this._unitOfWorkMock.Setup(u => u.UserTaskAccesses.DeleteByIdAsync(
+                command.TaskId, Guid.NewGuid(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        this._unitOfWorkMock.Setup(u => u.Users.GetByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+
+        this._unitOfWorkMock.Setup(u => u.Tasks.IsTaskOwnerAsync(taskId, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        this._unitOfWorkMock.Setup(u => u.UserTaskAccesses.ExistsAsync(taskId, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        this._unitOfWorkMock.Setup(u => u.UserTaskAccesses.DeleteByIdAsync(taskId, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
 
         this._unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
@@ -67,10 +84,7 @@ public class DeleteTaskAccessByUserEmailCommandHandlerTests
 
         Assert.True(result.IsSuccess);
 
-        this._unitOfWorkMock.Verify(
-            u => u.UserTaskAccesses.DeleteByUserEmailAndTaskIdAsync(
-            command.TaskId, command.Email, It.IsAny<CancellationToken>()), Times.Once);
-
+        this._unitOfWorkMock.Verify(u => u.UserTaskAccesses.DeleteByIdAsync(taskId, userId, It.IsAny<CancellationToken>()), Times.Once);
         this._unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }
