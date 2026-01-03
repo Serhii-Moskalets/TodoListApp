@@ -21,5 +21,5 @@ public class TaskAccessListDto
     /// <summary>
     /// Gets the collection of users who have access to this task.
     /// </summary>
-    public IEnumerable<UserBriefDto> Users { get; init; } = Enumerable.Empty<UserBriefDto>();
+    public IReadOnlyCollection<UserBriefDto> Users { get; init; } = [];
 }
