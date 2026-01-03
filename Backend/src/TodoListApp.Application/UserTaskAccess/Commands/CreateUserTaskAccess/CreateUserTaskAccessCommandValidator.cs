@@ -1,31 +1,23 @@
-﻿using FluentValidation;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+﻿using System.Text.RegularExpressions;
+using FluentValidation;
 
 namespace TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
 
 /// <summary>
-/// Validates the <see cref="CreateUserTaskAccessCommand"/> to ensure that
-/// a user can be granted access to a task only if they do not already have access
-/// and are not the owner of the task.
+/// Validator for <see cref="CreateUserTaskAccessCommand"/>.
 /// </summary>
 public class CreateUserTaskAccessCommandValidator : AbstractValidator<CreateUserTaskAccessCommand>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateUserTaskAccessCommandValidator"/> class
-    /// and sets up validation rules for creating user-task access.
+    /// and configures validation rules for creating user-task access.
     /// </summary>
-    /// <param name="unitOfWork">
-    /// The unit of work used to access repositories for checking existing user-task access
-    /// and task ownership.
-    /// </param>
-    public CreateUserTaskAccessCommandValidator(IUnitOfWork unitOfWork)
+    public CreateUserTaskAccessCommandValidator()
     {
-        this.RuleFor(x => x.TaskId)
-           .MustAsync(async (command, id, ct) =>
-               !await unitOfWork.UserTaskAccesses.ExistsAsync(id, command.UserId, ct))
-           .WithMessage("User already has access to this task.")
-           .MustAsync(async (command, id, ct) =>
-               !await unitOfWork.Tasks.IsTaskOwnerAsync(id, command.UserId, ct))
-           .WithMessage("User is owner in this task.");
+        this.RuleFor(x => x.Email)
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty().WithMessage("Email cannot be null or empty.")
+            .Must(email => Regex.IsMatch(email!, @"^[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}$"))
+                .WithMessage("Email address is incorrect.");
     }
 }
