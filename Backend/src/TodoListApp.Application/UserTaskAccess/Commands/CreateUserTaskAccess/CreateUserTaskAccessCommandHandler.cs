@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using TinyResult;
+using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Entities;
@@ -19,11 +20,11 @@ public class CreateUserTaskAccessCommandHandler(
     /// <summary>
     /// Handles the <see cref="CreateUserTaskAccessCommand"/> to grant a user access to a task.
     /// </summary>
-    /// <param name="command">The command containing the task ID and user ID.</param>
+    /// <param name="command">The command containing the task ID and user email.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.</param>
     /// <returns>
     /// A <see cref="Result{T}"/> indicating success if the access was created,
-    /// or failure if the user already has access or is the task owner.
+    /// or failure if the user does not exist, is the task owner, or already has access.
     /// </returns>
     public async Task<Result<bool>> Handle(CreateUserTaskAccessCommand command, CancellationToken cancellationToken)
     {
@@ -33,11 +34,50 @@ public class CreateUserTaskAccessCommandHandler(
             return validation;
         }
 
-        var userTaskAccess = new UserTaskAccessEntity(command.TaskId, command.UserId);
+        var email = command.Email!;
 
-        await this.UnitOfWork.UserTaskAccesses.AddAsync(userTaskAccess, cancellationToken);
+        var user = await this.UnitOfWork.Users.GetByEmailAsync(email, cancellationToken);
+
+        if (user is null)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "User not found.");
+        }
+
+        if (await this.IsOwner(command.TaskId, user.Id, cancellationToken))
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.ValidationError, "Task cannot be shared with its owner.");
+        }
+
+        if (await this.HasAccess(command.TaskId, user.Id, cancellationToken))
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "Task already shared with this user.");
+        }
+
+        var access = new UserTaskAccessEntity(command.TaskId, user.Id);
+
+        await this.UnitOfWork.UserTaskAccesses.AddAsync(access, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);
     }
+
+    /// <summary>
+    /// Checks whether the specified user is the owner of the task.
+    /// </summary>
+    /// <param name="taskId">The task ID.</param>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    /// <returns><c>true</c> if the user is the owner; otherwise, <c>false</c>.</returns>
+    private async Task<bool> IsOwner(Guid taskId, Guid userId,  CancellationToken cancellationToken = default)
+        => await this.UnitOfWork.Tasks.IsTaskOwnerAsync(taskId, userId, cancellationToken);
+
+    /// <summary>
+    /// Checks whether the specified user already has access to the task.
+    /// </summary>
+    /// <param name="taskId">The task ID.</param>
+    /// <param name="userId">The user ID.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
+    /// <returns><c>true</c> if the user already has access; otherwise, <c>false</c>.</returns>
+    private async Task<bool> HasAccess(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
+       => await this.UnitOfWork.UserTaskAccesses.ExistsAsync(taskId, userId, cancellationToken);
 }
