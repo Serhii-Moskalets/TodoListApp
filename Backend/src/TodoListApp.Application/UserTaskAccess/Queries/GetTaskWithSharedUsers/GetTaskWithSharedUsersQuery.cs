@@ -1,5 +1,5 @@
 ﻿using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Application.UserTaskAccess.Dto;
+using TodoListApp.Application.UserTaskAccess.Dtos;
 
 namespace TodoListApp.Application.UserTaskAccess.Queries.GetTaskWithSharedUsers;
 

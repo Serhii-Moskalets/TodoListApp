@@ -1,7 +1,7 @@
 ﻿using TinyResult;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Application.UserTaskAccess.Dto;
+using TodoListApp.Application.UserTaskAccess.Dtos;
 using TodoListApp.Application.UserTaskAccess.Mappers;
 
 namespace TodoListApp.Application.UserTaskAccess.Queries.GetTaskWithSharedUsers;

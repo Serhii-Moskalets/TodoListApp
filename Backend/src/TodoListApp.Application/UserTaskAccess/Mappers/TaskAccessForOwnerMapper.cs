@@ -1,6 +1,6 @@
 ﻿using Riok.Mapperly.Abstractions;
 using TodoListApp.Application.Common.Dtos;
-using TodoListApp.Application.UserTaskAccess.Dto;
+using TodoListApp.Application.UserTaskAccess.Dtos;
 using TodoListApp.Domain.Entities;
 
 namespace TodoListApp.Application.UserTaskAccess.Mappers;

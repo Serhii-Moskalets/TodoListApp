@@ -29,7 +29,7 @@ using TodoListApp.Application.UserTaskAccess.Commands.DeleteAllTaskAccessesByTas
 using TodoListApp.Application.UserTaskAccess.Commands.DeleteAllTaskAccessesByUserId;
 using TodoListApp.Application.UserTaskAccess.Commands.DeleteByTaskAccessByUserEmail;
 using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessById;
-using TodoListApp.Application.UserTaskAccess.Dto;
+using TodoListApp.Application.UserTaskAccess.Dtos;
 using TodoListApp.Application.UserTaskAccess.Queries.GetSharedTaskById;
 using TodoListApp.Application.UserTaskAccess.Queries.GetSharedTasksByUserId;
 using TodoListApp.Application.UserTaskAccess.Queries.GetTaskWithSharedUsers;

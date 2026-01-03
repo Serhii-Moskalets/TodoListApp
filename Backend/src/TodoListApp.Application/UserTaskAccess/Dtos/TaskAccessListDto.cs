@@ -1,6 +1,6 @@
 ﻿using TodoListApp.Application.Common.Dtos;
 
-namespace TodoListApp.Application.UserTaskAccess.Dto;
+namespace TodoListApp.Application.UserTaskAccess.Dtos;
 
 /// <summary>
 /// Represents a task along with the list of users who have access to it.
