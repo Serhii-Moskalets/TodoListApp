@@ -70,8 +70,9 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(access);
         await context.SaveChangesAsync();
 
-        await repo.DeleteByTaskAndUserIdAsync(task.Id, user_2.Id);
+        var deleted = await repo.DeleteByIdAsync(task.Id, user_2.Id);
 
+        Assert.Equal(1, deleted);
         Assert.False(await context.UserTaskAccesses.AnyAsync());
     }
 
@@ -107,7 +108,9 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(access_2);
         await context.SaveChangesAsync();
 
-        await repo.DeleteAllByTaskIdAsync(task_1.Id);
+        var deleted = await repo.DeleteAllByTaskIdAsync(task_1.Id);
+
+        Assert.Equal(1, deleted);
         Assert.False(await repo.ExistsAsync(task_1.Id, user_2.Id));
         Assert.True(await repo.ExistsAsync(task_2.Id, user_1.Id));
     }
@@ -144,44 +147,9 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(access_2);
         await context.SaveChangesAsync();
 
-        await repo.DeleteAllByUserIdAsync(user_2.Id);
-        Assert.False(await repo.ExistsAsync(task_1.Id, user_2.Id));
-        Assert.True(await repo.ExistsAsync(task_2.Id, user_1.Id));
-    }
+        var deleted = await repo.DeleteAllByUserIdAsync(user_2.Id);
 
-    /// <summary>
-    /// Verifies that access can be removed using the user's email
-    /// and the task ID.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task DeleteByUserEmailAndTaskIdAsync_ShouldRemoveAccess()
-    {
-        await using var context = SqliteInMemoryDbContextFactory.Create();
-        var repo = new UserTaskAccessRepository(context);
-
-        var user_1 = new UserEntity("John", "john", "john@example.com", "hash");
-        await context.Users.AddAsync(user_1);
-        var user_2 = new UserEntity("John2", "john2", "john2@example.com", "hash2");
-        await context.Users.AddAsync(user_2);
-
-        var taskList = new TaskListEntity(user_1.Id, "Task list 1");
-        await context.TaskLists.AddAsync(taskList);
-
-        var task_1 = new TaskEntity(user_1.Id, taskList.Id, "Task 1");
-        await context.Tasks.AddAsync(task_1);
-
-        var task_2 = new TaskEntity(user_2.Id, taskList.Id, "Task 2");
-        await context.Tasks.AddAsync(task_2);
-
-        var access_1 = new UserTaskAccessEntity(task_1.Id, user_2.Id);
-        await repo.AddAsync(access_1);
-
-        var access_2 = new UserTaskAccessEntity(task_2.Id, user_1.Id);
-        await repo.AddAsync(access_2);
-        await context.SaveChangesAsync();
-
-        await repo.DeleteByUserEmailAndTaskIdAsync(task_1.Id, "john2@example.com");
+        Assert.Equal(1, deleted);
         Assert.False(await repo.ExistsAsync(task_1.Id, user_2.Id));
         Assert.True(await repo.ExistsAsync(task_2.Id, user_1.Id));
     }
@@ -216,7 +184,7 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(access_2);
         await context.SaveChangesAsync();
 
-        var shared = await repo.GetSharedTasksByTaskIdAsync(task.Id);
+        var shared = await repo.GetUserTaskAccessByTaskIdAsync(task.Id);
         Assert.Equal(2, shared.Count);
         Assert.Contains(shared, x => x.UserId == user_2.Id);
         Assert.Contains(shared, x => x.UserId == user_3.Id);
@@ -279,63 +247,5 @@ public class UserTaskAccessRepositoryTests
 
         Assert.False(await repo.ExistsAsync(Guid.NewGuid(), user_2.Id));
         Assert.False(await repo.ExistsAsync(task.Id, Guid.NewGuid()));
-    }
-
-    /// <summary>
-    /// Verifies that a task access exists when a matching
-    /// user email is associated with the task.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task ExistsTaskAccessWithEmail_ShouldReturnTrue_WhenEmailMatches()
-    {
-        await using var context = InMemoryDbContextFactory.Create();
-        var repo = new UserTaskAccessRepository(context);
-
-        var user_1 = new UserEntity("John", "john", "john@example.com", "hash");
-        await context.Users.AddAsync(user_1);
-        var user_2 = new UserEntity("John2", "john2", "john2@example.com", "hash2");
-        await context.Users.AddAsync(user_2);
-
-        var taskList = new TaskListEntity(user_1.Id, "Task list 1");
-        await context.TaskLists.AddAsync(taskList);
-
-        var task = new TaskEntity(user_1.Id, taskList.Id, "Task1");
-        await context.Tasks.AddAsync(task);
-
-        var access = new UserTaskAccessEntity(task.Id, user_2.Id);
-        await repo.AddAsync(access);
-        await context.SaveChangesAsync();
-
-        Assert.True(await repo.ExistsTaskAccessWithEmail(task.Id, "john2@example.com"));
-    }
-
-    /// <summary>
-    /// Verifies that <see cref="UserTaskAccessRepository.ExistsTaskAccessWithEmail"/>
-    /// returns <c>false</c> when no access exists for the given email.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task ExistsTaskAccessWithEmail_ShouldReturnFalse_WhenEmailDoesNotMatch()
-    {
-        await using var context = InMemoryDbContextFactory.Create();
-        var repo = new UserTaskAccessRepository(context);
-
-        var user_1 = new UserEntity("John", "john", "john@example.com", "hash");
-        await context.Users.AddAsync(user_1);
-        var user_2 = new UserEntity("John2", "john2", "john2@example.com", "hash2");
-        await context.Users.AddAsync(user_2);
-
-        var taskList = new TaskListEntity(user_1.Id, "Task list 1");
-        await context.TaskLists.AddAsync(taskList);
-
-        var task = new TaskEntity(user_1.Id, taskList.Id, "Task1");
-        await context.Tasks.AddAsync(task);
-
-        var access = new UserTaskAccessEntity(task.Id, user_2.Id);
-        await repo.AddAsync(access);
-        await context.SaveChangesAsync();
-
-        Assert.False(await repo.ExistsTaskAccessWithEmail(task.Id, "john3@example.com"));
     }
 }
