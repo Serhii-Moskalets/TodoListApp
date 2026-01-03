@@ -35,7 +35,7 @@ public interface IUserTaskAccessRepository
     /// A task that returns a read-only collection of <see cref="UserTaskAccessEntity"/> entries
     /// representing all users who currently have access to the task.
     /// </returns>
-    Task<IReadOnlyCollection<UserTaskAccessEntity>> GetSharedTasksByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<UserTaskAccessEntity>> GetUserTaskAccessByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves all tasks shared with a specific user.
@@ -55,45 +55,33 @@ public interface IUserTaskAccessRepository
     Task<bool> ExistsAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Checks whether a user task access record exists for the given task and user.
-    /// </summary>
-    /// <param name="taskId">The task identifier.</param>
-    /// <param name="email">The user email.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns><c>true</c> if the access record exists; otherwise, <c>false</c>.</returns>
-    Task<bool> ExistsTaskAccessWithEmail(Guid taskId, string email, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Deletes a user task access record by task ID and user ID.
     /// </summary>
     /// <param name="taskId">The task identifier.</param>
     /// <param name="userId">The user identifier.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A task representing the asynchronous delete operation.</returns>
-    Task DeleteByTaskAndUserIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default);
+    /// <returns>
+    /// A task that returns the number of deleted user-task access entries.
+    /// </returns>
+    Task<int> DeleteByIdAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes all user task access records associated with a specific task.
     /// </summary>
     /// <param name="taskId">The task identifier.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A task representing the asynchronous delete operation.</returns>
-    Task DeleteAllByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default);
+    /// <returns>
+    /// A task that returns the number of deleted user-task access entries.
+    /// </returns>
+    Task<int> DeleteAllByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes all user task access records associated with a specific user.
     /// </summary>
     /// <param name="userId">The user identifier.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A task representing the asynchronous delete operation.</returns>
-    Task DeleteAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Deletes a user-task access entry by the user's email for a specific task.
-    /// </summary>
-    /// <param name="taskId">The ID of the task for which access should be removed.</param>
-    /// <param name="email">The email of the user whose access should be deleted.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>A task representing the asynchronous delete operation.</returns>
-    Task DeleteByUserEmailAndTaskIdAsync(Guid taskId, string email, CancellationToken cancellationToken = default);
+    /// <returns>
+    /// A task that returns the number of deleted user-task access entries.
+    /// </returns>
+    Task<int> DeleteAllByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 }
