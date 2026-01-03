@@ -21,7 +21,7 @@ public class CreateUserTaskAccessCommandValidatorTests
     [InlineData(" ")]
     public void Validator_ShouldHaveError_WhenEmailIsNullOrEmpty(string? email)
     {
-        var createCommand = new CreateUserTaskAccessCommand(Guid.NewGuid(), email);
+        var createCommand = new CreateUserTaskAccessCommand(Guid.NewGuid(), Guid.NewGuid(), email);
 
         var result = this._validator.Validate(createCommand);
 
@@ -40,7 +40,7 @@ public class CreateUserTaskAccessCommandValidatorTests
     [InlineData("@gsss")]
     public void Validator_ShouldHaveError_WhenEmailIsInvalid(string? email)
     {
-        var createCommand = new CreateUserTaskAccessCommand(Guid.NewGuid(), email);
+        var createCommand = new CreateUserTaskAccessCommand(Guid.NewGuid(), Guid.NewGuid(), email);
 
         var result = this._validator.Validate(createCommand);
 
@@ -55,7 +55,7 @@ public class CreateUserTaskAccessCommandValidatorTests
     [Fact]
     public void Validator_ShouldNotHaveError_WhenEmailIsValid()
     {
-        var createCommand = new CreateUserTaskAccessCommand(Guid.NewGuid(), "test@test.com");
+        var createCommand = new CreateUserTaskAccessCommand(Guid.NewGuid(), Guid.NewGuid(), "test@test.com");
 
         var result = this._validator.Validate(createCommand);
 
