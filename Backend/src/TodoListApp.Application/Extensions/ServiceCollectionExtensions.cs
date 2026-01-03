@@ -25,10 +25,10 @@ using TodoListApp.Application.Tasks.Queries.GetTaskById;
 using TodoListApp.Application.Tasks.Queries.GetTaskByTitle;
 using TodoListApp.Application.Tasks.Queries.GetTasks;
 using TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
-using TodoListApp.Application.UserTaskAccess.Commands.DeleteAllTaskAccessesByTaskId;
-using TodoListApp.Application.UserTaskAccess.Commands.DeleteAllTaskAccessesByUserId;
-using TodoListApp.Application.UserTaskAccess.Commands.DeleteByTaskAccessByUserEmail;
 using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessById;
+using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessByUserEmail;
+using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessesByTask;
+using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessesByUser;
 using TodoListApp.Application.UserTaskAccess.Dtos;
 using TodoListApp.Application.UserTaskAccess.Queries.GetSharedTaskById;
 using TodoListApp.Application.UserTaskAccess.Queries.GetSharedTasksByUserId;
@@ -81,7 +81,6 @@ public static class ServiceCollectionExtensions
         // --- UserTaskAccess Validators ---
         services.AddScoped<IValidator<CreateUserTaskAccessCommand>, CreateUserTaskAccessCommandValidator>();
         services.AddScoped<IValidator<DeleteTaskAccessByUserEmailCommand>, DeleteTaskAccessByUserEmailCommandValidator>();
-        services.AddScoped<IValidator<DeleteTaskAccessByIdCommand>, DeleteTaskAccessByIdCommandValidator>();
     }
 
     /// <summary>
@@ -121,8 +120,8 @@ public static class ServiceCollectionExtensions
 
         // --- UserTaskAccess Handlers ---
         services.AddScoped<ICommandHandler<CreateUserTaskAccessCommand, bool>, CreateUserTaskAccessCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteAllTaskAccessesByTaskIdCommand, bool>, DeleteAllTaskAccessesByTaskIdCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteAllTaskAccessesByUserIdCommand, bool>, DeleteAllTaskAccessesByUserIdCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskAccessesByTaskCommand, bool>, DeleteTaskAccessesByTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskAccessesByUserCommand, bool>, DeleteTaskAccessesByUserCommandHandler>();
         services.AddScoped<ICommandHandler<DeleteTaskAccessByUserEmailCommand, bool>, DeleteTaskAccessByUserEmailCommandHandler>();
         services.AddScoped<ICommandHandler<DeleteTaskAccessByIdCommand, bool>, DeleteTaskAccessByIdCommandHandler>();
         services.AddScoped<IQueryHandler<GetSharedTaskByIdQuery, TaskDto>, GetSharedTaskByIdQueryHandler>();
