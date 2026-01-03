@@ -2,13 +2,13 @@
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 
-namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteAllTaskAccessesByUserId;
+namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessesByUser;
 
 /// <summary>
-/// Handles the <see cref="DeleteAllTaskAccessesByUserIdCommand"/> to remove all user-task access entries for a specific user.
+/// Handles the <see cref="DeleteTaskAccessesByUserCommand"/> to remove all user-task access entries for a specific user.
 /// </summary>
-public class DeleteAllTaskAccessesByUserIdCommandHandler(IUnitOfWork unitOfWork)
-    : HandlerBase(unitOfWork), ICommandHandler<DeleteAllTaskAccessesByUserIdCommand, bool>
+public class DeleteTaskAccessesByUserCommandHandler(IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskAccessesByUserCommand, bool>
 {
     /// <summary>
     /// Processes the command to delete all user-task access entries for a given user.
@@ -20,7 +20,7 @@ public class DeleteAllTaskAccessesByUserIdCommandHandler(IUnitOfWork unitOfWork)
     /// <returns>
     /// A <see cref="Result{T}"/> indicating success if the access entries were deleted.
     /// </returns>
-    public async Task<Result<bool>> Handle(DeleteAllTaskAccessesByUserIdCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(DeleteTaskAccessesByUserCommand command, CancellationToken cancellationToken)
     {
         await this.UnitOfWork.UserTaskAccesses.DeleteAllByUserIdAsync(command.UserId, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
