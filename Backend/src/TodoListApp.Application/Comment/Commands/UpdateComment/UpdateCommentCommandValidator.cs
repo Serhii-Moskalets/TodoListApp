@@ -1,26 +1,22 @@
 ﻿using FluentValidation;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.Comment.Commands.UpdateComment;
 
 /// <summary>
 /// Validator for <see cref="UpdateCommentCommand"/>.
-/// Ensures that the comment exists and belongs to the user attempting the deletion.
 /// </summary>
 public class UpdateCommentCommandValidator : AbstractValidator<UpdateCommentCommand>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="UpdateCommentCommandValidator"/> class.
     /// </summary>
-    /// <param name="unitOfWork">
-    /// The unit of work used to access comment data for validation.
-    /// </param>
-    public UpdateCommentCommandValidator(IUnitOfWork unitOfWork)
+    public UpdateCommentCommandValidator()
     {
+        this.RuleFor(x => x.UserId)
+            .NotEmpty().WithMessage("User ID is required");
+
         this.RuleFor(x => x.CommentId)
-            .MustAsync(async (command, id, ct) =>
-                await unitOfWork.Comments.ExistsInTaskAndOwnedByUserAsync(id, command.TaskId, command.UserId, ct))
-            .WithMessage("Comment not found or does not belong to the user.");
+            .NotEmpty().WithMessage("Comment ID is required");
 
         this.RuleFor(x => x.NewText)
             .NotEmpty().WithMessage("New text cannot be null or empty.")

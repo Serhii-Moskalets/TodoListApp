@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using TinyResult;
+using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 
@@ -16,24 +17,31 @@ public class DeleteCommentCommandHandler(
     private readonly IValidator<DeleteCommentCommand> _validator = validator;
 
     /// <summary>
-    /// Handles the specified <see cref="DeleteCommentCommand"/>.
+    /// Deletes the comment identified by the command if allowed.
     /// </summary>
-    /// <param name="command">
-    /// The command containing the ID of the comment to delete and the ID of the user requesting deletion.
-    /// </param>
-    /// <param name="cancellationToken">
-    /// A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
-    /// </param>
-    /// <returns>
-    /// A <see cref="Result{T}"/> indicating whether the comment was successfully deleted.
-    /// Returns a failure result if the comment does not exist or the user is not the owner.
-    /// </returns>
-    public async Task<Result<bool>> Handle(DeleteCommentCommand command, CancellationToken cancellationToken)
+    /// <param name="command">Comment ID and user ID requesting deletion.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Success if deleted; otherwise, a failure result.</returns>
+    public async Task<Result<bool>> HandleAsync(DeleteCommentCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)
         {
-            return validation;
+            return await Result<bool>.FailureAsync(validation.Error!.Code, validation.Error.Message);
+        }
+
+        var comment = await this.UnitOfWork.Comments.GetByIdAsync(command.CommentId, asNoTracking: true, cancellationToken);
+        if (comment is null)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Comment not found.");
+        }
+
+        var isCommentOwner = command.UserId == comment.UserId;
+        var isTaskOwner = await this.UnitOfWork.Tasks.IsTaskOwnerAsync(comment.TaskId, command.UserId, cancellationToken);
+
+        if (!isCommentOwner && !isTaskOwner)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "You don't have permission to delete this comment.");
         }
 
         await this.UnitOfWork.Comments.DeleteAsync(command.CommentId, cancellationToken);

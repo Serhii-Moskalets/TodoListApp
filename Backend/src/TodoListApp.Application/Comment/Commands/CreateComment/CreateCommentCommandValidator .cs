@@ -1,26 +1,22 @@
 ﻿using FluentValidation;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.Comment.Commands.CreateComment;
 
 /// <summary>
-/// Validator for <see cref="CreateCommentCommand"/> using FluentValidation.
-/// Ensures that the comment text is not empty and does not exceed the maximum allowed length.
+/// Validator for <see cref="CreateCommentCommand"/>.
 /// </summary>
 public class CreateCommentCommandValidator : AbstractValidator<CreateCommentCommand>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateCommentCommandValidator"/> class.
     /// </summary>
-    /// <param name="unitOfWork">
-    /// The unit of work used to access the tasks repository for validation.
-    /// </param>
-    public CreateCommentCommandValidator(IUnitOfWork unitOfWork)
+    public CreateCommentCommandValidator()
     {
+        this.RuleFor(x => x.UserId)
+            .NotEmpty().WithMessage("User ID is required");
+
         this.RuleFor(x => x.TaskId)
-            .MustAsync(async (taskId, ct) =>
-                await unitOfWork.Tasks.ExistsAsync(taskId, ct))
-            .WithMessage("Task not found.");
+            .NotEmpty().WithMessage("Task ID is required");
 
         this.RuleFor(c => c.Text)
             .NotEmpty().WithMessage("Comment text cannot be null or empty.")
