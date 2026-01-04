@@ -69,7 +69,7 @@ public class TaskListsController : BaseController
     public async Task<IActionResult> CreateTaskList([FromBody] TaskListTitleRequest request)
     {
         var command = new CreateTaskListCommand(CurrentUserId, request.Title);
-        var result = await this._createTaskListHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._createTaskListHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleResult(result);
     }
 
@@ -85,7 +85,7 @@ public class TaskListsController : BaseController
     public async Task<IActionResult> DeleteTaskList([FromRoute] Guid taskListId)
     {
         var command = new DeleteTaskListCommand(taskListId, CurrentUserId);
-        var result = await this._deleteTaskListHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._deleteTaskListHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 
@@ -102,7 +102,7 @@ public class TaskListsController : BaseController
     public async Task<IActionResult> UpdateTaskList([FromRoute] Guid taskListId, [FromBody] TaskListTitleRequest request)
     {
         var command = new UpdateTaskListCommand(taskListId, CurrentUserId, request.Title);
-        var result = await this._updateTaskListHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._updateTaskListHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 }

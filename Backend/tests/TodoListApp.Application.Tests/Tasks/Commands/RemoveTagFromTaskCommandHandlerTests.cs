@@ -35,7 +35,7 @@ public class RemoveTagFromTaskCommandHandlerTests
         var handler = new RemoveTagFromTaskCommandHandler(uowMock.Object);
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -70,7 +70,7 @@ public class RemoveTagFromTaskCommandHandlerTests
         var handler = new RemoveTagFromTaskCommandHandler(uowMock.Object);
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.True(result.IsSuccess);
         Assert.Null(taskEntity.TagId);

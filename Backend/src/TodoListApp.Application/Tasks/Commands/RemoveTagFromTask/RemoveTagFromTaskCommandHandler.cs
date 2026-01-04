@@ -21,7 +21,7 @@ public class RemoveTagFromTaskCommandHandler(IUnitOfWork unitOfWork)
     /// <param name="command">The <see cref="RemoveTagFromTaskCommand"/> containing the task and user identifiers.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.</param>
     /// <returns>A <see cref="Result{Boolean}"/> indicating success or failure of the operation.</returns>
-    public async Task<Result<bool>> Handle(RemoveTagFromTaskCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(RemoveTagFromTaskCommand command, CancellationToken cancellationToken)
     {
         var taskEntity = await this.UnitOfWork.Tasks.GetByIdAsync(command.TaskId, false, cancellationToken);
 

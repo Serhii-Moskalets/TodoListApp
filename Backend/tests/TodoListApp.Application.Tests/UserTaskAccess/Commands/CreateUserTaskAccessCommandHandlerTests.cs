@@ -40,7 +40,7 @@ public class CreateUserTaskAccessCommandHandlerTests
             Guid.NewGuid(),
             "test@test.com");
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         uowMock.VerifyNoOtherCalls();
@@ -65,7 +65,7 @@ public class CreateUserTaskAccessCommandHandlerTests
 
         var handler = CreateHandler(uowMock, validatorMock);
 
-        var result = await handler.Handle(
+        var result = await handler.HandleAsync(
             new CreateUserTaskAccessCommand(Guid.NewGuid(), Guid.NewGuid(), "test@test.com"),
             CancellationToken.None);
 
@@ -92,7 +92,7 @@ public class CreateUserTaskAccessCommandHandlerTests
 
         var handler = CreateHandler(uowMock, validatorMock);
 
-        var result = await handler.Handle(
+        var result = await handler.HandleAsync(
             new CreateUserTaskAccessCommand(Guid.NewGuid(), Guid.NewGuid(), user.Email),
             CancellationToken.None);
 
@@ -126,7 +126,7 @@ public class CreateUserTaskAccessCommandHandlerTests
 
         var handler = CreateHandler(uowMock, validatorMock);
 
-        var result = await handler.Handle(
+        var result = await handler.HandleAsync(
             new CreateUserTaskAccessCommand(Guid.NewGuid(), Guid.NewGuid(), user.Email),
             CancellationToken.None);
 
@@ -174,7 +174,7 @@ public class CreateUserTaskAccessCommandHandlerTests
 
         var handler = CreateHandler(uowMock, validatorMock);
 
-        var result = await handler.Handle(
+        var result = await handler.HandleAsync(
             new CreateUserTaskAccessCommand(task.Id, ownerId, user.Email),
             CancellationToken.None);
 

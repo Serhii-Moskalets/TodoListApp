@@ -20,7 +20,7 @@ public class DeleteTaskAccessesByUserCommandHandler(IUnitOfWork unitOfWork)
     /// <returns>
     /// A <see cref="Result{T}"/> indicating success if the access entries were deleted.
     /// </returns>
-    public async Task<Result<bool>> Handle(DeleteTaskAccessesByUserCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(DeleteTaskAccessesByUserCommand command, CancellationToken cancellationToken)
     {
         await this.UnitOfWork.UserTaskAccesses.DeleteAllByUserIdAsync(command.UserId, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);

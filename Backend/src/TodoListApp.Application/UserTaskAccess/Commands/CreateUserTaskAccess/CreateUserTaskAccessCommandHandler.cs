@@ -26,7 +26,7 @@ public class CreateUserTaskAccessCommandHandler(
     /// A <see cref="Result{T}"/> indicating success if the access was created,
     /// or failure if the user does not exist, is the task owner, or already has access.
     /// </returns>
-    public async Task<Result<bool>> Handle(CreateUserTaskAccessCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(CreateUserTaskAccessCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)

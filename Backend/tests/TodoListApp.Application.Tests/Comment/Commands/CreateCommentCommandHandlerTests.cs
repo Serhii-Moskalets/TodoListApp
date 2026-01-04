@@ -30,7 +30,7 @@ public class CreateCommentCommandHandlerTests
         var handler = new CreateCommentCommandHandler(uowMock.Object, validatorMock.Object);
         var command = new CreateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -62,7 +62,7 @@ public class CreateCommentCommandHandlerTests
         var userId = Guid.NewGuid();
         var command = new CreateCommentCommand(taskId, userId, "Comments...");
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         commentsRepoMock.Verify(

@@ -21,7 +21,7 @@ public class DeleteTaskAccessByIdCommandHandler(IUnitOfWork unitOfWork)
     /// A <see cref="Result{T}"/> indicating success if the access was deleted,
     /// or failure if the access was not found.
     /// </returns>
-    public async Task<Result<bool>> Handle(DeleteTaskAccessByIdCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(DeleteTaskAccessByIdCommand command, CancellationToken cancellationToken)
     {
         if (!await this.HasAccess(command.TaskId, command.UserId, cancellationToken))
         {

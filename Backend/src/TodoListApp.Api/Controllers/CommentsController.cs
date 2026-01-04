@@ -72,7 +72,7 @@ public class CommentsController : BaseController
         [FromBody] CommentTextRequest request)
     {
         var command = new CreateCommentCommand(taskId, CurrentUserId, request.Text);
-        var result = await this._createCommentHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._createCommentHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleResult(result);
     }
 
@@ -91,7 +91,7 @@ public class CommentsController : BaseController
         [FromRoute] Guid commentId)
     {
         var command = new DeleteCommentCommand(taskId, commentId, CurrentUserId);
-        var result = await this._deleteCommentHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._deleteCommentHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 
@@ -112,7 +112,7 @@ public class CommentsController : BaseController
         [FromBody] CommentTextRequest request)
     {
         var command = new UpdateCommentCommand(taskId, commentId, CurrentUserId, request.Text);
-        var result = await this._updateCommentHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._updateCommentHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 }

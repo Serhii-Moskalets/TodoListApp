@@ -30,7 +30,7 @@ public class DeleteTaskAccessByIdCommandHandlerTests
         this._unitOfWorkMock.Setup(u => u.UserTaskAccesses).Returns(userTaskAccessRepoMock.Object);
         var handler = new DeleteTaskAccessByIdCommandHandler(this._unitOfWorkMock.Object);
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -59,7 +59,7 @@ public class DeleteTaskAccessByIdCommandHandlerTests
 
         var handler = new DeleteTaskAccessByIdCommandHandler(this._unitOfWorkMock.Object);
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
 

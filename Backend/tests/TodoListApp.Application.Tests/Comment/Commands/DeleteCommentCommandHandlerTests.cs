@@ -34,7 +34,7 @@ public class DeleteCommentCommandHandlerTests
 
         var command = new DeleteCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -72,7 +72,7 @@ public class DeleteCommentCommandHandlerTests
         var taskId = Guid.NewGuid();
         var command = new DeleteCommentCommand(taskId, commentId, Guid.NewGuid());
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         commentRepoMock.Verify(

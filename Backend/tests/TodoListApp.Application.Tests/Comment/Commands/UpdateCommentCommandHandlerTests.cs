@@ -41,7 +41,7 @@ public class UpdateCommentCommandHandlerTests
             Guid.NewGuid(),
             string.Empty);
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -81,7 +81,7 @@ public class UpdateCommentCommandHandlerTests
             Guid.NewGuid(),
             "New text");
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal("Comment not found.", result.Error?.Message);
@@ -128,7 +128,7 @@ public class UpdateCommentCommandHandlerTests
             userId,
             "Updated text");
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("Updated text", commentEntity.Text);

@@ -22,7 +22,7 @@ public class UpdateTaskCommandHandler(
     /// <param name="command">The <see cref="UpdateTaskCommand"/> containing update task dto.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.</param>
     /// <returns>A <see cref="Result{Boolean}"/> indicating success or failure of the operation.</returns>
-    public async Task<Result<bool>> Handle(UpdateTaskCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(UpdateTaskCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)

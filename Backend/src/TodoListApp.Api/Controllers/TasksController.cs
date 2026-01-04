@@ -143,7 +143,7 @@ public class TasksController : BaseController
             TaskListId = taskListId,
         });
 
-        var result = await this._createTaskHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._createTaskHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleResult(result);
     }
 
@@ -168,7 +168,7 @@ public class TasksController : BaseController
             DueDate = request.DueDate,
         });
 
-        var result = await this._updateTaskHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._updateTaskHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 
@@ -184,7 +184,7 @@ public class TasksController : BaseController
     public async Task<IActionResult> DeleteTask([FromRoute] Guid taskId)
     {
         var command = new DeleteTaskCommand(taskId, CurrentUserId);
-        var result = await this._deleteTaskHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._deleteTaskHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 
@@ -201,7 +201,7 @@ public class TasksController : BaseController
     public async Task<IActionResult> AddTagToTask([FromRoute] Guid taskId, [FromRoute] Guid tagId)
     {
         var command = new AddTagToTaskCommand(taskId, CurrentUserId, tagId);
-        var result = await this._addTagToTaskHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._addTagToTaskHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 
@@ -218,7 +218,7 @@ public class TasksController : BaseController
     public async Task<IActionResult> RemoveTagFromTask([FromRoute] Guid taskId)
     {
         var command = new RemoveTagFromTaskCommand(taskId, CurrentUserId);
-        var result = await this._removeTagFromTaskHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._removeTagFromTaskHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 
@@ -235,7 +235,7 @@ public class TasksController : BaseController
     public async Task<IActionResult> ChangeTaskStatus([FromRoute] Guid taskId, [FromRoute] StatusTask status)
     {
         var command = new ChangeTaskStatusCommand(taskId, CurrentUserId, status);
-        var result = await this._changeTaskStatusHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._changeTaskStatusHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 }

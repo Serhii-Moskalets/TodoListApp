@@ -114,7 +114,7 @@ public class UserTaskAccessesController : BaseController
     public async Task<IActionResult> CreateUserTaskAccessAsync([FromRoute] Guid taskId, [FromBody] AccessEmailRequest request)
     {
         var command = new CreateUserTaskAccessCommand(taskId, CurrentUserId, request.Email);
-        var result = await this._createUserTaskAccessHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._createUserTaskAccessHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         if (!result.IsSuccess)
         {
             return this.HandleResult(result);
@@ -133,7 +133,7 @@ public class UserTaskAccessesController : BaseController
     public async Task<IActionResult> DeleteTaskAccessByEmailAsync([FromRoute] Guid taskId, [FromQuery] string? email)
     {
         var command = new DeleteTaskAccessByUserEmailCommand(taskId, CurrentUserId, email);
-        var result = await this._deleteTaskAccessByUserEmailHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._deleteTaskAccessByUserEmailHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 
@@ -147,7 +147,7 @@ public class UserTaskAccessesController : BaseController
     public async Task<IActionResult> DeleteTaskAccessByIdAsync([FromRoute] Guid taskId, [FromRoute] Guid userId)
     {
         var command = new DeleteTaskAccessByIdCommand(taskId, userId);
-        var result = await this._deleteTaskAccessByIdHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._deleteTaskAccessByIdHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 
@@ -160,7 +160,7 @@ public class UserTaskAccessesController : BaseController
     public async Task<IActionResult> DeleteTaskAccessesByTaskAsync([FromRoute] Guid taskId)
     {
         var command = new DeleteTaskAccessesByTaskCommand(taskId, CurrentUserId);
-        var result = await this._deleteTaskAccessesByTaskHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._deleteTaskAccessesByTaskHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 
@@ -172,7 +172,7 @@ public class UserTaskAccessesController : BaseController
     public async Task<IActionResult> DeleteTasksAccessesByUserAsync()
     {
         var command = new DeleteTaskAccessesByUserCommand(CurrentUserId);
-        var result = await this._deleteTaskAccessesByUserHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._deleteTaskAccessesByUserHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 }

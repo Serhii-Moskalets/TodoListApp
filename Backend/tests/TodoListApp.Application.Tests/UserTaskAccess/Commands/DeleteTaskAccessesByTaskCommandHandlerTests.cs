@@ -41,7 +41,7 @@ public class DeleteTaskAccessesByTaskCommandHandlerTests
             .ReturnsAsync((TaskEntity?)null);
 
         var handler = new DeleteTaskAccessesByTaskCommandHandler(this._unitOfWorkMock.Object);
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal("Task not found.", result.Error!.Message);
@@ -50,7 +50,7 @@ public class DeleteTaskAccessesByTaskCommandHandlerTests
         this._tasksRepoMock.Setup(r => r.GetByIdAsync(command.TaskId, true, It.IsAny<CancellationToken>()))
                       .ReturnsAsync(task);
 
-        result = await handler.Handle(command, CancellationToken.None);
+        result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal("Only the task owner can delete accesses.", result.Error!.Message);
@@ -80,7 +80,7 @@ public class DeleteTaskAccessesByTaskCommandHandlerTests
         var handler = new DeleteTaskAccessesByTaskCommandHandler(this._unitOfWorkMock.Object);
         var command = new DeleteTaskAccessesByTaskCommand(taskId, userId);
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
 

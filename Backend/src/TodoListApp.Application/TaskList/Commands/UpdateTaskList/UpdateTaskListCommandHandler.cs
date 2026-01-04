@@ -25,7 +25,7 @@ public class UpdateTaskListCommandHandler(
     /// A <see cref="Result{T}"/> containing <c>true</c> if the task list title was successfully updated;
     /// otherwise, a failure result with an appropriate error code.
     /// </returns>
-    public async Task<Result<bool>> Handle(UpdateTaskListCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(UpdateTaskListCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)

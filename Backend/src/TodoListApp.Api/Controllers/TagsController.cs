@@ -61,7 +61,7 @@ public class TagsController : BaseController
     public async Task<IActionResult> CreateTag([FromRoute] Guid taskId, [FromBody] TagTitleRequest request)
     {
         var command = new CreateTagCommand(CurrentUserId, taskId, request.Name);
-        var result = await this._createTagHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._createTagHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleResult(result);
     }
 
@@ -74,7 +74,7 @@ public class TagsController : BaseController
     public async Task<IActionResult> DeleteTag([FromRoute] Guid tagId)
     {
         var command = new DeleteTagCommand(tagId, CurrentUserId);
-        var result = await this._deleteTagHandler.Handle(command, this.HttpContext.RequestAborted);
+        var result = await this._deleteTagHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 }

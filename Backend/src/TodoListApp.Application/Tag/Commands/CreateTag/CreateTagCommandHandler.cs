@@ -26,7 +26,7 @@ public class CreateTagCommandHandler(
     /// <param name="command">The command containing the user ID and name for the new tag.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A <see cref="Result{T}"/> indicating whether the operation was successful.</returns>
-    public async Task<Result<Guid>> Handle(CreateTagCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> HandleAsync(CreateTagCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)
@@ -49,7 +49,7 @@ public class CreateTagCommandHandler(
         if (command.TaskId.HasValue)
         {
             var addTagCommand = new AddTagToTaskCommand(command.TaskId.Value, command.UserId, tagEntity.Id);
-            var tagResult = await this._addTagToTaskHandler.Handle(addTagCommand, cancellationToken);
+            var tagResult = await this._addTagToTaskHandler.HandleAsync(addTagCommand, cancellationToken);
 
             if (!tagResult.IsSuccess)
             {

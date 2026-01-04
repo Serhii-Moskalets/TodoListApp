@@ -30,7 +30,7 @@ public class DeleteTagCommandHandlerTests
 
         var command = new DeleteTagCommand(Guid.NewGuid(), Guid.NewGuid());
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -62,7 +62,7 @@ public class DeleteTagCommandHandlerTests
         var tagId = Guid.NewGuid();
         var command = new DeleteTagCommand(tagId, Guid.NewGuid());
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         tagRepoMock.Verify(r => r.DeleteAsync(tagId, It.IsAny<CancellationToken>()), Times.Once);

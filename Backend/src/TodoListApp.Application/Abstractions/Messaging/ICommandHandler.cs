@@ -19,5 +19,5 @@ public interface ICommandHandler<in TCommand, TResult>
     /// A <see cref="Task{TResult}"/> representing the asynchronous operation,
     /// containing a <see cref="Result{TResult}"/> that indicates success or failure of the command.
     /// </returns>
-    Task<Result<TResult>> Handle(TCommand command, CancellationToken cancellationToken);
+    Task<Result<TResult>> HandleAsync(TCommand command, CancellationToken cancellationToken);
 }

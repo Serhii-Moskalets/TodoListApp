@@ -23,7 +23,7 @@ public class DeleteTaskAccessesByTaskCommandHandler(IUnitOfWork unitOfWork)
     /// A <see cref="Result{T}"/> indicating success if all accesses were deleted,
     /// or failure if the task was not found or the user is not the task owner.
     /// </returns>
-    public async Task<Result<bool>> Handle(DeleteTaskAccessesByTaskCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(DeleteTaskAccessesByTaskCommand command, CancellationToken cancellationToken)
     {
         var taskEntity = await this.UnitOfWork.Tasks.GetByIdAsync(command.TaskId, cancellationToken: cancellationToken);
 

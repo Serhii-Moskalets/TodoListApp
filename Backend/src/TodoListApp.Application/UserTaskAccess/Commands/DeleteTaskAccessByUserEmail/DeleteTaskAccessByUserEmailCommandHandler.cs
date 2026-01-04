@@ -28,7 +28,7 @@ public class DeleteTaskAccessByUserEmailCommandHandler(
     /// A <see cref="Result{T}"/> indicating success if the access was deleted,
     /// or failure if the access was not found.
     /// </returns>
-    public async Task<Result<bool>> Handle(DeleteTaskAccessByUserEmailCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(DeleteTaskAccessByUserEmailCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)

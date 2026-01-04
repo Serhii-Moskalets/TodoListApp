@@ -36,7 +36,7 @@ public class ChangeTaskStatusCommandHandlerTests
         var handler = new ChangeTaskStatusCommandHandler(uowMock.Object);
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCode.NotFound, result.Error?.Code);
@@ -67,7 +67,7 @@ public class ChangeTaskStatusCommandHandlerTests
         var handler = new ChangeTaskStatusCommandHandler(uowMock.Object);
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(StatusTask.InProgress, taskEntity.Status);

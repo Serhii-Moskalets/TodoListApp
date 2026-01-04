@@ -38,7 +38,7 @@ public class CreateTaskListCommandHandlerTests
         var command = new CreateTaskListCommand(Guid.NewGuid(), string.Empty);
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -75,7 +75,7 @@ public class CreateTaskListCommandHandlerTests
         var command = new CreateTaskListCommand(userId, "My List");
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.True(result.IsSuccess);
         taskListRepoMock.Verify(r => r.AddAsync(It.Is<TaskListEntity>(t => t.OwnerId == userId && t.Title == "My List"), It.IsAny<CancellationToken>()));
@@ -119,7 +119,7 @@ public class CreateTaskListCommandHandlerTests
         var command = new CreateTaskListCommand(userId, "My List");
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.True(result.IsSuccess);
         taskListRepoMock.Verify(r => r.AddAsync(It.Is<TaskListEntity>(t => t.Title == "My List (1)"), It.IsAny<CancellationToken>()), Times.Once());

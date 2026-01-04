@@ -21,7 +21,7 @@ public class DeleteTaskCommandHandler(
     /// <param name="command">The <see cref="DeleteTaskCommand"/> containing task and user identifiers.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.</param>
     /// <returns>A <see cref="Result{Boolean}"/> indicating success or failure of the operation.</returns>
-    public async Task<Result<bool>> Handle(DeleteTaskCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(DeleteTaskCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)

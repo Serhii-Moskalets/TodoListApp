@@ -26,7 +26,7 @@ public class DeleteTagCommandHandler(
     /// A <see cref="Result{T}"/> indicating success if the tag was deleted,
     /// or failure if the tag was not found or the user is not the owner.
     /// </returns>
-    public async Task<Result<bool>> Handle(DeleteTagCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(DeleteTagCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)

@@ -41,7 +41,7 @@ public class CreateTagCommandHandlerTests
 
         var command = new CreateTagCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -69,7 +69,7 @@ public class CreateTagCommandHandlerTests
 
         var addTagToTaskHandlerMock = new Mock<ICommandHandler<AddTagToTaskCommand, bool>>();
         addTagToTaskHandlerMock
-            .Setup(h => h.Handle(It.IsAny<AddTagToTaskCommand>(), It.IsAny<CancellationToken>()))
+            .Setup(h => h.HandleAsync(It.IsAny<AddTagToTaskCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(await Result<bool>.SuccessAsync(true));
 
         var handler = new CreateTagCommandHandler(
@@ -81,7 +81,7 @@ public class CreateTagCommandHandlerTests
         var task = new TaskEntity(Guid.NewGuid(), Guid.NewGuid(), "Task");
         var command = new CreateTagCommand(userId, task.Id, "Tag");
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         tagRepoMock.Verify(r => r.AddAsync(It.Is<TagEntity>(t => t.UserId == userId && t.Name == "Tag"), It.IsAny<CancellationToken>()), Times.Once);
@@ -110,7 +110,7 @@ public class CreateTagCommandHandlerTests
 
         var addTagToTaskHandlerMock = new Mock<ICommandHandler<AddTagToTaskCommand, bool>>();
         addTagToTaskHandlerMock
-            .Setup(h => h.Handle(It.IsAny<AddTagToTaskCommand>(), It.IsAny<CancellationToken>()))
+            .Setup(h => h.HandleAsync(It.IsAny<AddTagToTaskCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(await Result<bool>.SuccessAsync(true));
 
         var handler = new CreateTagCommandHandler(
@@ -121,7 +121,7 @@ public class CreateTagCommandHandlerTests
         var userId = Guid.NewGuid();
         var command = new CreateTagCommand(userId, Guid.NewGuid(), "Tag");
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         tagRepoMock.Verify(r => r.AddAsync(It.Is<TagEntity>(t => t.Name == "Tag (1)" && t.UserId == userId), It.IsAny<CancellationToken>()), Times.Once);

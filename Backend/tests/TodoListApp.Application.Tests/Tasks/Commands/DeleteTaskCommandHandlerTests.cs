@@ -31,7 +31,7 @@ public class DeleteTaskCommandHandlerTests
         var command = new DeleteTaskCommand(Guid.NewGuid(), Guid.NewGuid());
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -63,7 +63,7 @@ public class DeleteTaskCommandHandlerTests
         var command = new DeleteTaskCommand(taskId, Guid.NewGuid());
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.True(result.IsSuccess);
         taskRespository.Verify(r => r.DeleteAsync(taskId, It.IsAny<CancellationToken>()), Times.Once);

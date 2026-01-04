@@ -25,7 +25,7 @@ public class CreateTaskCommandHandler(
     /// <param name="command">The <see cref="CreateTaskCommand"/> containing task details.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A <see cref="Result{Boolean}"/> indicating success or failure of the operation.</returns>
-    public async Task<Result<Guid>> Handle(CreateTaskCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> HandleAsync(CreateTaskCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)

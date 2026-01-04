@@ -44,7 +44,7 @@ public class DeleteTaskAccessesByUserCommandHandlerTests
         var handler = new DeleteTaskAccessesByUserCommandHandler(this._unitOfWorkMock.Object);
         var command = new DeleteTaskAccessesByUserCommand(userId);
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
 

@@ -38,7 +38,7 @@ public class UpdateTaskCommandHandlerTests
         });
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -72,7 +72,7 @@ public class UpdateTaskCommandHandlerTests
         });
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -114,7 +114,7 @@ public class UpdateTaskCommandHandlerTests
         });
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("New task", taskEntity.Title);
@@ -159,7 +159,7 @@ public class UpdateTaskCommandHandlerTests
         });
 
         var ct = CancellationToken.None;
-        var result = await handler.Handle(command, ct);
+        var result = await handler.HandleAsync(command, ct);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("New task", taskEntity.Title);

@@ -27,7 +27,7 @@ public class ChangeTaskStatusCommandHandler(IUnitOfWork unitOfWork)
     /// A <see cref="Result{T}"/> indicating whether the operation
     /// completed successfully.
     /// </returns>
-    public async Task<Result<bool>> Handle(ChangeTaskStatusCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(ChangeTaskStatusCommand command, CancellationToken cancellationToken)
     {
         var entity = await this.UnitOfWork.Tasks.GetByIdAsync(command.TaskId, false, cancellationToken);
 

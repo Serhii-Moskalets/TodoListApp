@@ -34,7 +34,7 @@ public class DeleteTaskAccessByUserEmailCommandHandlerTests
 
         var handler = new DeleteTaskAccessByUserEmailCommandHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -80,7 +80,7 @@ public class DeleteTaskAccessByUserEmailCommandHandlerTests
 
         var handler = new DeleteTaskAccessByUserEmailCommandHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
 
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
 
