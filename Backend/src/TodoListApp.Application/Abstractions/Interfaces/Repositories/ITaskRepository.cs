@@ -59,18 +59,6 @@ public interface ITaskRepository : IRepository<TaskEntity>
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Determines whether a task exists for the specified user.
-    /// </summary>
-    /// <param name="taskId">The task identifier.</param>
-    /// <param name="userId">The user identifier.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns><c>true</c> if the task exists; otherwise, <c>false</c>.</returns>
-    Task<bool> ExistsForUserAsync(
-        Guid taskId,
-        Guid userId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Counts overdue tasks for a specific user and To-Do list.
     /// </summary>
     /// <param name="userId">The user identifier.</param>

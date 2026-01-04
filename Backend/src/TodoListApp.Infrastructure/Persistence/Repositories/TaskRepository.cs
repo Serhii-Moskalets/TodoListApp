@@ -58,16 +58,6 @@ public class TaskRepository(TodoListAppDbContext context)
     }
 
     /// <summary>
-    /// Checks whether a specific task exists for a given user.
-    /// </summary>
-    /// <param name="taskId">The identifier of the task.</param>
-    /// <param name="userId">The identifier of the user.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns><c>true</c> if the task exists for the user; otherwise, <c>false</c>.</returns>
-    public async Task<bool> ExistsForUserAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
-        => await this.DbSet.AsNoTracking().AnyAsync(x => x.Id == taskId && x.OwnerId == userId, cancellationToken);
-
-    /// <summary>
     /// Retrieves tasks for a user within a specific task list, optionally filtered by statuses, due dates, and sorting.
     /// Includes Tag and Comments related entities.
     /// </summary>
