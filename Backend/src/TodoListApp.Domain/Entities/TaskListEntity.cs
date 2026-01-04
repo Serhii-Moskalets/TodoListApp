@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using TodoListApp.Domain.Exceptions;
 
 namespace TodoListApp.Domain.Entities;
 
@@ -13,11 +14,20 @@ public class TaskListEntity : BaseEntity
     /// </summary>
     /// <param name="ownerId">The ID of the user who created the task list.</param>
     /// <param name="title">The title of the task list.</param>
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="title"/> is null, empty, or consists only of white-space characters
+    /// or exceed 50 characters.
+    /// </exception>
     public TaskListEntity(Guid ownerId, string title)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
-            throw new ArgumentException("Title of the task list cannot be empty.", nameof(title));
+            throw new DomainException("Title of the task list cannot be empty.");
+        }
+
+        if (title.Length > 100)
+        {
+            throw new DomainException("Title cannot exceed 50 characters.");
         }
 
         this.OwnerId = ownerId;
@@ -59,12 +69,20 @@ public class TaskListEntity : BaseEntity
     /// Updates the taskList title.
     /// </summary>
     /// <param name="title">The new title of the taskList.</param>
-    /// <exception cref="ArgumentException">Thrown when the title is empty.</exception>
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="title"/> is null, empty, or consists only of white-space characters
+    /// or exceed 50 characters.
+    /// </exception>
     public void UpdateTitle(string title)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
-            throw new ArgumentException("Title of the task list cannot be empty.", nameof(title));
+            throw new DomainException("Title of the task list cannot be empty.");
+        }
+
+        if (title.Length > 100)
+        {
+            throw new DomainException("Title cannot exceed 50 characters.");
         }
 
         this.Title = title.Trim();

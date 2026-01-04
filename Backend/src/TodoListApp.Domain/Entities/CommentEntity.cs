@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using TodoListApp.Domain.Exceptions;
 
 namespace TodoListApp.Domain.Entities;
 
@@ -14,14 +15,19 @@ public class CommentEntity : BaseEntity
     /// <param name="taskId">The ID of the task the comment belongs to.</param>
     /// <param name="userId">The ID of the user who created the comment.</param>
     /// <param name="text">The text content of the comment.</param>
-    /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="text"/> is null, empty, or consists only of white-space characters.
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="text"/> is null, empty, or consists only of white-space characters or exceed 1000 characters.
     /// </exception>
     public CommentEntity(Guid taskId, Guid userId, string text)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            throw new ArgumentException("Comment text cannot be empty", nameof(text));
+            throw new DomainException("Comment text cannot be empty.");
+        }
+
+        if (text.Length > 1000)
+        {
+            throw new DomainException("Comment text cannot exceed 1000 characters.");
         }
 
         this.TaskId = taskId;
@@ -38,10 +44,17 @@ public class CommentEntity : BaseEntity
     /// <param name="userId">The ID of the user who created the comment.</param>
     /// <param name="text">The text content of the comment. Cannot be null or empty.</param>
     /// <param name="user">The <see cref="UserEntity"/> representing the user who created the comment.</param>
-    /// <exception cref="ArgumentException">Thrown if <paramref name="text"/> is null, empty, or whitespace only.</exception>
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="text"/> is null, empty, or consists only of white-space characters.
+    /// </exception>
     public CommentEntity(Guid taskId, Guid userId, string text, UserEntity user)
     : this(taskId, userId, text)
     {
+        if (user.Id != userId)
+        {
+            throw new DomainException("User ID mismatch.");
+        }
+
         this.User = user;
     }
 
@@ -85,14 +98,19 @@ public class CommentEntity : BaseEntity
     /// Updates the text content of the comment.
     /// </summary>
     /// <param name="text">The new text content of the comment.</param>
-    /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="text"/> is null, empty, or consists only of white-space characters.
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="text"/> is null, empty, or consists only of white-space characters or exceed 1000 characters.
     /// </exception>
     public void Update(string text)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            throw new ArgumentException("Comment text cannot be empty", nameof(text));
+            throw new DomainException("Comment text cannot be empty.");
+        }
+
+        if (text.Length > 1000)
+        {
+            throw new DomainException("Comment text cannot exceed 1000 characters.");
         }
 
         this.Text = text.Trim();

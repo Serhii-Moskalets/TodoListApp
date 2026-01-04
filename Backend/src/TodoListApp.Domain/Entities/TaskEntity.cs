@@ -18,6 +18,11 @@ public class TaskEntity : BaseEntity
     /// <param name="title">The title of the task.</param>
     /// <param name="dueDate">The due date of the task.</param>
     /// <param name="description">The Description of the task.</param>
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="title"/> is null, empty, or consists only of white-space characters or exceed 50 characters.
+    /// Thrown when <paramref name="dueDate"/> in the past.
+    /// Throw when <paramref name="description"/> exceed 1000 charecters.
+    /// </exception>
     public TaskEntity(
         Guid ownerId,
         Guid taskListId,
@@ -27,7 +32,22 @@ public class TaskEntity : BaseEntity
     {
         if (string.IsNullOrWhiteSpace(title))
         {
-            throw new ArgumentException("Title cannot be empty", nameof(title));
+            throw new DomainException("Title cannot be empty.");
+        }
+
+        if (title.Length > 100)
+        {
+            throw new DomainException("Title cannot exceed 100 characters.");
+        }
+
+        if (dueDate < DateTime.UtcNow)
+        {
+            throw new DomainException("Due date cannot be in the past.");
+        }
+
+        if (description?.Length > 1000)
+        {
+            throw new DomainException("Description cannot exceed 1000 characters.");
         }
 
         this.OwnerId = ownerId;
@@ -120,12 +140,30 @@ public class TaskEntity : BaseEntity
     /// <param name="title">The new title of the task.</param>
     /// <param name="description">The new description of the task.</param>
     /// <param name="dueDate">The new due date of the task.</param>
-    /// <exception cref="ArgumentException">Thrown when the title is empty.</exception>
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="title"/> is null, empty, or consists only of white-space characters.
+    /// Thrown when <paramref name="dueDate"/> is in the past.
+    /// </exception>
     public void UpdateDetails(string title, string? description = null, DateTime? dueDate = null)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
-            throw new ArgumentException("Title cannot be empty", nameof(title));
+            throw new DomainException("Title cannot be empty.");
+        }
+
+        if (title.Length > 100)
+        {
+            throw new DomainException("Title cannot exceed 100 characters.");
+        }
+
+        if (dueDate < DateTime.UtcNow)
+        {
+            throw new DomainException("Due date cannot be in the past.");
+        }
+
+        if (description?.Length > 1000)
+        {
+            throw new DomainException("Description cannot exceed 1000 characters.");
         }
 
         this.Title = title.Trim();
@@ -148,7 +186,7 @@ public class TaskEntity : BaseEntity
     /// If the new status is the same as the current one, no action is taken.
     /// </summary>
     /// <param name="newStatus">The new status to apply to the task.</param>
-    /// <exception cref="ArgumentOutOfRangeException">
+    /// <exception cref="DomainException">
     /// Thrown when the provided <paramref name="newStatus"/> is not a valid <see cref="StatusTask"/> value.
     /// </exception>
     public void ChangeStatus(StatusTask newStatus)
@@ -156,11 +194,6 @@ public class TaskEntity : BaseEntity
         if (this.Status == newStatus)
         {
             return;
-        }
-
-        if (!Enum.IsDefined(typeof(StatusTask), newStatus))
-        {
-            throw new DomainException("Invalid task status.");
         }
 
         switch (newStatus)
