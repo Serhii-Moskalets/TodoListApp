@@ -57,21 +57,4 @@ public class CommentRepository(TodoListAppDbContext context)
 
         return (items, totalCount);
     }
-
-    /// <summary>
-    /// Determines whether a specific user is the owner of a comment.
-    /// </summary>
-    /// <param name="commentId">The ID of the comment.</param>
-    /// <param name="taskId">The ID of the task.</param>
-    /// <param name="userId">The ID of the user.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns><c>true</c> if the user is the owner of the comment; otherwise, <c>false</c>.</returns>
-    public async Task<bool> ExistsInTaskAndOwnedByUserAsync(
-        Guid commentId,
-        Guid taskId,
-        Guid userId,
-        CancellationToken cancellationToken = default)
-        => await this.DbSet
-        .AsNoTracking()
-        .AnyAsync(x => x.Id == commentId && x.TaskId == taskId && x.UserId == userId, cancellationToken);
 }

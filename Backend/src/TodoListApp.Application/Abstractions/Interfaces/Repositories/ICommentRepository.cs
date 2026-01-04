@@ -31,14 +31,4 @@ public interface ICommentRepository : IRepository<CommentEntity>
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Checks whether a given user is the owner of a specific comment.
-    /// </summary>
-    /// <param name="commentId">The identifier of the comment.</param>
-    /// <param name="taskId">The ID of the task.</param>
-    /// <param name="userId">The identifier of the user.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns><c>true</c> if the user is the owner of the comment; otherwise, <c>false</c>.</returns>
-    Task<bool> ExistsInTaskAndOwnedByUserAsync(Guid commentId, Guid taskId, Guid userId, CancellationToken cancellationToken = default);
 }
