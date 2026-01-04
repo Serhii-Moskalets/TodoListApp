@@ -3,8 +3,7 @@
 namespace TodoListApp.Application.Tag.Commands.CreateTag;
 
 /// <summary>
-/// Validator for <see cref="CreateTagCommand"/> using FluentValidation.
-/// Ensures that the tag name is not empty and does not exceed the maximum allowed length.
+/// Validator for <see cref="CreateTagCommand"/>.
 /// </summary>
 public class CreateTagCommandValidator : AbstractValidator<CreateTagCommand>
 {
@@ -13,6 +12,12 @@ public class CreateTagCommandValidator : AbstractValidator<CreateTagCommand>
     /// </summary>
     public CreateTagCommandValidator()
     {
+        this.RuleFor(x => x.UserId)
+            .NotEmpty().WithMessage("User ID is required");
+
+        this.RuleFor(x => x.TaskId)
+            .NotEmpty().WithMessage("Task ID is required");
+
         this.RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Tag name cannot be null or empty.")
             .MaximumLength(50).WithMessage("Tag name cannot exceed 50 characters.");

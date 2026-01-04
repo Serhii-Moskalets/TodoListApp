@@ -34,32 +34,48 @@ public class CreateTagCommandHandler(
             return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
-        var newName = command.Name;
-        var siffix = 1;
+        var uniqueName = await this.GetUniqueName(command.Name!, command.UserId, cancellationToken);
 
-        while (await this.UnitOfWork.Tags.ExistsByNameAsync(newName!, command.UserId, cancellationToken))
+        var tagEntity = new TagEntity(uniqueName, command.UserId);
+        await this.UnitOfWork.Tags.AddAsync(tagEntity, cancellationToken);
+
+        var addTagCommand = new AddTagToTaskCommand(command.TaskId, command.UserId, tagEntity.Id);
+        var tagResult = await this._addTagToTaskHandler.HandleAsync(addTagCommand, cancellationToken);
+
+        if (!tagResult.IsSuccess)
         {
-            newName = $"{command.Name} ({siffix++})";
+            await this.UnitOfWork.Tags.DeleteAsync(tagEntity, cancellationToken);
+
+            return await Result<Guid>.FailureAsync(tagResult.Error!.Code, tagResult.Error.Message);
         }
 
-        var tagEntity = new TagEntity(newName!, command.UserId);
-        await this.UnitOfWork.Tags.AddAsync(tagEntity, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
-        if (command.TaskId.HasValue)
+        return await Result<Guid>.SuccessAsync(tagEntity.Id);
+    }
+
+    /// <summary>
+    /// Generates a unique tag name for the specified user by appending
+    /// a numeric suffix if a tag with the same name already exists.
+    /// </summary>
+    /// <param name="name">The desired tag name.</param>
+    /// <param name="userId">The identifier of the tag owner.</param>
+    /// <param name="cancellationToken">
+    /// A <see cref="CancellationToken"/> to observe while checking for existing tags.
+    /// </param>
+    /// <returns>
+    /// A unique tag name that does not conflict with existing tags of the user.
+    /// </returns>
+    private async Task<string> GetUniqueName(string name, Guid userId, CancellationToken cancellationToken)
+    {
+        var newName = name;
+        var siffix = 1;
+
+        while (await this.UnitOfWork.Tags.ExistsByNameAsync(newName!, userId, cancellationToken))
         {
-            var addTagCommand = new AddTagToTaskCommand(command.TaskId.Value, command.UserId, tagEntity.Id);
-            var tagResult = await this._addTagToTaskHandler.HandleAsync(addTagCommand, cancellationToken);
-
-            if (!tagResult.IsSuccess)
-            {
-                await this.UnitOfWork.Tags.DeleteAsync(tagEntity.Id, cancellationToken);
-                await this.UnitOfWork.SaveChangesAsync(cancellationToken);
-
-                return await Result<Guid>.FailureAsync(tagResult.Error!.Code, tagResult.Error.Message);
-            }
+            newName = $"{name} ({siffix++})";
         }
 
-        return await Result<Guid>.SuccessAsync(tagEntity.Id);
+        return newName;
     }
 }

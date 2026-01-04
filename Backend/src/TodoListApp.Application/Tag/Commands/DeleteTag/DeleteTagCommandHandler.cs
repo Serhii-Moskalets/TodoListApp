@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using TinyResult;
+using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 
@@ -34,7 +35,18 @@ public class DeleteTagCommandHandler(
             return validation;
         }
 
-        await this.UnitOfWork.Tags.DeleteAsync(command.TagId, cancellationToken);
+        var tag = await this.UnitOfWork.Tags.GetByIdAsync(command.TagId, asNoTracking: false, cancellationToken);
+        if (tag is null)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Comment not found.");
+        }
+
+        if (tag.UserId != command.UserId)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "You do not have permission to delete this tag.");
+        }
+
+        await this.UnitOfWork.Tags.DeleteAsync(tag, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);

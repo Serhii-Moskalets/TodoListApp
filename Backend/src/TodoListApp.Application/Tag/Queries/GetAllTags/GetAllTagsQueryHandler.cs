@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Common.Dtos;
@@ -9,9 +10,13 @@ namespace TodoListApp.Application.Tag.Queries.GetAllTags;
 /// <summary>
 /// Handles the <see cref="GetAllTagsQuery"/> to retrieve all tags for a specific user.
 /// </summary>
-public class GetAllTagsQueryHandler(IUnitOfWork unitOfWork)
+public class GetAllTagsQueryHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<GetAllTagsQuery> validator)
     : HandlerBase(unitOfWork), IQueryHandler<GetAllTagsQuery, IEnumerable<TagDto>>
 {
+    private readonly IValidator<GetAllTagsQuery> _validator = validator;
+
     /// <summary>
     /// Handles the query to get all tags for the specified user.
     /// </summary>
@@ -22,6 +27,12 @@ public class GetAllTagsQueryHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<IEnumerable<TagDto>>> Handle(GetAllTagsQuery query, CancellationToken cancellationToken)
     {
+        var validation = await ValidateAsync(this._validator, query);
+        if (!validation.IsSuccess)
+        {
+            return await Result<IEnumerable<TagDto>>.FailureAsync(validation.Error!.Code, validation.Error.Message);
+        }
+
         var tagEntities = await this.UnitOfWork.Tags
             .GetByUserIdAsync(query.UserId, cancellationToken);
 
