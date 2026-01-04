@@ -44,7 +44,7 @@ public class DeleteCommentCommandHandler(
             return await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "You don't have permission to delete this comment.");
         }
 
-        await this.UnitOfWork.Comments.DeleteAsync(command.CommentId, cancellationToken);
+        await this.UnitOfWork.Comments.DeleteAsync(comment, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);

@@ -42,8 +42,8 @@ public interface IRepository
     /// <summary>
     /// Deletes an entity from the repository by its unique identifier.
     /// </summary>
-    /// <param name="id">The unique identifier of the entity to delete.</param>
+    /// <param name="entity">The entity to delete.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>Generic type constraints should be on their own line.</returns>
-    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default);
 }
