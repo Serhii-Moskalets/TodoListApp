@@ -4,7 +4,6 @@ namespace TodoListApp.Application.Comment.Commands.UpdateComment;
 
 /// <summary>
 /// Validator for <see cref="UpdateCommentCommand"/>.
-/// Ensures that the comment text is not empty and does not exceed the maximum allowed length.
 /// </summary>
 public class UpdateCommentCommandValidator : AbstractValidator<UpdateCommentCommand>
 {
@@ -13,6 +12,12 @@ public class UpdateCommentCommandValidator : AbstractValidator<UpdateCommentComm
     /// </summary>
     public UpdateCommentCommandValidator()
     {
+        this.RuleFor(x => x.UserId)
+            .NotEmpty().WithMessage("User ID is required");
+
+        this.RuleFor(x => x.CommentId)
+            .NotEmpty().WithMessage("Comment ID is required");
+
         this.RuleFor(x => x.NewText)
             .NotEmpty().WithMessage("New text cannot be null or empty.")
             .MaximumLength(1000).WithMessage("Comment text cannot exceed 1000 characters.");
