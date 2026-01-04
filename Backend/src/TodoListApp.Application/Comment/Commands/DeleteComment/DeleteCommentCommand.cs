@@ -6,7 +6,6 @@ namespace TodoListApp.Application.Comment.Commands.DeleteComment;
 /// Represents a command to delete an existing comment.
 /// </summary>
 public record DeleteCommentCommand(
-    Guid TaskId,
     Guid CommentId,
     Guid UserId)
     : ICommand;
