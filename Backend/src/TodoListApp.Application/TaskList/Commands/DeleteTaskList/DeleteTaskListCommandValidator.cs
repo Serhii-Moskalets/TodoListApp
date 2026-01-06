@@ -1,23 +1,21 @@
 ﻿using FluentValidation;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.TaskList.Commands.DeleteTaskList;
 
 /// <summary>
-/// Validates the <see cref="DeleteTaskListCommand"/> to ensure the task list exists
-/// and belongs to the requesting user before deletion.
+/// Validator for <see cref="DeleteTaskListCommand"/>.
 /// </summary>
 public class DeleteTaskListCommandValidator : AbstractValidator<DeleteTaskListCommand>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="DeleteTaskListCommandValidator"/> class.
     /// </summary>
-    /// <param name="unitOfWork">The unit of work used to access the data store.</param>
-    public DeleteTaskListCommandValidator(IUnitOfWork unitOfWork)
+    public DeleteTaskListCommandValidator()
     {
+        this.RuleFor(x => x.UserId)
+            .NotEmpty().WithMessage("User ID is required.");
+
         this.RuleFor(x => x.TaskListId)
-            .MustAsync(async (command, id, ct) =>
-                await unitOfWork.TaskLists.IsTaskListOwnerAsync(id, command.UserId, ct))
-            .WithMessage("Task list not found or does not belong to the user.");
+            .NotEmpty().WithMessage("Task list ID is required.");
     }
 }

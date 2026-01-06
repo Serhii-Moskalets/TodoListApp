@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using TinyResult;
+using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 
@@ -33,7 +34,18 @@ public class DeleteTaskListCommandHandler(
             return validation;
         }
 
-        await this.UnitOfWork.TaskLists.DeleteAsync(command.TaskListId, cancellationToken);
+        var taskList = await this.UnitOfWork.TaskLists.GetByIdAsync(command.TaskListId, asNoTracking: false, cancellationToken);
+        if (taskList is null)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task list not found.");
+        }
+
+        if (taskList.OwnerId != command.UserId)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "You do not have permission to delete this task list.");
+        }
+
+        await this.UnitOfWork.TaskLists.DeleteAsync(taskList, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);
