@@ -3,8 +3,7 @@
 namespace TodoListApp.Application.TaskList.Commands.UpdateTaskList;
 
 /// <summary>
-/// Validates the <see cref="UpdateTaskListCommand"/> to ensure all required properties
-/// meet the defined business rules.
+/// Validator for <see cref="UpdateTaskListCommand"/>.
 /// </summary>
 public class UpdateTaskListCommandValidator : AbstractValidator<UpdateTaskListCommand>
 {
@@ -15,5 +14,11 @@ public class UpdateTaskListCommandValidator : AbstractValidator<UpdateTaskListCo
     {
         this.RuleFor(x => x.NewTitle)
             .NotEmpty().WithMessage("New title cannot be null or empty.");
+
+        this.RuleFor(x => x.UserId)
+            .NotEmpty().WithMessage("User ID is required.");
+
+        this.RuleFor(x => x.TaskListId)
+            .NotEmpty().WithMessage("Task list ID is required.");
     }
 }

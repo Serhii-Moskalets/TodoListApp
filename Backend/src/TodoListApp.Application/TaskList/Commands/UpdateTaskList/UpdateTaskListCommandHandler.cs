@@ -1,5 +1,7 @@
 ﻿using FluentValidation;
 using TinyResult;
+using TinyResult.Enums;
+using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 
@@ -11,10 +13,12 @@ namespace TodoListApp.Application.TaskList.Commands.UpdateTaskList;
 /// </summary>
 public class UpdateTaskListCommandHandler(
     IUnitOfWork unitOfWork,
+    ITaskListNameUniquenessService taskListNameUniquenessService,
     IValidator<UpdateTaskListCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<UpdateTaskListCommand, bool>
 {
     private readonly IValidator<UpdateTaskListCommand> _validator = validator;
+    private readonly ITaskListNameUniquenessService _taskListNameUniquenessService = taskListNameUniquenessService;
 
     /// <summary>
     /// Handles the command to update the title of a task list.
@@ -33,14 +37,27 @@ public class UpdateTaskListCommandHandler(
             return validation;
         }
 
-        var taskListEntity = await this.UnitOfWork.TaskLists.GetByIdAsync(command.TaskListId, false, cancellationToken);
+        var taskList = await this.UnitOfWork.TaskLists.GetByIdAsync(command.TaskListId, false, cancellationToken);
 
-        if (taskListEntity is null || taskListEntity.OwnerId != command.UserId)
+        if (taskList is null)
         {
-            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Task list not found.");
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task list not found.");
         }
 
-        taskListEntity.UpdateTitle(command.NewTitle!);
+        if (taskList.Title == command.NewTitle)
+        {
+            return await Result<bool>.SuccessAsync(true);
+        }
+
+        if (taskList.OwnerId != command.UserId)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "You do not have permission to update this task list.");
+        }
+
+        string uniqueTitle = await this._taskListNameUniquenessService
+            .GetUniqueNameAsync(command.UserId, command.NewTitle!, cancellationToken);
+
+        taskList.UpdateTitle(uniqueTitle);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);
