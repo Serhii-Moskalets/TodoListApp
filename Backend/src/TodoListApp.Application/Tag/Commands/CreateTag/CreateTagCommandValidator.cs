@@ -13,10 +13,10 @@ public class CreateTagCommandValidator : AbstractValidator<CreateTagCommand>
     public CreateTagCommandValidator()
     {
         this.RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required");
+            .NotEmpty().WithMessage("User ID is required.");
 
         this.RuleFor(x => x.TaskId)
-            .NotEmpty().WithMessage("Task ID is required");
+            .NotEmpty().WithMessage("Task ID is required.");
 
         this.RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Tag name cannot be null or empty.")

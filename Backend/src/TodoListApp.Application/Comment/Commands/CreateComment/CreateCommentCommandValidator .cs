@@ -13,10 +13,10 @@ public class CreateCommentCommandValidator : AbstractValidator<CreateCommentComm
     public CreateCommentCommandValidator()
     {
         this.RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required");
+            .NotEmpty().WithMessage("User ID is required.");
 
         this.RuleFor(x => x.TaskId)
-            .NotEmpty().WithMessage("Task ID is required");
+            .NotEmpty().WithMessage("Task ID is required.");
 
         this.RuleFor(c => c.Text)
             .NotEmpty().WithMessage("Comment text cannot be null or empty.")

@@ -13,6 +13,6 @@ public class GetAllTagsQueryValidator : AbstractValidator<GetAllTagsQuery>
     public GetAllTagsQueryValidator()
     {
         this.RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required");
+            .NotEmpty().WithMessage("User ID is required.");
     }
 }

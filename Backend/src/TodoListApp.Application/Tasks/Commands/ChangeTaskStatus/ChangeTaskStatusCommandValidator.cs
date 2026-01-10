@@ -13,12 +13,12 @@ public class ChangeTaskStatusCommandValidator : AbstractValidator<ChangeTaskStat
     public ChangeTaskStatusCommandValidator()
     {
         this.RuleFor(x => x.TaskId)
-            .NotEmpty().WithMessage("Task ID is required");
+            .NotEmpty().WithMessage("Task ID is required.");
 
         this.RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required");
+            .NotEmpty().WithMessage("User ID is required.");
 
         this.RuleFor(x => x.Status)
-            .IsInEnum().WithMessage("Invalid task status");
+            .IsInEnum().WithMessage("Invalid task status.");
     }
 }

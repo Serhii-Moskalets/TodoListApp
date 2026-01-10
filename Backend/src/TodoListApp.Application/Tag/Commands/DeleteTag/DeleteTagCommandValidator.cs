@@ -13,9 +13,9 @@ public class DeleteTagCommandValidator : AbstractValidator<DeleteTagCommand>
     public DeleteTagCommandValidator()
     {
         this.RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required");
+            .NotEmpty().WithMessage("User ID is required.");
 
         this.RuleFor(x => x.TagId)
-            .NotEmpty().WithMessage("Tag ID is required");
+            .NotEmpty().WithMessage("Tag ID is required.");
     }
 }

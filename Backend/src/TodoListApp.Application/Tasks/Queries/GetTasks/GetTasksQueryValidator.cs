@@ -13,13 +13,13 @@ public class GetTasksQueryValidator : AbstractValidator<GetTasksQuery>
     public GetTasksQueryValidator()
     {
         this.RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required");
+            .NotEmpty().WithMessage("User ID is required.");
 
         this.RuleFor(x => x.TaskListId)
-            .NotEmpty().WithMessage("Task list ID is required");
+            .NotEmpty().WithMessage("Task list ID is required.");
 
         this.RuleFor(x => x)
             .Must(x => !x.DueAfter.HasValue || !x.DueBefore.HasValue || x.DueAfter <= x.DueBefore)
-            .WithMessage("DueAfter must be before or equal to DueBefore");
+            .WithMessage("DueAfter must be before or equal to DueBefore.");
     }
 }

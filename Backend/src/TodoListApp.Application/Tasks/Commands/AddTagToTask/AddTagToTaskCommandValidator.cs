@@ -13,12 +13,12 @@ public class AddTagToTaskCommandValidator : AbstractValidator<AddTagToTaskComman
     public AddTagToTaskCommandValidator()
     {
         this.RuleFor(x => x.TaskId)
-            .NotEmpty().WithMessage("Task ID is required");
+            .NotEmpty().WithMessage("Task ID is required.");
 
         this.RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required");
+            .NotEmpty().WithMessage("User ID is required.");
 
         this.RuleFor(x => x.TagId)
-            .NotEmpty().WithMessage("Tag ID is required");
+            .NotEmpty().WithMessage("Tag ID is required.");
     }
 }
