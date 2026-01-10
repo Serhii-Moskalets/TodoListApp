@@ -94,4 +94,29 @@ public class TaskListRepository(TodoListAppDbContext context)
 
         return (items, totalCount);
     }
+
+    /// <summary>
+    /// Retrieves a task list entity by its identifier for a specific user.
+    /// Includes the Tag and Comments (with User) related entities.
+    /// </summary>
+    /// <param name="taskListId">The unique identifier of the task list.</param>
+    /// <param name="userId">The unique identifier of the user who owns the task list.</param>
+    /// <param name="asNoTracking">
+    /// If <c>true</c>, the query will not track changes in the retrieved entity,
+    /// which can improve performance for read-only operations.
+    /// </param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation.</param>
+    /// <returns>
+    /// The task list entity with the specified ID for the given user, or <c>null</c> if not found.
+    /// </returns>
+    public async Task<TaskListEntity?> GetTaskListByIdForUserAsync(Guid taskListId, Guid userId, bool asNoTracking = true, CancellationToken cancellationToken = default)
+    {
+        IQueryable<TaskListEntity> query = this.DbSet;
+        if (asNoTracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        return await query.FirstOrDefaultAsync(x => x.Id == taskListId && x.OwnerId == userId, cancellationToken);
+    }
 }

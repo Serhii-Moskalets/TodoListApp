@@ -34,30 +34,6 @@ public class TaskRepository(TodoListAppDbContext context)
             .CountAsync(cancellationToken);
 
     /// <summary>
-    /// Deletes all overdue tasks for a specific user within a specific task list.
-    /// </summary>
-    /// <param name="userId">The identifier of the user.</param>
-    /// <param name="taskListId">The identifier of the task list.</param>
-    /// <param name="now">The current date and time used to determine overdue tasks.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A task representing the asynchronous delete operation.</returns>
-    /// <remarks>
-    /// Changes are not automatically saved. Call SaveChangesAsync in service if needed.
-    /// </remarks>
-    public async Task DeleteOverdueTasksAsync(
-        Guid userId,
-        Guid taskListId,
-        DateTime now,
-        CancellationToken cancellationToken = default)
-    {
-        var overdueTasks = await this.DbSet
-            .Where(x => x.OwnerId == userId && x.TaskListId == taskListId && x.DueDate < now)
-            .ToListAsync(cancellationToken);
-
-        this.DbSet.RemoveRange(overdueTasks);
-    }
-
-    /// <summary>
     /// Retrieves tasks for a user within a specific task list, optionally filtered by statuses, due dates, and sorting.
     /// Includes Tag and Comments related entities.
     /// </summary>
@@ -128,6 +104,10 @@ public class TaskRepository(TodoListAppDbContext context)
     /// </summary>
     /// <param name="taskId">The unique identifier of the task.</param>
     /// <param name="userId">The unique identifier of the user who owns the task.</param>
+    /// <param name="asNoTracking">
+    /// If <c>true</c>, the query will not track changes in the retrieved entity,
+    /// which can improve performance for read-only operations.
+    /// </param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation.</param>
     /// <returns>
     /// The task entity with the specified ID for the given user, or <c>null</c> if not found.
@@ -135,13 +115,19 @@ public class TaskRepository(TodoListAppDbContext context)
     public async Task<TaskEntity?> GetTaskByIdForUserAsync(
         Guid taskId,
         Guid userId,
+        bool asNoTracking = true,
         CancellationToken cancellationToken = default)
     {
-        return await this.DbSet
+        IQueryable<TaskEntity> query = this.DbSet;
+        if (asNoTracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        return await query
             .Include(x => x.Tag)
             .Include(x => x.Comments)
                 .ThenInclude(c => c.User)
-            .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == taskId && x.OwnerId == userId, cancellationToken);
     }
 

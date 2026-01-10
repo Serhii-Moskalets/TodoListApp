@@ -73,20 +73,6 @@ public interface ITaskRepository : IRepository<TaskEntity>
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Deletes all overdue tasks for a specific user and To-Do list.
-    /// </summary>
-    /// <param name="userId">The user identifier.</param>
-    /// <param name="taskListId">The To-Do list identifier.</param>
-    /// <param name="now">The current date and time used to determine overdue tasks.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    Task DeleteOverdueTasksAsync(
-        Guid userId,
-        Guid taskListId,
-        DateTime now,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Retrieves paginated tasks with optional filtering.
     /// </summary>
     /// <param name="userId">The user identifier.</param>
@@ -112,6 +98,10 @@ public interface ITaskRepository : IRepository<TaskEntity>
     /// </summary>
     /// <param name="taskId">The unique identifier of the task.</param>
     /// <param name="userId">The unique identifier of the user who owns the task.</param>
+    /// <param name="asNoTracking">
+    /// If <c>true</c>, the query will not track changes in the retrieved entity,
+    /// which can improve performance for read-only operations.
+    /// </param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation.</param>
     /// <returns>
     /// The task entity with the specified ID for the given user, or <c>null</c> if not found.
@@ -119,6 +109,7 @@ public interface ITaskRepository : IRepository<TaskEntity>
     Task<TaskEntity?> GetTaskByIdForUserAsync(
         Guid taskId,
         Guid userId,
+        bool asNoTracking = true,
         CancellationToken cancellationToken = default);
 
     /// <summary>

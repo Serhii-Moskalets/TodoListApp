@@ -38,4 +38,20 @@ public interface ITaskListRepository : IRepository<TaskListEntity>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns><c>true</c> if a task list with the specified title exists; otherwise, <c>false</c>.</returns>
     Task<bool> ExistsByTitleAsync(string title, Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves a task list entity by its identifier for a specific user.
+    /// Includes the Tag and Comments (with User) related entities.
+    /// </summary>
+    /// <param name="taskListId">The unique identifier of the task list.</param>
+    /// <param name="userId">The unique identifier of the user who owns the task list.</param>
+    /// <param name="asNoTracking">
+    /// If <c>true</c>, the query will not track changes in the retrieved entity,
+    /// which can improve performance for read-only operations.
+    /// </param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation.</param>
+    /// <returns>
+    /// The task list entity with the specified ID for the given user, or <c>null</c> if not found.
+    /// </returns>
+    Task<TaskListEntity?> GetTaskListByIdForUserAsync(Guid taskListId, Guid userId, bool asNoTracking = true, CancellationToken cancellationToken = default);
 }
