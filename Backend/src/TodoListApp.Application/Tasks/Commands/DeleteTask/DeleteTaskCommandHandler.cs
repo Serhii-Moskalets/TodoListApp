@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using TinyResult;
+using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 
@@ -29,7 +30,14 @@ public class DeleteTaskCommandHandler(
             return validation;
         }
 
-        await this.UnitOfWork.Tasks.DeleteAsync(command.TaskId, cancellationToken);
+        var task = await this.UnitOfWork.Tasks
+            .GetTaskByIdForUserAsync(command.TaskId, command.UserId, asNoTracking: false, cancellationToken);
+        if (task is null)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
+        }
+
+        await this.UnitOfWork.Tasks.DeleteAsync(task, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);
