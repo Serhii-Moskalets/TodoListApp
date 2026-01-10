@@ -24,7 +24,7 @@ public class CreateTaskCommandHandler(
     /// </summary>
     /// <param name="command">The <see cref="CreateTaskCommand"/> containing task details.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A <see cref="Result{Boolean}"/> indicating success or failure of the operation.</returns>
+    /// <returns>A <see cref="Result{Guid}"/> containing the created task identifier.</returns>
     public async Task<Result<Guid>> HandleAsync(CreateTaskCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
@@ -33,8 +33,16 @@ public class CreateTaskCommandHandler(
             return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
+        var taskList = await this.UnitOfWork.TaskLists
+            .GetTaskListByIdForUserAsync(command.Dto.TaskListId, command.UserId, cancellationToken: cancellationToken);
+
+        if (taskList is null)
+        {
+            return await Result<Guid>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Task not found.");
+        }
+
         var task = new TaskEntity(
-            command.Dto.OwnerId,
+            command.UserId,
             command.Dto.TaskListId,
             command.Dto.Title!,
             command.Dto.DueDate);
