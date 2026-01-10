@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
@@ -8,13 +9,13 @@ namespace TodoListApp.Application.Tasks.Commands.RemoveTagFromTask;
 /// <summary>
 /// Handles the <see cref="RemoveTagFromTaskCommand"/> to remove a tag from an existing task.
 /// </summary>
-/// <remarks>
-/// Initializes a new instance of the <see cref="RemoveTagFromTaskCommandHandler"/> class.
-/// </remarks>
-/// <param name="unitOfWork">The unit of work used to manage repositories and save changes.</param>
-public class RemoveTagFromTaskCommandHandler(IUnitOfWork unitOfWork)
+public class RemoveTagFromTaskCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<RemoveTagFromTaskCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<RemoveTagFromTaskCommand, bool>
 {
+    private readonly IValidator<RemoveTagFromTaskCommand> _validator = validator;
+
     /// <summary>
     /// Handles the removal of a tag for a specific task and user.
     /// </summary>
@@ -23,14 +24,24 @@ public class RemoveTagFromTaskCommandHandler(IUnitOfWork unitOfWork)
     /// <returns>A <see cref="Result{Boolean}"/> indicating success or failure of the operation.</returns>
     public async Task<Result<bool>> HandleAsync(RemoveTagFromTaskCommand command, CancellationToken cancellationToken)
     {
-        var taskEntity = await this.UnitOfWork.Tasks.GetByIdAsync(command.TaskId, false, cancellationToken);
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
+        {
+            return validation;
+        }
 
-        if (taskEntity is null || taskEntity.OwnerId != command.UserId)
+        var task = await this.UnitOfWork.Tasks.GetTaskByIdForUserAsync(command.TaskId, command.UserId, false, cancellationToken);
+        if (task is null)
         {
             return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
         }
 
-        taskEntity.SetTag(null);
+        if (task.TagId is null)
+        {
+            return await Result<bool>.SuccessAsync(true);
+        }
+
+        task.SetTag(null);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);
