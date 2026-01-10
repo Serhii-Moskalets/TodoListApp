@@ -34,15 +34,11 @@ public class DeleteTaskListCommandHandler(
             return validation;
         }
 
-        var taskList = await this.UnitOfWork.TaskLists.GetByIdAsync(command.TaskListId, asNoTracking: false, cancellationToken);
+        var taskList = await this.UnitOfWork.TaskLists
+            .GetTaskListByIdForUserAsync(command.TaskListId, command.UserId, asNoTracking: false, cancellationToken);
         if (taskList is null)
         {
             return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task list not found.");
-        }
-
-        if (taskList.OwnerId != command.UserId)
-        {
-            return await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "You do not have permission to delete this task list.");
         }
 
         await this.UnitOfWork.TaskLists.DeleteAsync(taskList, cancellationToken);

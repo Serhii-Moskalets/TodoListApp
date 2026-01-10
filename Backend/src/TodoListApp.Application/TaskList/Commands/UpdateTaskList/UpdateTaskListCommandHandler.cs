@@ -37,7 +37,8 @@ public class UpdateTaskListCommandHandler(
             return validation;
         }
 
-        var taskList = await this.UnitOfWork.TaskLists.GetByIdAsync(command.TaskListId, false, cancellationToken);
+        var taskList = await this.UnitOfWork.TaskLists
+            .GetTaskListByIdForUserAsync(command.TaskListId, command.UserId, asNoTracking: false, cancellationToken);
 
         if (taskList is null)
         {
@@ -47,11 +48,6 @@ public class UpdateTaskListCommandHandler(
         if (taskList.Title == command.NewTitle)
         {
             return await Result<bool>.SuccessAsync(true);
-        }
-
-        if (taskList.OwnerId != command.UserId)
-        {
-            return await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "You do not have permission to update this task list.");
         }
 
         string uniqueTitle = await this._taskListNameUniquenessService

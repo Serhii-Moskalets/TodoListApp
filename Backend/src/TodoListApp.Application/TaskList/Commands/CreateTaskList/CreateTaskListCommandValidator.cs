@@ -14,7 +14,8 @@ public class CreateTaskListCommandValidator : AbstractValidator<CreateTaskListCo
     public CreateTaskListCommandValidator()
     {
         this.RuleFor(x => x.Title)
-            .NotEmpty().WithMessage("Title cannot be null or empty.");
+            .NotEmpty().WithMessage("Title cannot be null or empty.")
+            .MaximumLength(50).WithMessage("Title cannot exceed 50 characters.");
 
         this.RuleFor(x => x.UserId)
             .NotEmpty().WithMessage("OwnerId cannot be empty.");
