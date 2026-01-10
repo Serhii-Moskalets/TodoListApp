@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using TinyResult;
+using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 
@@ -30,8 +31,17 @@ public class DeleteOverdueTasksCommandHandler(
             return validation;
         }
 
-        await this.UnitOfWork.Tasks.DeleteOverdueTasksAsync(command.UserId, command.TaskListId, DateTime.UtcNow, cancellationToken);
+        var taskList = await this.UnitOfWork.TaskLists
+            .GetTaskListByIdForUserAsync(command.TaskListId, command.UserId, asNoTracking: false, cancellationToken);
+
+        if (taskList is null)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task list not found.");
+        }
+
+        taskList.DeleteOverdueTasks(DateTime.UtcNow);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
+
         return await Result<bool>.SuccessAsync(true);
     }
 }
