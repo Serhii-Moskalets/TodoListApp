@@ -12,11 +12,6 @@ public class UpdateTaskDto
     public Guid TaskId { get; init; }
 
     /// <summary>
-    /// Gets the unique identifier of the user.
-    /// </summary>
-    public Guid OwnerId { get; init; }
-
-    /// <summary>
     /// Gets the new title of the task.
     /// </summary>
     public string? Title { get; init; }

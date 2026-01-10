@@ -6,11 +6,6 @@
 public class CreateTaskDto
 {
     /// <summary>
-    /// Gets the unique identifier of the user.
-    /// </summary>
-    public Guid OwnerId { get; init; }
-
-    /// <summary>
     /// Gets the title of the task.
     /// </summary>
     public string? Title { get; init; }
