@@ -25,17 +25,11 @@ public class GetTaskWithSharedUsersQueryHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<TaskAccessListDto>> Handle(GetTaskWithSharedUsersQuery query, CancellationToken cancellationToken)
     {
-        var task = await this.UnitOfWork.Tasks.GetByIdAsync(query.TaskId);
+        var task = await this.UnitOfWork.Tasks
+            .GetTaskByIdForUserAsync(query.TaskId, query.UserId, asNoTracking: true, cancellationToken);
         if (task is null)
         {
             return await Result<TaskAccessListDto>.FailureAsync(ErrorCode.NotFound, "Task not found.");
-        }
-
-        if (task.OwnerId != query.OwnerId)
-        {
-            return await Result<TaskAccessListDto>.FailureAsync(
-                ErrorCode.InvalidOperation,
-                "Only task owner can retrieve shared access.");
         }
 
         var utaEntityList = await this.UnitOfWork.UserTaskAccesses
