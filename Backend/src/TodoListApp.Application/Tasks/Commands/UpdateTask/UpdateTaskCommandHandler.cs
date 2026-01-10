@@ -27,18 +27,17 @@ public class UpdateTaskCommandHandler(
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)
         {
-            return validation;
+            return await Result<bool>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
-        var taskDto = command.Dto;
-
-        var taskEntity = await this.UnitOfWork.Tasks.GetByIdAsync(taskDto.TaskId, false, cancellationToken: cancellationToken);
-        if (taskEntity == null || taskEntity.OwnerId != taskDto.OwnerId)
+        var task = await this.UnitOfWork.Tasks
+            .GetTaskByIdForUserAsync(command.Dto.TaskId, command.UserId, false, cancellationToken: cancellationToken);
+        if (task == null)
         {
             return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
         }
 
-        taskEntity.UpdateDetails(taskDto.Title!, taskDto.Description, taskDto.DueDate);
+        task.UpdateDetails(command.Dto.Title!, command.Dto.Description, command.Dto.DueDate);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);
