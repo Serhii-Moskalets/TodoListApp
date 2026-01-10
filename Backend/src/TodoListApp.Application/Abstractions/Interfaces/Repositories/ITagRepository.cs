@@ -17,6 +17,25 @@ public interface ITagRepository : IRepository<TagEntity>
     Task<IReadOnlyCollection<TagEntity>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Retrieves a tag entity by its identifier for a specific user.
+    /// </summary>
+    /// <param name="tagId">The unique identifier of the tag.</param>
+    /// <param name="userId">The unique identifier of the user who owns the task list.</param>
+    /// <param name="asNoTracking">
+    /// If <c>true</c>, the query will not track changes in the retrieved entity,
+    /// which can improve performance for read-only operations.
+    /// </param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation.</param>
+    /// <returns>
+    /// The tag entity with the specified ID for the given user, or <c>null</c> if not found.
+    /// </returns>
+    Task<TagEntity?> GetTagByIdForUserAsync(
+        Guid tagId,
+        Guid userId,
+        bool asNoTracking = true,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Retrieves a paginated collection of tags for a specific user.
     /// </summary>
     /// <param name="userId">The identifier of the user.</param>

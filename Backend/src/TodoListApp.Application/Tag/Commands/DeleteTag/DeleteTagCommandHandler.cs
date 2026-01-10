@@ -35,15 +35,11 @@ public class DeleteTagCommandHandler(
             return validation;
         }
 
-        var tag = await this.UnitOfWork.Tags.GetByIdAsync(command.TagId, asNoTracking: false, cancellationToken);
+        var tag = await this.UnitOfWork.Tags
+            .GetTagByIdForUserAsync(command.TagId, command.UserId, asNoTracking: false, cancellationToken);
         if (tag is null)
         {
-            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Comment not found.");
-        }
-
-        if (tag.UserId != command.UserId)
-        {
-            return await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "You do not have permission to delete this tag.");
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Tag not found.");
         }
 
         await this.UnitOfWork.Tags.DeleteAsync(tag, cancellationToken);
