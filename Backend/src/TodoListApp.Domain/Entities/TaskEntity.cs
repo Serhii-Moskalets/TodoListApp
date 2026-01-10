@@ -177,8 +177,16 @@ public class TaskEntity : BaseEntity
     /// <param name="tagId">The ID of the tag to associate, or null to remove it.</param>
     public void SetTag(Guid? tagId)
     {
+        if (this.TagId == tagId)
+        {
+            return;
+        }
+
         this.TagId = tagId;
-        this.Tag = null;
+        if (tagId is null)
+        {
+            this.Tag = null;
+        }
     }
 
     /// <summary>
@@ -204,6 +212,8 @@ public class TaskEntity : BaseEntity
                 this.SetInProgress(); break;
             case StatusTask.Done:
                 this.Complete(); break;
+            default:
+                throw new DomainException("Invalid task status.");
         }
     }
 
