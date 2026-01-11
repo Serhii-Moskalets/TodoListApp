@@ -144,7 +144,7 @@ public class TaskEntity : BaseEntity
     /// Thrown when <paramref name="title"/> is null, empty, or consists only of white-space characters.
     /// Thrown when <paramref name="dueDate"/> is in the past.
     /// </exception>
-    public void UpdateDetails(string title, string? description = null, DateTime? dueDate = null)
+    public virtual void UpdateDetails(string title, string? description = null, DateTime? dueDate = null)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
