@@ -191,6 +191,39 @@ public class UserTaskAccessRepositoryTests
     }
 
     /// <summary>
+    /// Verifies that <see cref="UserTaskAccessRepository.GetSharedTasksByUserIdAsync"/>
+    /// returns all tasks shared with a specific user.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task GetSharedTasksByUserIdAsync_ShouldReturnCorrectTasks()
+    {
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new UserTaskAccessRepository(context);
+
+        var owner = new UserEntity("Owner", "owner", "owner@example.com", "hash");
+        var sharedUser = new UserEntity("Shared", "shared", "shared@example.com", "hash2");
+        await context.Users.AddRangeAsync(owner, sharedUser);
+
+        var taskList = new TaskListEntity(owner.Id, "List");
+        await context.TaskLists.AddAsync(taskList);
+
+        var task1 = new TaskEntity(owner.Id, taskList.Id, "Task1");
+        var task2 = new TaskEntity(owner.Id, taskList.Id, "Task2");
+        await context.Tasks.AddRangeAsync(task1, task2);
+
+        var access1 = new UserTaskAccessEntity(task1.Id, sharedUser.Id);
+        var access2 = new UserTaskAccessEntity(task2.Id, sharedUser.Id);
+        await repo.AddAsync(access1);
+        await repo.AddAsync(access2);
+        await context.SaveChangesAsync();
+
+        var sharedTasks = await repo.GetSharedTasksByUserIdAsync(sharedUser.Id);
+        Assert.Equal(2, sharedTasks.Count);
+        Assert.All(sharedTasks, t => Assert.Equal(sharedUser.Id, t.UserId));
+    }
+
+    /// <summary>
     /// Verifies that <see cref="UserTaskAccessRepository.ExistsAsync"/>
     /// returns true when an access entry exists.
     /// </summary>

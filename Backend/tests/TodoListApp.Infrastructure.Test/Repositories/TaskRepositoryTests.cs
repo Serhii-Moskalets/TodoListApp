@@ -12,41 +12,6 @@ namespace TodoListApp.Infrastructure.Test.Repositories;
 public class TaskRepositoryTests
 {
     /// <summary>
-    /// Tests that <see cref="TaskRepository.ExistsForUserAsync"/>
-    /// returns true when a task exists for a given user.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task ExistsForUser_ReturnsTrue_WhenTaskExists()
-    {
-        await using var context = InMemoryDbContextFactory.Create();
-        var repo = new TaskRepository(context);
-        var userId = Guid.NewGuid();
-        var task = new TaskEntity(userId, taskListId: Guid.NewGuid(), "Task", DateTime.UtcNow.AddDays(1));
-        await repo.AddAsync(task);
-        await context.SaveChangesAsync();
-
-        var exists = await repo.ExistsForUserAsync(task.Id, userId);
-        Assert.True(exists);
-    }
-
-    /// <summary>
-    /// Tests that <see cref="TaskRepository.ExistsForUserAsync"/>
-    /// returns false when the task does not exist.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task ExistsForUser_ReturnsFalse_WhenTaskDoesNotExists()
-    {
-        await using var context = InMemoryDbContextFactory.Create();
-        var repo = new TaskRepository(context);
-        var userId = Guid.NewGuid();
-
-        var exists = await repo.ExistsForUserAsync(Guid.NewGuid(), userId);
-        Assert.False(exists);
-    }
-
-    /// <summary>
     /// Tests that <see cref="TaskRepository.CountOverdueTasksAsync"/>
     /// returns the correct number of overdue tasks.
     /// </summary>
@@ -58,13 +23,15 @@ public class TaskRepositoryTests
         var repo = new TaskRepository(context);
         var userId = Guid.NewGuid();
         var taskListId = Guid.NewGuid();
-        var now = DateTime.UtcNow;
+
+        var pastTime = DateTime.UtcNow.AddMinutes(5);
+        var now = DateTime.UtcNow.AddMinutes(20);
 
         var tasks = new[]
         {
-            new TaskEntity(userId, taskListId, "Task_1", now.AddDays(-1)),
-            new TaskEntity(userId, taskListId, "Task_2", now.AddDays(-2)),
-            new TaskEntity(userId, taskListId, "Task_3", now.AddDays(1)),
+            new TaskEntity(userId, taskListId, "Task_1", pastTime),
+            new TaskEntity(userId, taskListId, "Task_2", pastTime),
+            new TaskEntity(userId, taskListId, "Task_3", now.AddMinutes(10)),
         };
 
         foreach (var task in tasks)
@@ -76,41 +43,6 @@ public class TaskRepositoryTests
 
         var count = await repo.CountOverdueTasksAsync(userId, taskListId, now);
         Assert.Equal(2, count);
-    }
-
-    /// <summary>
-    /// Tests that <see cref="TaskRepository.DeleteOverdueTasksAsync"/> removes only overdue tasks.
-    /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
-    [Fact]
-    public async Task DeleteOverdueTasks_RemovesOnlyOverdueTasks()
-    {
-        await using var context = InMemoryDbContextFactory.Create();
-        var repo = new TaskRepository(context);
-        var userId = Guid.NewGuid();
-        var taskListId = Guid.NewGuid();
-        var now = DateTime.UtcNow;
-
-        var tasks = new[]
-        {
-            new TaskEntity(userId, taskListId, "Task_1", now.AddDays(-1)),
-            new TaskEntity(userId, taskListId, "Task_2", now.AddDays(-2)),
-            new TaskEntity(userId, taskListId, "Task_3", now.AddDays(1)),
-        };
-
-        foreach (var task in tasks)
-        {
-            await repo.AddAsync(task);
-        }
-
-        await context.SaveChangesAsync();
-
-        await repo.DeleteOverdueTasksAsync(userId, taskListId, now);
-        await context.SaveChangesAsync();
-
-        var allTasks = await repo.GetTasksAsync(userId, taskListId);
-        Assert.Single(allTasks);
-        Assert.Equal("Task_3", allTasks.First().Title);
     }
 
     /// <summary>
@@ -154,11 +86,11 @@ public class TaskRepositoryTests
         var repo = new TaskRepository(context);
         var userId = Guid.NewGuid();
         var taskListId = Guid.NewGuid();
-        var now = DateTime.UtcNow;
+        var now = DateTime.UtcNow.AddMinutes(5);
 
-        var task_1 = new TaskEntity(userId, taskListId, "Task_1", now.AddDays(-1));
-        var task_3 = new TaskEntity(userId, taskListId, "Task_3", now.AddDays(1));
-        var task_2 = new TaskEntity(userId, taskListId, "Task_2", now.AddDays(-2));
+        var task_1 = new TaskEntity(userId, taskListId, "Task_1", now.AddMinutes(1));
+        var task_3 = new TaskEntity(userId, taskListId, "Task_3", now.AddMinutes(2));
+        var task_2 = new TaskEntity(userId, taskListId, "Task_2", now.AddMinutes(3));
 
         task_1.ChangeStatus(StatusTask.InProgress);
         task_3.ChangeStatus(StatusTask.InProgress);
@@ -169,7 +101,12 @@ public class TaskRepositoryTests
 
         await context.SaveChangesAsync();
 
-        var filtered = await repo.GetTasksAsync(userId, taskListId, statuses: [StatusTask.InProgress], sortBy: TaskSortBy.Title);
+        var filtered = await repo.GetTasksAsync(
+            userId,
+            taskListId,
+            statuses: [StatusTask.InProgress],
+            sortBy: TaskSortBy.Title);
+
         Assert.Equal(2, filtered.Count);
         Assert.Equal(["Task_1", "Task_3"], [.. filtered.Select(x => x.Title)]);
     }
@@ -192,5 +129,59 @@ public class TaskRepositoryTests
 
         Assert.True(await repo.IsTaskOwnerAsync(task.Id, userId_1));
         Assert.False(await repo.IsTaskOwnerAsync(task.Id, userId_2));
+    }
+
+    /// <summary>
+    /// Checks that <see cref="TaskRepository.GetTasksAsync"/>
+    /// returns all tasks when statuses are null or empty.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task GetTasks_ReturnsAll_WhenStatusesNullOrEmpty()
+    {
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new TaskRepository(context);
+        var userId = Guid.NewGuid();
+        var taskListId = Guid.NewGuid();
+        var now = DateTime.UtcNow.AddMinutes(5);
+
+        var tasks = new[]
+        {
+            new TaskEntity(userId, taskListId, "Task_1", now),
+            new TaskEntity(userId, taskListId, "Task_2", now),
+        };
+
+        foreach (var task in tasks)
+        {
+            await repo.AddAsync(task);
+        }
+
+        await context.SaveChangesAsync();
+
+        var allTasks1 = await repo.GetTasksAsync(userId, taskListId, statuses: null);
+        var allTasks2 = await repo.GetTasksAsync(userId, taskListId, statuses: []);
+        Assert.Equal(2, allTasks1.Count);
+        Assert.Equal(2, allTasks2.Count);
+    }
+
+    /// <summary>
+    /// Checks that <see cref="TaskRepository.GetTaskByIdForUserAsync"/>
+    /// returns null when the task does not belong to the specified user.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task GetTaskByIdForUser_ReturnsNull_WhenUserMismatch()
+    {
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new TaskRepository(context);
+
+        var user1 = Guid.NewGuid();
+        var user2 = Guid.NewGuid();
+        var task = new TaskEntity(user1, Guid.NewGuid(), "Task", DateTime.UtcNow.AddMinutes(5));
+        await repo.AddAsync(task);
+        await context.SaveChangesAsync();
+
+        var result = await repo.GetTaskByIdForUserAsync(task.Id, user2);
+        Assert.Null(result);
     }
 }

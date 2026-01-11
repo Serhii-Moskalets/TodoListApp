@@ -159,7 +159,7 @@ public class TaskListRepositoryTests
     }
 
     /// <summary>
-    /// Verifies that <see cref="TaskListRepository.GetByIdForUserAsync"/>
+    /// Verifies that <see cref="TaskListRepository.GetTaskListByIdForUserAsync"/>
     /// retrieves the correct task list by its ID.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -175,13 +175,13 @@ public class TaskListRepositoryTests
         await repo.AddAsync(taskList);
         await context.SaveChangesAsync();
 
-        var saved = await repo.GetByIdForUserAsync(taskList.Id, userId);
+        var saved = await repo.GetTaskListByIdForUserAsync(taskList.Id, userId);
         Assert.NotNull(saved);
         Assert.Equal(taskList.Title, saved.Title);
     }
 
     /// <summary>
-    /// Verifies that <see cref="TaskListRepository.GetByIdForUserAsync"/>
+    /// Verifies that <see cref="TaskListRepository.GetTaskListByIdForUserAsync"/>
     /// returns null when the task list does not exist.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
@@ -193,7 +193,7 @@ public class TaskListRepositoryTests
 
         var userId = Guid.NewGuid();
         var taskListId = Guid.NewGuid();
-        var saved = await repo.GetByIdForUserAsync(taskListId, userId);
+        var saved = await repo.GetTaskListByIdForUserAsync(taskListId, userId);
         Assert.Null(saved);
     }
 
@@ -313,6 +313,27 @@ public class TaskListRepositoryTests
     }
 
     /// <summary>
+    /// Checks that <see cref="TaskListRepository.GetTaskListByIdForUserAsync"/>
+    /// returns null when the task list does not belong to the specified user.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task GetTaskListByIdForUserAsync_ReturnsNull_WhenUserMismatch()
+    {
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new TaskListRepository(context);
+
+        var user1 = Guid.NewGuid();
+        var user2 = Guid.NewGuid();
+        var taskList = new TaskListEntity(user1, title: "Task");
+        await repo.AddAsync(taskList);
+        await context.SaveChangesAsync();
+
+        var result = await repo.GetTaskListByIdForUserAsync(taskList.Id, user2);
+        Assert.Null(result);
+    }
+
+    /// <summary>
     /// Ensures <see cref="TaskListRepository.GetPagedByUserIdAsync"/>
     /// throws <see cref="ArgumentOutOfRangeException"/> when page number is invalid.
     /// </summary>
@@ -399,47 +420,27 @@ public class TaskListRepositoryTests
     }
 
     /// <summary>
-    /// Verifies that <see cref="TaskListRepository.IsTaskListOwnerAsync"/>
-    /// returns true when the user is the owner of the task list.
+    /// Checks that <see cref="TaskListRepository.GetPagedByUserIdAsync"/>
+    /// returns remaining items when the last page is partially filled.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    public async Task IsTaskListOwner_ReturnTrue_WhenUserIsOwner()
+    public async Task GetPagedByUserId_LastPartialPage_ReturnsRemainingItems()
     {
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TaskListRepository(context);
 
         var userId = Guid.NewGuid();
-        var taskList = new TaskListEntity(userId, title: "Task List");
+        for (int i = 1; i <= 5; i++)
+        {
+            await repo.AddAsync(new TaskListEntity(userId, $"Task_{i}"));
+        }
 
-        await repo.AddAsync(taskList);
         await context.SaveChangesAsync();
 
-        var isOwner = await repo.IsTaskListOwnerAsync(taskList.Id, userId);
-
-        Assert.True(isOwner);
-    }
-
-    /// <summary>
-    /// Verifies that <see cref="TaskListRepository.IsTaskListOwnerAsync"/>
-    /// returns false when the user is not the owner of the task list.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    [Fact]
-    public async Task IsTaskListOwner_ReturnFalse_WhenUserIsNotOwner()
-    {
-        await using var context = InMemoryDbContextFactory.Create();
-        var repo = new TaskListRepository(context);
-
-        var userId_1 = Guid.NewGuid();
-        var userId_2 = Guid.NewGuid();
-        var taskList = new TaskListEntity(userId_1, title: "Task List");
-
-        await repo.AddAsync(taskList);
-        await context.SaveChangesAsync();
-
-        var isOwner = await repo.IsTaskListOwnerAsync(taskList.Id, userId_2);
-
-        Assert.False(isOwner);
+        var (items, totalCount) = await repo.GetPagedByUserIdAsync(userId, page: 3, pageSize: 2);
+        Assert.Equal(5, totalCount);
+        Assert.Single(items);
+        Assert.Equal("Task_5", items.First().Title);
     }
 }

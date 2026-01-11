@@ -11,6 +11,20 @@ namespace TodoListApp.Infrastructure.Test.Repositories;
 public class TagRepositoryTests
 {
     /// <summary>
+    /// Tests that checking tag existence by name returns false when the tag does not exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExistsByNameAsync_ReturnsFalse_WhenTagDoesNotExist()
+    {
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new TagRepository(context);
+        var userId = Guid.NewGuid();
+
+        Assert.False(await repo.ExistsByNameAsync("NonExistingTag", userId));
+    }
+
+    /// <summary>
     /// Tests that <see cref="TagRepository.ExistsByNameAsync"/>
     /// returns true when a tag exists for a given user.
     /// </summary>
@@ -27,6 +41,22 @@ public class TagRepositoryTests
         await context.SaveChangesAsync();
 
         Assert.True(await repo.ExistsByNameAsync("Tag", userId));
+    }
+
+    /// <summary>
+    /// Tests that retrieving tags for a user returns an empty list when no tags exist.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task GetByUserIdAsync_ReturnsEmptyList_WhenNoTags()
+    {
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new TagRepository(context);
+        var userId = Guid.NewGuid();
+
+        var result = await repo.GetByUserIdAsync(userId);
+        Assert.NotNull(result);
+        Assert.Empty(result);
     }
 
     /// <summary>

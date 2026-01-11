@@ -49,6 +49,47 @@ public class UserRepositoryTests
     }
 
     /// <summary>
+    /// Checks that <see cref="UserRepository.ExistsByEmailAsync"/>
+    /// performs a case-insensitive email comparison.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task ExistsByEmail_IsCaseInsensitive()
+    {
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new UserRepository(context);
+        var user = new UserEntity("John", "john", "John@Example.com", "hash");
+        await context.Users.AddAsync(user);
+        await context.SaveChangesAsync();
+
+        Assert.True(await repo.ExistsByEmailAsync("john@example.com"));
+        Assert.True(await repo.ExistsByEmailAsync("JOHN@EXAMPLE.COM"));
+    }
+
+    /// <summary>
+    /// Checks that <see cref="UserRepository.GetByUserNameAsync"/>
+    /// performs a case-insensitive username lookup.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task GetByUserName_IsCaseInsensitive()
+    {
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new UserRepository(context);
+        var user = new UserEntity("John", "JohnUser", "john@example.com", "hash");
+        await context.Users.AddAsync(user);
+        await context.SaveChangesAsync();
+
+        var user1 = await repo.GetByUserNameAsync("johnuser");
+        var user2 = await repo.GetByUserNameAsync("JOHNUSER");
+
+        Assert.NotNull(user1);
+        Assert.NotNull(user2);
+        Assert.Equal(user.Id, user1.Id);
+        Assert.Equal(user.Id, user2.Id);
+    }
+
+    /// <summary>
     /// Checks that <see cref="UserRepository.GetByEmailAsync"/>
     /// returns the correct user when the email exists.
     /// </summary>
