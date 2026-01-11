@@ -99,9 +99,8 @@ public class CommentEntityTests
     [InlineData("New text    ")]
     public void Update_ShouldTrimName(string text)
     {
-        var normalText = "New text";
         var comment = new CommentEntity(Guid.NewGuid(), Guid.NewGuid(), Text);
         comment.Update(text);
-        Assert.Equal(comment.Text, normalText);
+        Assert.Equal("New text", comment.Text);
     }
 }

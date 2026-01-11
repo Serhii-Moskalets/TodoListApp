@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
-	<NoWarn>SA1200,SA1633,SA1000,SA1309,RCS1118</NoWarn>
+	<NoWarn>SA1200,SA1633,SA1000,SA1309,RCS1118,SA1010</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
