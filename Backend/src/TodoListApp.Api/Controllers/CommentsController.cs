@@ -79,18 +79,15 @@ public class CommentsController : BaseController
     /// <summary>
     /// Deletes an existing comment.
     /// </summary>
-    /// <param name="taskId">The unique identifier of the task.</param>
     /// <param name="commentId">The unique identifier of the comment to delete.</param>
     /// <returns>
     /// Returns <see cref="NoContentResult"/> if the comment was successfully deleted;
     /// otherwise, returns <see cref="BadRequestObjectResult"/> with error details.
     /// </returns>
     [HttpDelete("{commentId:guid}")]
-    public async Task<IActionResult> DeleteComment(
-        [FromRoute] Guid taskId,
-        [FromRoute] Guid commentId)
+    public async Task<IActionResult> DeleteComment([FromRoute] Guid commentId)
     {
-        var command = new DeleteCommentCommand(taskId, commentId, CurrentUserId);
+        var command = new DeleteCommentCommand(commentId, CurrentUserId);
         var result = await this._deleteCommentHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
@@ -98,7 +95,6 @@ public class CommentsController : BaseController
     /// <summary>
     /// Updates the text of an existing comment.
     /// </summary>
-    /// <param name="taskId">The unique identifier of the task.</param>
     /// <param name="commentId">The unique identifier of the comment.</param>
     /// <param name="request">The request containing the updated comment text.</param>
     /// <returns>
@@ -107,11 +103,10 @@ public class CommentsController : BaseController
     /// </returns>
     [HttpPut("{commentId:guid}")]
     public async Task<IActionResult> UpdateComment(
-        [FromRoute] Guid taskId,
         [FromRoute] Guid commentId,
         [FromBody] CommentTextRequest request)
     {
-        var command = new UpdateCommentCommand(taskId, commentId, CurrentUserId, request.Text);
+        var command = new UpdateCommentCommand(commentId, CurrentUserId, request.Text);
         var result = await this._updateCommentHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }

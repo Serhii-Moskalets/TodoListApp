@@ -135,13 +135,13 @@ public class TasksController : BaseController
     [HttpPost("task-lists/{taskListId:guid}/tasks")]
     public async Task<IActionResult> CreateTask([FromRoute] Guid taskListId, [FromBody] CreateTaskDtoRequest request)
     {
-        var command = new CreateTaskCommand(new CreateTaskDto
-        {
-            OwnerId = CurrentUserId,
-            Title = request.Title,
-            DueDate = request.DueDate,
-            TaskListId = taskListId,
-        });
+        var command = new CreateTaskCommand(
+            new CreateTaskDto
+            {
+                Title = request.Title,
+                DueDate = request.DueDate,
+                TaskListId = taskListId,
+            }, CurrentUserId);
 
         var result = await this._createTaskHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleResult(result);
@@ -159,14 +159,14 @@ public class TasksController : BaseController
     [HttpPut("{taskId:guid}")]
     public async Task<IActionResult> UpdateTask([FromRoute] Guid taskId, [FromBody] UpdateTaskDtoRequest request)
     {
-        var command = new UpdateTaskCommand(new UpdateTaskDto
-        {
-            TaskId = taskId,
-            OwnerId = CurrentUserId,
-            Title = request.Title,
-            Description = request.Description,
-            DueDate = request.DueDate,
-        });
+        var command = new UpdateTaskCommand(
+            new UpdateTaskDto
+            {
+                TaskId = taskId,
+                Title = request.Title,
+                Description = request.Description,
+                DueDate = request.DueDate,
+            }, CurrentUserId);
 
         var result = await this._updateTaskHandler.HandleAsync(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
