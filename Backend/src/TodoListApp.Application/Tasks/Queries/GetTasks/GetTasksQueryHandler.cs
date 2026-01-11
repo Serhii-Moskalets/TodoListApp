@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Common.Dtos;
@@ -9,9 +10,13 @@ namespace TodoListApp.Application.Tasks.Queries.GetTasks;
 /// <summary>
 /// Handles the <see cref="GetTasksQuery"/> to retrieve a filtered and sorted list of tasks for a specific user.
 /// </summary>
-public class GetTasksQueryHandler(IUnitOfWork unitOfWork)
+public class GetTasksQueryHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<GetTasksQuery> validator)
     : HandlerBase(unitOfWork), IQueryHandler<GetTasksQuery, IEnumerable<TaskDto>>
 {
+    private readonly IValidator<GetTasksQuery> _validator = validator;
+
     /// <summary>
     /// Retrieves tasks based on the provided filters and sorting options, maps them to <see cref="TaskDto"/>,
     /// and returns the result wrapped in a <see cref="TinyResult.Result{T}"/>.
@@ -23,6 +28,12 @@ public class GetTasksQueryHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<IEnumerable<TaskDto>>> Handle(GetTasksQuery query, CancellationToken cancellationToken)
     {
+        var validation = await ValidateAsync(this._validator, query);
+        if (!validation.IsSuccess)
+        {
+            return await Result<IEnumerable<TaskDto>>.FailureAsync(validation.Error!.Code, validation.Error.Message);
+        }
+
         var taskEntityList = await this.UnitOfWork.Tasks.GetTasksAsync(
             query.UserId,
             query.TaskListId,
