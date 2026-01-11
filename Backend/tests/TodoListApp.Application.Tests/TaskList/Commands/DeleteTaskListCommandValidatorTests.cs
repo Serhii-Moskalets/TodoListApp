@@ -1,67 +1,54 @@
-﻿using Moq;
-using TodoListApp.Application.Abstractions.Interfaces.Repositories;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+﻿using FluentValidation.TestHelper;
 using TodoListApp.Application.TaskList.Commands.DeleteTaskList;
 
 namespace TodoListApp.Application.Tests.TaskList.Commands;
 
 /// <summary>
 /// Unit tests for <see cref="DeleteTaskListCommandValidator"/>.
-/// Ensures that the validator correctly verifies task list ownership.
+/// Ensures that validation rules for deleting a task list are enforced correctly.
 /// </summary>
 public class DeleteTaskListCommandValidatorTests
 {
+    private readonly DeleteTaskListCommandValidator _validator = new();
+
     /// <summary>
-    /// Tests that validation fails when the task list does not belong to the user.
+    /// Returns a validation error if <see cref="DeleteTaskListCommand.UserId"/> is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenUserIsNotOwner()
+    public void Should_Have_Error_When_UserId_Is_Empty()
     {
-        var taskListId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var command = new DeleteTaskListCommand(taskListId, userId);
+        var command = new DeleteTaskListCommand(Guid.NewGuid(), Guid.Empty);
 
-        var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock.Setup(r => r.IsTaskListOwnerAsync(taskListId, userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        var result = this._validator.TestValidate(command);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
-
-        var validator = new DeleteTaskListCommandValidator(uowMock.Object);
-
-        var result = await validator.ValidateAsync(command);
-
-        Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors);
-        Assert.NotNull(error);
-        Assert.Equal("Task list not found or does not belong to the user.", error.ErrorMessage);
-        Assert.Equal("TaskListId", error.PropertyName);
+        result.ShouldHaveValidationErrorFor(x => x.UserId)
+              .WithErrorMessage("User ID is required.");
     }
 
     /// <summary>
-    /// Tests that validation passes when the task list belongs to the user.
+    /// Returns a validation error if <see cref="DeleteTaskListCommand.TaskListId"/> is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldNotHaveError_WhenUserIsOwner()
+    public void Should_Have_Error_When_TaskListId_Is_Empty()
     {
-        var taskListId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var command = new DeleteTaskListCommand(taskListId, userId);
+        var command = new DeleteTaskListCommand(Guid.Empty, Guid.NewGuid());
 
-        var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock.Setup(r => r.IsTaskListOwnerAsync(taskListId, userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        var result = this._validator.TestValidate(command);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
+        result.ShouldHaveValidationErrorFor(x => x.TaskListId)
+              .WithErrorMessage("Task list ID is required.");
+    }
 
-        var validator = new DeleteTaskListCommandValidator(uowMock.Object);
+    /// <summary>
+    /// Should not return any validation errors when the command is valid.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_Valid_Command()
+    {
+        var command = new DeleteTaskListCommand(Guid.NewGuid(), Guid.NewGuid());
 
-        var result = await validator.ValidateAsync(command);
+        var result = this._validator.TestValidate(command);
 
-        Assert.True(result.IsValid);
+        result.ShouldNotHaveAnyValidationErrors();
     }
 }

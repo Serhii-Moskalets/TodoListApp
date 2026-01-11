@@ -1,76 +1,86 @@
-﻿using Moq;
+﻿using FluentValidation;
+using FluentValidation.Results;
+using Moq;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
-using TodoListApp.Application.TaskList.Dtos;
 using TodoListApp.Application.TaskList.Queries.GetAllTaskList;
-using TodoListApp.Domain.Entities;
 
 namespace TodoListApp.Application.Tests.TaskList.Queries;
 
 /// <summary>
 /// Unit tests for <see cref="GetAllTaskListQueryHandler"/>.
-/// Ensures that the handler correctly retrieves all task lists for a user and maps them to <see cref="TaskListDto"/>.
+/// Verifies validation handling and retrieval of all task lists for a user.
 /// </summary>
 public class GetAllTaskListQueryHandlerTests
 {
     /// <summary>
-    /// Tests that the handler returns a list of <see cref="TaskListDto"/> when task lists exist.
+    /// Returns a failure result when query validation fails.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldReturnTaskLists_WhenTaskListsExist()
+    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
     {
-        var userId = Guid.NewGuid();
-        var taskLists = new List<TaskListEntity>
-        {
-            new(userId, "Work"),
-            new(userId, "Personal"),
-        };
-
-        var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(taskLists);
+        // Arrange
+        var validatorMock = new Mock<IValidator<GetAllTaskListQuery>>();
+        validatorMock
+            .Setup(v => v.ValidateAsync(It.IsAny<GetAllTaskListQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult([new ValidationFailure("UserId", "Required")]));
 
         var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
 
-        var handler = new GetAllTaskListQueryHandler(uowMock.Object);
-        var query = new GetAllTaskListQuery(userId);
+        var handler = new GetAllTaskListQueryHandler(uowMock.Object, validatorMock.Object);
 
-        var ct = CancellationToken.None;
-        var result = await handler.Handle(query, ct);
+        var query = new GetAllTaskListQuery(Guid.NewGuid());
 
-        Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.Equal(2, result.Value!.Count());
-        Assert.Contains(result.Value, t => t.Title == "Work");
-        Assert.Contains(result.Value, t => t.Title == "Personal");
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.Error);
+        Assert.Equal("Required", result.Error.Message);
     }
 
     /// <summary>
-    /// Tests that the handler returns an empty list when the user has no task lists.
+    /// Returns a collection of task list DTOs when validation passes.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldReturnEmptyList_WhenNoTaskListsExist()
+    public async Task Handle_ShouldReturnTaskListDtos_WhenValidationPasses()
     {
-        var userId = Guid.NewGuid();
+        // Arrange
+        var validatorMock = new Mock<IValidator<GetAllTaskListQuery>>();
+        validatorMock
+            .Setup(v => v.ValidateAsync(It.IsAny<GetAllTaskListQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
+
+        var taskListEntities = new List<Domain.Entities.TaskListEntity>
+        {
+            new(Guid.NewGuid(), "Task 1"),
+            new(Guid.NewGuid(), "Task 2"),
+        };
 
         var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-                        .ReturnsAsync([]);
+        taskListRepoMock
+            .Setup(r => r.GetByUserIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(taskListEntities);
 
         var uowMock = new Mock<IUnitOfWork>();
         uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
 
-        var handler = new GetAllTaskListQueryHandler(uowMock.Object);
-        var query = new GetAllTaskListQuery(userId);
+        var handler = new GetAllTaskListQueryHandler(uowMock.Object, validatorMock.Object);
 
-        var ct = CancellationToken.None;
-        var result = await handler.Handle(query, ct);
+        var query = new GetAllTaskListQuery(Guid.NewGuid());
 
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Empty(result.Value);
+        Assert.Equal(2, result.Value.Count());
+
+        Assert.Contains(result.Value, t => t.Title == "Task 1");
+        Assert.Contains(result.Value, t => t.Title == "Task 2");
     }
 }

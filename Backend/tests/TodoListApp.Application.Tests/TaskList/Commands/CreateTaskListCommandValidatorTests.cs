@@ -1,57 +1,82 @@
-﻿using Moq;
-using TodoListApp.Application.Abstractions.Interfaces.Repositories;
+﻿using FluentValidation.TestHelper;
 using TodoListApp.Application.TaskList.Commands.CreateTaskList;
 
 namespace TodoListApp.Application.Tests.TaskList.Commands;
 
 /// <summary>
 /// Unit tests for <see cref="CreateTaskListCommandValidator"/>.
-/// Tests validation rules for creating a task list.
+/// Verifies that the validator correctly enforces rules for creating a task list.
 /// </summary>
 public class CreateTaskListCommandValidatorTests
 {
-    private readonly CreateTaskListCommandValidator _validator;
+    private readonly CreateTaskListCommandValidator _validator = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CreateTaskListCommandValidatorTests"/> class.
+    /// Ensures validation fails when the title is empty.
     /// </summary>
-    public CreateTaskListCommandValidatorTests()
-    {
-        var userRepoMock = new Mock<IUserRepository>();
-        userRepoMock
-            .Setup(r => r.ExistsAsync(It.IsAny<Guid>(), default))
-            .ReturnsAsync(true);
-
-        this._validator = new CreateTaskListCommandValidator(userRepoMock.Object);
-    }
-
-    /// <summary>
-    /// Tests that validation fails when the task list title is empty.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenTitleIsEmpty()
+    public void Should_Have_Error_When_Title_Is_Empty()
     {
+        // Arrange
         var command = new CreateTaskListCommand(Guid.NewGuid(), string.Empty);
 
-        var result = await this._validator.ValidateAsync(command);
+        // Act
+        var result = this._validator.TestValidate(command);
 
-        Assert.False(result.IsValid);
-        var titleError = Assert.Single(result.Errors, e => e.PropertyName == "Title");
-        Assert.Equal("Title cannot be null or empty.", titleError.ErrorMessage);
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Title)
+              .WithErrorMessage("Title cannot be null or empty.");
     }
 
     /// <summary>
-    /// Tests that validation passes when the task list title is not empty.
+    /// Ensures validation fails when the title exceeds the maximum length.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Validate_ShouldNotHaveError_WhenTitleIsNotEmpty()
+    public void Should_Have_Error_When_Title_Too_Long()
     {
-        var command = new CreateTaskListCommand(Guid.NewGuid(), "Task List");
+        // Arrange
+        var longTitle = new string('A', 51);
+        var command = new CreateTaskListCommand(Guid.NewGuid(), longTitle);
 
-        var result = await this._validator.ValidateAsync(command);
+        // Act
+        var result = this._validator.TestValidate(command);
 
-        Assert.True(result.IsValid);
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.Title)
+              .WithErrorMessage("Title cannot exceed 50 characters.");
+    }
+
+    /// <summary>
+    /// Ensures validation fails when the user ID is empty.
+    /// </summary>
+    [Fact]
+    public void Should_Have_Error_When_UserId_Is_Empty()
+    {
+        // Arrange
+        var command = new CreateTaskListCommand(Guid.Empty, "Valid Title");
+
+        // Act
+        var result = this._validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.UserId)
+              .WithErrorMessage("OwnerId cannot be empty.");
+    }
+
+    /// <summary>
+    /// Ensures no validation errors when the command is valid.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_Valid()
+    {
+        // Arrange
+        var command = new CreateTaskListCommand(Guid.NewGuid(), "Valid Title");
+
+        // Act
+        var result = this._validator.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(c => c.Title);
+        result.ShouldNotHaveValidationErrorFor(c => c.UserId);
     }
 }

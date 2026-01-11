@@ -1,127 +1,119 @@
 ﻿using FluentValidation;
+using FluentValidation.Results;
 using Moq;
-using TodoListApp.Application.Abstractions.Interfaces.Repositories;
+using TinyResult.Enums;
+using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.TaskList.Commands.CreateTaskList;
 using TodoListApp.Domain.Entities;
+using FVResult = FluentValidation.Results.ValidationResult;
 
 namespace TodoListApp.Application.Tests.TaskList.Commands;
 
 /// <summary>
 /// Unit tests for <see cref="CreateTaskListCommandHandler"/>.
-/// Verifies validation handling, task list creation,
-/// and automatic title suffixing when duplicates exist.
+/// Verifies validation, user existence, and task list creation logic.
 /// </summary>
 public class CreateTaskListCommandHandlerTests
 {
     /// <summary>
-    /// Ensures that the handler returns a failure result when command validation fails.
+    /// Returns failure if validation fails.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    /// <remarks>
-    /// The validator mock is configured with <c>ReturnsAsync</c> to simulate
-    /// a failed validation result with a "Required" error for the Title property.
-    /// This ensures the handler short-circuits and does not call the repository or unit of work.
-    /// </remarks>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task Handle_ShouldReturnFailure_WhenValidationFails()
     {
+        // Arrange
         var validatorMock = new Mock<IValidator<CreateTaskListCommand>>();
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskListCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FluentValidation.Results.ValidationResult(
-                [new FluentValidation.Results.ValidationFailure("Title", "Required")]));
+                     .ReturnsAsync(new FVResult([new ValidationFailure("Title", "Required")]));
 
         var uowMock = new Mock<IUnitOfWork>();
+        var uniquenessServiceMock = new Mock<ITaskListNameUniquenessService>();
 
-        var handler = new CreateTaskListCommandHandler(uowMock.Object, validatorMock.Object);
+        var handler = new CreateTaskListCommandHandler(uowMock.Object, uniquenessServiceMock.Object, validatorMock.Object);
 
         var command = new CreateTaskListCommand(Guid.NewGuid(), string.Empty);
 
-        var ct = CancellationToken.None;
-        var result = await handler.HandleAsync(command, ct);
+        // Act
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
+        // Assert
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
         Assert.Equal("Required", result.Error.Message);
     }
 
     /// <summary>
-    /// Ensures that a new task list is created successfully when the provided title is unique for the user.
+    /// Returns NotFound if the specified user does not exist.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    /// <remarks>
-    /// The task list repository mock returns <c>false</c> for <c>ExistsByTitleAsync</c>,
-    /// simulating that the title is unique. The <c>ReturnsAsync(1)</c> on
-    /// <c>SaveChangesAsync</c> simulates a successful commit of one record.
-    /// </remarks>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldAddTaskList_WhenTitleIsUnique()
+    public async Task Handle_ShouldReturnNotFound_WhenUserDoesNotExist()
     {
+        // Arrange
+        var userId = Guid.NewGuid();
         var validatorMock = new Mock<IValidator<CreateTaskListCommand>>();
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskListCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FluentValidation.Results.ValidationResult());
-
-        var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock.Setup(r => r.ExistsByTitleAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+                     .ReturnsAsync(new FVResult());
 
         var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        uowMock.Setup(u => u.Users.GetByIdAsync(userId, true, It.IsAny<CancellationToken>()))
+               .ReturnsAsync((UserEntity)null!);
 
-        var handler = new CreateTaskListCommandHandler(uowMock.Object, validatorMock.Object);
+        var uniquenessServiceMock = new Mock<ITaskListNameUniquenessService>();
 
-        var userId = Guid.NewGuid();
-        var command = new CreateTaskListCommand(userId, "My List");
+        var handler = new CreateTaskListCommandHandler(uowMock.Object, uniquenessServiceMock.Object, validatorMock.Object);
 
-        var ct = CancellationToken.None;
-        var result = await handler.HandleAsync(command, ct);
+        var command = new CreateTaskListCommand(userId, "My Task List");
 
-        Assert.True(result.IsSuccess);
-        taskListRepoMock.Verify(r => r.AddAsync(It.Is<TaskListEntity>(t => t.OwnerId == userId && t.Title == "My List"), It.IsAny<CancellationToken>()));
-        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        // Act
+        var result = await handler.HandleAsync(command, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.Error);
+        Assert.Equal(ErrorCode.NotFound, result.Error.Code);
+        Assert.Equal("User not found.", result.Error.Message);
     }
 
     /// <summary>
-    /// Ensures that a numeric suffix is appended to the task list title when a list with the same title already exists for the user.
+    /// Creates a task list successfully when validation passes and the user exists.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    /// <remarks>
-    /// The repository mock uses <c>SetupSequence(...).ReturnsAsync(...)</c> to simulate:
-    /// <list type="bullet">
-    /// <item>First call returns true → title exists</item>
-    /// <item>Second call returns false → title is now available</item>
-    /// </list>
-    /// This ensures that the handler appends "(1)" to the title before adding it.
-    /// <para>
-    /// The <c>ReturnsAsync(1)</c> on <c>SaveChangesAsync</c> simulates a successful commit.
-    /// </para>
-    /// </remarks>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldAppendSuffix_WhenTitleExists()
+    public async Task Handle_ShouldCreateTaskList_WhenValidationPasses()
     {
+        // Arrange
         var validatorMock = new Mock<IValidator<CreateTaskListCommand>>();
         validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTaskListCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FluentValidation.Results.ValidationResult());
+                     .ReturnsAsync(new FVResult());
 
-        var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock.SetupSequence(u => u.ExistsByTitleAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true)
-            .ReturnsAsync(false);
+        var user = new UserEntity("John", "john", "john@example.com", "hash");
 
         var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        uowMock.Setup(u => u.Users.GetByIdAsync(user.Id, true, It.IsAny<CancellationToken>()))
+               .ReturnsAsync(user);
 
-        var handler = new CreateTaskListCommandHandler(uowMock.Object, validatorMock.Object);
+        uowMock.Setup(u => u.TaskLists.AddAsync(It.IsAny<TaskListEntity>(), It.IsAny<CancellationToken>()))
+               .Returns(Task.CompletedTask);
 
-        var userId = Guid.NewGuid();
-        var command = new CreateTaskListCommand(userId, "My List");
+        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+               .ReturnsAsync(1);
 
-        var ct = CancellationToken.None;
-        var result = await handler.HandleAsync(command, ct);
+        var uniquenessServiceMock = new Mock<ITaskListNameUniquenessService>();
+        uniquenessServiceMock.Setup(s => s.GetUniqueNameAsync(user.Id, "My Task List", It.IsAny<CancellationToken>()))
+                             .ReturnsAsync("My Task List");
 
+        var handler = new CreateTaskListCommandHandler(uowMock.Object, uniquenessServiceMock.Object, validatorMock.Object);
+        var command = new CreateTaskListCommand(user.Id, "My Task List");
+
+        // Act
+        var result = await handler.HandleAsync(command, CancellationToken.None);
+
+        // Assert
         Assert.True(result.IsSuccess);
-        taskListRepoMock.Verify(r => r.AddAsync(It.Is<TaskListEntity>(t => t.Title == "My List (1)"), It.IsAny<CancellationToken>()), Times.Once());
+        uowMock.Verify(u => u.TaskLists.AddAsync(It.Is<TaskListEntity>(t => t.OwnerId == user.Id && t.Title == "My Task List"), It.IsAny<CancellationToken>()), Times.Once);
+        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }
