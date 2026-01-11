@@ -1,0 +1,113 @@
+﻿using FluentValidation.TestHelper;
+using TodoListApp.Application.Tasks.Queries.GetTaskByTitle;
+
+namespace TodoListApp.Application.Tests.Tasks.Queries;
+
+/// <summary>
+/// Unit tests for <see cref="GetTaskByTitleQueryValidator"/>.
+/// Verifies validation rules for searching tasks by title.
+/// </summary>
+public class GetTaskByTitleQueryValidatorTests
+{
+    private readonly GetTaskByTitleQueryValidator _validator = new();
+
+    /// <summary>
+    /// Returns a validation error when UserId is empty.
+    /// </summary>
+    [Fact]
+    public void Should_Have_Error_When_UserId_Is_Empty()
+    {
+        // Arrange
+        var query = new GetTaskByTitleQuery(
+            UserId: Guid.Empty,
+            Text: "test");
+
+        // Act
+        var result = this._validator.TestValidate(query);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.UserId)
+              .WithErrorMessage("User Id is required.");
+    }
+
+    /// <summary>
+    /// Does not return a validation error when UserId is valid.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_UserId_Is_Valid()
+    {
+        var query = new GetTaskByTitleQuery(
+            UserId: Guid.NewGuid(),
+            Text: "test");
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.UserId);
+    }
+
+    /// <summary>
+    /// Allows Text to be null.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_Text_Is_Null()
+    {
+        var query = new GetTaskByTitleQuery(
+            UserId: Guid.NewGuid(),
+            Text: null);
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.Text);
+    }
+
+    /// <summary>
+    /// Allows Text to be empty or whitespace.
+    /// </summary>
+    /// <param name="text">
+    /// Input search text that may be empty or contain only whitespace.
+    /// </param>
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Should_Not_Have_Error_When_Text_Is_Empty_Or_Whitespace(string text)
+    {
+        var query = new GetTaskByTitleQuery(
+            UserId: Guid.NewGuid(),
+            Text: text);
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.Text);
+    }
+
+    /// <summary>
+    /// Returns a validation error when Text exceeds 100 characters.
+    /// </summary>
+    [Fact]
+    public void Should_Have_Error_When_Text_Exceeds_100_Characters()
+    {
+        var query = new GetTaskByTitleQuery(
+            UserId: Guid.NewGuid(),
+            Text: new string('a', 101));
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldHaveValidationErrorFor(x => x.Text)
+              .WithErrorMessage("Search text cannot exceed 100 characters");
+    }
+
+    /// <summary>
+    /// Does not return a validation error when Text length is exactly 100 characters.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_Text_Is_Exactly_100_Characters()
+    {
+        var query = new GetTaskByTitleQuery(
+            UserId: Guid.NewGuid(),
+            Text: new string('a', 100));
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.Text);
+    }
+}

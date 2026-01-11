@@ -1,4 +1,6 @@
-﻿using Moq;
+﻿using FluentValidation;
+using FluentValidation.Results;
+using Moq;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Common.Dtos;
@@ -15,62 +17,112 @@ namespace TodoListApp.Application.Tests.Tasks.Queries;
 public class GetTaskByTitleQueryHandlerTests
 {
     /// <summary>
-    /// Tests that the handler returns a list of <see cref="TaskDto"/> when tasks are found by title.
+    /// Returns failure result when query validation fails.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldReturnTaskDtos_WhenTasksFound()
+    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
     {
-        var userId = Guid.NewGuid();
-        var queryText = "Test";
-        var tasks = new List<TaskEntity>
-        {
-            new(userId, Guid.NewGuid(), "Test Task 1"),
-            new(userId, Guid.NewGuid(), "Another Test Task"),
-        };
-
-        var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.SearchByTitleAsync(userId, queryText, It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(tasks);
+        // Arrange
+        var validatorMock = new Mock<IValidator<GetTaskByTitleQuery>>();
+        validatorMock
+            .Setup(v => v.ValidateAsync(It.IsAny<GetTaskByTitleQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult([new ValidationFailure("Text", "Title is required")]));
 
         var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
 
-        var handler = new GetTaskByTitleQueryHandler(uowMock.Object);
-        var query = new GetTaskByTitleQuery(userId, queryText);
+        var handler = new GetTaskByTitleQueryHandler(uowMock.Object, validatorMock.Object);
 
-        var ct = CancellationToken.None;
-        var result = await handler.Handle(query, ct);
+        var query = new GetTaskByTitleQuery(Guid.NewGuid(), string.Empty);
 
-        Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.Equal(2, result.Value!.Count());
-        Assert.All(result.Value, t => Assert.Contains(queryText, t.Title, StringComparison.OrdinalIgnoreCase));
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.Error);
+        Assert.Equal("Title is required", result.Error.Message);
     }
 
     /// <summary>
-    /// Tests that the handler returns an empty list when no tasks match the title.
+    /// Returns mapped task DTOs when validation passes and tasks are found.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldReturnEmptyList_WhenNoTasksFound()
+    public async Task Handle_ShouldReturnTaskDtos_WhenValidationPasses()
     {
+        // Arrange
+        var validatorMock = new Mock<IValidator<GetTaskByTitleQuery>>();
+        validatorMock
+            .Setup(v => v.ValidateAsync(It.IsAny<GetTaskByTitleQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
+
         var userId = Guid.NewGuid();
-        var queryText = "NonExistingTask";
+        var text = "Task";
+
+        var taskEntities = new List<TaskEntity>
+        {
+            new(userId, Guid.NewGuid(), "Task 1", DateTime.UtcNow.AddDays(1)),
+            new(userId, Guid.NewGuid(), "Task 2", DateTime.UtcNow.AddDays(2)),
+        };
 
         var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.SearchByTitleAsync(userId, queryText, It.IsAny<CancellationToken>()))
-                    .ReturnsAsync([]);
+        taskRepoMock
+            .Setup(r => r.SearchByTitleAsync(userId, text, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(taskEntities);
 
         var uowMock = new Mock<IUnitOfWork>();
         uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
 
-        var handler = new GetTaskByTitleQueryHandler(uowMock.Object);
-        var query = new GetTaskByTitleQuery(userId, queryText);
+        var handler = new GetTaskByTitleQueryHandler(uowMock.Object, validatorMock.Object);
 
-        var ct = CancellationToken.None;
-        var result = await handler.Handle(query, ct);
+        var query = new GetTaskByTitleQuery(userId, text);
 
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(2, result.Value.Count());
+
+        // Перевірка мапінгу
+        Assert.Contains(result.Value, t => t.Title == "Task 1");
+        Assert.Contains(result.Value, t => t.Title == "Task 2");
+    }
+
+    /// <summary>
+    /// Returns an empty collection when no tasks match the search criteria.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Handle_ShouldReturnEmptyCollection_WhenNoTasksFound()
+    {
+        // Arrange
+        var validatorMock = new Mock<IValidator<GetTaskByTitleQuery>>();
+        validatorMock
+            .Setup(v => v.ValidateAsync(It.IsAny<GetTaskByTitleQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
+
+        var userId = Guid.NewGuid();
+        var text = "NonExistent";
+
+        var taskRepoMock = new Mock<ITaskRepository>();
+        taskRepoMock
+            .Setup(r => r.SearchByTitleAsync(userId, text, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+
+        var uowMock = new Mock<IUnitOfWork>();
+        uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
+
+        var handler = new GetTaskByTitleQueryHandler(uowMock.Object, validatorMock.Object);
+
+        var query = new GetTaskByTitleQuery(userId, text);
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Empty(result.Value);
