@@ -1,56 +1,64 @@
-﻿using Moq;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+﻿using FluentValidation.TestHelper;
 using TodoListApp.Application.Tag.Commands.DeleteTag;
 
-namespace TodoListApp.Application.Tests.Tag.Commands
+namespace TodoListApp.Application.Tests.Tag.Commands;
+
+/// <summary>
+/// Unit tests for <see cref="DeleteTagCommandValidator"/>.
+/// Ensures that the validator correctly enforces rules for deleting a tag.
+/// </summary>
+public class DeleteTagCommandValidatorTests
 {
+    private readonly DeleteTagCommandValidator _validator = new();
+
     /// <summary>
-    /// Unit tests for <see cref="DeleteTagCommandValidator"/>.
-    /// Verifies validation rules for deleting a tag.
+    /// Fails validation when UserId is empty.
     /// </summary>
-    public class DeleteTagCommandValidatorTests
+    [Fact]
+    public void Should_Have_Error_When_UserId_Is_Empty()
     {
-        /// <summary>
-        /// Tests that validation passes when the user owns the tag.
-        /// </summary>
-        /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-        [Fact]
-        public async Task Validate_ShouldPass_WhenUserOwnsTag()
-        {
-            var tagId = Guid.NewGuid();
-            var userId = Guid.NewGuid();
-            var unitOfWorkMock = new Mock<IUnitOfWork>();
-            unitOfWorkMock.Setup(u => u.Tags.IsTagOwnerAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync(true);
+        // Arrange
+        var command = new DeleteTagCommand(TagId: Guid.NewGuid(), UserId: Guid.Empty);
 
-            var validator = new DeleteTagCommandValidator(unitOfWorkMock.Object);
-            var command = new DeleteTagCommand(tagId, userId);
+        // Act
+        var result = this._validator.TestValidate(command);
 
-            var result = await validator.ValidateAsync(command);
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.UserId)
+              .WithErrorMessage("User ID is required.");
+    }
 
-            Assert.True(result.IsValid);
-        }
+    /// <summary>
+    /// Fails validation when TagId is empty.
+    /// </summary>
+    [Fact]
+    public void Should_Have_Error_When_TagId_Is_Empty()
+    {
+        // Arrange
+        var command = new DeleteTagCommand(TagId: Guid.Empty, UserId: Guid.NewGuid());
 
-        /// <summary>
-        /// Tests that validation fails when the user does not own the tag.
-        /// Ensures the proper error message is returned.
-        /// </summary>
-        /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-        [Fact]
-        public async Task Validate_ShouldFail_WhenUserDoesNotOwnTag()
-        {
-            var unitOfWorkMock = new Mock<IUnitOfWork>();
-            unitOfWorkMock.Setup(u => u.Tags.IsTagOwnerAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync(false);
+        // Act
+        var result = this._validator.TestValidate(command);
 
-            var validator = new DeleteTagCommandValidator(unitOfWorkMock.Object);
-            var command = new DeleteTagCommand(Guid.NewGuid(), Guid.NewGuid());
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.TagId)
+              .WithErrorMessage("Tag ID is required.");
+    }
 
-            var result = await validator.ValidateAsync(command);
+    /// <summary>
+    /// Passes validation when both UserId and TagId are valid.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_UserId_And_TagId_Are_Valid()
+    {
+        // Arrange
+        var command = new DeleteTagCommand(TagId: Guid.NewGuid(), UserId: Guid.NewGuid());
 
-            Assert.False(result.IsValid);
-            var error = Assert.Single(result.Errors, e => e.PropertyName == "TagId");
-            Assert.Equal("Tag not found or does not belong to the user.", error.ErrorMessage);
-        }
+        // Act
+        var result = this._validator.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(c => c.UserId);
+        result.ShouldNotHaveValidationErrorFor(c => c.TagId);
     }
 }

@@ -1,79 +1,117 @@
-﻿using Moq;
+﻿using FluentValidation;
+using FluentValidation.Results;
+using Moq;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
-using TodoListApp.Application.Common.Dtos;
 using TodoListApp.Application.Tag.Queries.GetAllTags;
 using TodoListApp.Domain.Entities;
 
-namespace TodoListApp.Application.Tests.Tag.Queries
+namespace TodoListApp.Application.Tests.Tag.Queries;
+
+/// <summary>
+/// Unit tests for <see cref="GetAllTagsQueryHandler"/>.
+/// Verifies validation and retrieval of tags for a user.
+/// </summary>
+public class GetAllTagsQueryHandlerTests
 {
     /// <summary>
-    /// Unit tests for <see cref="GetAllTagsQueryHandler"/>.
-    /// Verifies retrieval of tags for a specific user.
+    /// Returns failure if validation fails.
     /// </summary>
-    public class GetAllTagsQueryHandlerTests
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
     {
-        /// <summary>
-        /// Ensures that the handler returns a list of <see cref="TagDto"/> for the user.
-        /// </summary>
-        /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-        [Fact]
-        public async Task Handle_ShouldReturnTags_ForUser()
+        // Arrange
+        var validatorMock = new Mock<IValidator<GetAllTagsQuery>>();
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<GetAllTagsQuery>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(new ValidationResult([new ValidationFailure("UserId", "Required")]));
+
+        var uowMock = new Mock<IUnitOfWork>();
+        var handler = new GetAllTagsQueryHandler(uowMock.Object, validatorMock.Object);
+
+        var query = new GetAllTagsQuery(Guid.NewGuid());
+
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.Error);
+        Assert.Equal("Required", result.Error.Message);
+    }
+
+    /// <summary>
+    /// Returns a list of tags when validation passes and tags exist for the user.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Handle_ShouldReturnTags_WhenValidationPasses()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+
+        var validatorMock = new Mock<IValidator<GetAllTagsQuery>>();
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<GetAllTagsQuery>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(new ValidationResult());
+
+        var tagEntities = new List<TagEntity>
         {
-            var userId = Guid.NewGuid();
+            new("Tag1", userId),
+            new("Tag2", userId),
+        };
 
-            var tags = new List<TagEntity>
-            {
-                new("Tag1", userId),
-                new("Tag2", userId),
-            };
+        var tagRepoMock = new Mock<ITagRepository>();
+        tagRepoMock.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+                   .ReturnsAsync(tagEntities);
 
-            var tagRepoMock = new Mock<ITagRepository>();
-            tagRepoMock.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-                       .ReturnsAsync(tags);
+        var uowMock = new Mock<IUnitOfWork>();
+        uowMock.Setup(u => u.Tags).Returns(tagRepoMock.Object);
 
-            var uowMock = new Mock<IUnitOfWork>();
-            uowMock.Setup(u => u.Tags).Returns(tagRepoMock.Object);
+        var handler = new GetAllTagsQueryHandler(uowMock.Object, validatorMock.Object);
+        var query = new GetAllTagsQuery(userId);
 
-            var handler = new GetAllTagsQueryHandler(uowMock.Object);
-            var query = new GetAllTagsQuery(userId);
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
 
-            var result = await handler.Handle(query, CancellationToken.None);
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Collection(
+            result.Value,
+            tag => Assert.Equal("Tag1", tag.Name),
+            tag => Assert.Equal("Tag2", tag.Name));
+    }
 
-            Assert.True(result.IsSuccess);
-            var tagDtos = result.Value?.ToList();
-            Assert.Equal(2, tagDtos?.Count);
-            Assert.Contains(tagDtos!, t => t.Name == "Tag1");
-            Assert.Contains(tagDtos!, t => t.Name == "Tag2");
+    /// <summary>
+    /// Returns an empty list when the user has no tags.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Handle_ShouldReturnEmptyList_WhenNoTagsExist()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
 
-            tagRepoMock.Verify(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
-        }
+        var validatorMock = new Mock<IValidator<GetAllTagsQuery>>();
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<GetAllTagsQuery>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(new ValidationResult());
 
-        /// <summary>
-        /// Ensures that the handler returns an empty list when the user has no tags.
-        /// </summary>
-        /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-        [Fact]
-        public async Task Handle_ShouldReturnEmptyList_WhenNoTagsExist()
-        {
-            var userId = Guid.NewGuid();
+        var tagRepoMock = new Mock<ITagRepository>();
+        tagRepoMock.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+                   .ReturnsAsync([]);
 
-            var tagRepoMock = new Mock<ITagRepository>();
-            tagRepoMock.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-                       .ReturnsAsync([]);
+        var uowMock = new Mock<IUnitOfWork>();
+        uowMock.Setup(u => u.Tags).Returns(tagRepoMock.Object);
 
-            var uowMock = new Mock<IUnitOfWork>();
-            uowMock.Setup(u => u.Tags).Returns(tagRepoMock.Object);
+        var handler = new GetAllTagsQueryHandler(uowMock.Object, validatorMock.Object);
+        var query = new GetAllTagsQuery(userId);
 
-            var handler = new GetAllTagsQueryHandler(uowMock.Object);
-            var query = new GetAllTagsQuery(userId);
+        // Act
+        var result = await handler.Handle(query, CancellationToken.None);
 
-            var result = await handler.Handle(query, CancellationToken.None);
-
-            Assert.True(result.IsSuccess);
-            Assert.Empty(result.Value!);
-
-            tagRepoMock.Verify(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
-        }
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Empty(result.Value);
     }
 }
