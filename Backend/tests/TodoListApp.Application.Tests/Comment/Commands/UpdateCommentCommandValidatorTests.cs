@@ -1,129 +1,83 @@
-﻿using Moq;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+﻿using FluentValidation.TestHelper;
 using TodoListApp.Application.Comment.Commands.UpdateComment;
 
 namespace TodoListApp.Application.Tests.Comment.Commands;
 
 /// <summary>
-/// Contains unit tests for <see cref="UpdateCommentCommandValidator"/>.
+/// Unit tests for <see cref="UpdateCommentCommandValidator"/>.
 /// Ensures that the validator correctly enforces rules for updating a comment.
 /// </summary>
 public class UpdateCommentCommandValidatorTests
 {
+    private readonly UpdateCommentCommandValidator _validator = new();
+
     /// <summary>
-    /// Tests that validation returns an error when the user does not own the comment.
+    /// Fails validation when UserId is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenUserDoesNotOwnComment()
+    public void Should_Have_Error_When_UserId_Is_Empty()
     {
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        unitOfWorkMock
-            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(
-                It.IsAny<Guid>(),
-                It.IsAny<Guid>(),
-                It.IsAny<Guid>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.Empty, "Some text");
 
-        var validator = new UpdateCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Some text");
+        var result = this._validator.TestValidate(command);
 
-        var result = await validator.ValidateAsync(command);
-
-        Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "CommentId");
-        Assert.Equal("Comment not found or does not belong to the user.", error.ErrorMessage);
+        result.ShouldHaveValidationErrorFor(c => c.UserId)
+              .WithErrorMessage("User ID is required.");
     }
 
     /// <summary>
-    /// Tests that validation passes when the user owns the comment.
+    /// Fails validation when CommentId is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldNotHaveError_WhenUserOwnsComment()
+    public void Should_Have_Error_When_CommentId_Is_Empty()
     {
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        unitOfWorkMock
-            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        var command = new UpdateCommentCommand(Guid.Empty, Guid.NewGuid(), "Some text");
 
-        var validator = new UpdateCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Some text");
+        var result = this._validator.TestValidate(command);
 
-        var result = await validator.ValidateAsync(command);
-
-        Assert.True(result.IsValid);
+        result.ShouldHaveValidationErrorFor(c => c.CommentId)
+              .WithErrorMessage("Comment ID is required.");
     }
 
     /// <summary>
-    /// Tests that validation returns an error when <see cref="UpdateCommentCommand.NewText"/> is empty.
+    /// Fails validation when NewText is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenNewTextIsEmpty()
+    public void Should_Have_Error_When_NewText_Is_Empty()
     {
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        unitOfWorkMock
-            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
 
-        var validator = new UpdateCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), string.Empty);
+        var result = this._validator.TestValidate(command);
 
-        var result = await validator.ValidateAsync(command);
-
-        Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "NewText");
-        Assert.Equal("New text cannot be null or empty.", error.ErrorMessage);
+        result.ShouldHaveValidationErrorFor(c => c.NewText)
+              .WithErrorMessage("New text cannot be null or empty.");
     }
 
     /// <summary>
-    /// Tests that validation passes when <see cref="UpdateCommentCommand.NewText"/> is valid.
+    /// Fails validation when NewText exceeds maximum allowed length.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveNotHaveError_WhenNewTextIsValid()
+    public void Should_Have_Error_When_NewText_Exceeds_MaxLength()
     {
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        unitOfWorkMock
-            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(
-                It.IsAny<Guid>(),
-                It.IsAny<Guid>(),
-                It.IsAny<Guid>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        var validator = new UpdateCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "Valid comment text");
-
-        var result = await validator.ValidateAsync(command);
-
-        Assert.True(result.IsValid);
-    }
-
-    /// <summary>
-    /// Tests that validation returns an error when <see cref="UpdateCommentCommand.NewText"/> exceeds 1000 characters.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task Validate_ShouldHaveError_WhenNewTextIsTooLong()
-    {
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        unitOfWorkMock
-            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(
-                It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        var validator = new UpdateCommentCommandValidator(unitOfWorkMock.Object);
-
         var longText = new string('a', 1001);
-        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), longText);
+        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), longText);
 
-        var result = await validator.ValidateAsync(command);
+        var result = this._validator.TestValidate(command);
 
-        Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "NewText");
-        Assert.Equal("Comment text cannot exceed 1000 characters.", error.ErrorMessage);
+        result.ShouldHaveValidationErrorFor(c => c.NewText)
+              .WithErrorMessage("Comment text cannot exceed 1000 characters.");
+    }
+
+    /// <summary>
+    /// Passes validation when the command is valid.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_Command_Is_Valid()
+    {
+        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), "Valid comment");
+
+        var result = this._validator.TestValidate(command);
+
+        result.ShouldNotHaveAnyValidationErrors();
     }
 }

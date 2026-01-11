@@ -1,97 +1,92 @@
-﻿using Moq;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+﻿using FluentValidation.TestHelper;
 using TodoListApp.Application.Comment.Commands.CreateComment;
 
 namespace TodoListApp.Application.Tests.Comment.Commands;
 
 /// <summary>
 /// Unit tests for <see cref="CreateCommentCommandValidator"/>.
-/// Tests validation rules for creating a tag.
+/// Validates command properties and ensures correct validation messages.
 /// </summary>
 public class CreateCommentCommandValidatorTests
 {
-    private readonly CreateCommentCommandValidator _validator;
+    private readonly CreateCommentCommandValidator _validator = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CreateCommentCommandValidatorTests"/> class.
+    /// Fails validation when UserId is empty.
     /// </summary>
-    public CreateCommentCommandValidatorTests()
+    [Fact]
+    public void Should_Have_Error_When_UserId_Is_Empty()
     {
-        // Мокаємо IUnitOfWork
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
+        var command = new CreateCommentCommand(
+            TaskId: Guid.NewGuid(),
+            UserId: Guid.Empty,
+            Text: "Some text");
 
-        // Налаштовуємо ExistsAsync для будь-якого TaskId
-        unitOfWorkMock.Setup(u => u.Tasks.ExistsAsync(It.IsAny<Guid>(), default))
-            .ReturnsAsync(true);
+        var result = this._validator.TestValidate(command);
 
-        this._validator = new CreateCommentCommandValidator(unitOfWorkMock.Object);
+        result.ShouldHaveValidationErrorFor(c => c.UserId)
+              .WithErrorMessage("User ID is required.");
     }
 
     /// <summary>
-    /// Tests that validation fails when the comments text is empty.
+    /// Fails validation when TaskId is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenTextIsEmpty()
+    public void Should_Have_Error_When_TaskId_Is_Empty()
     {
-        var command = new CreateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
+        var command = new CreateCommentCommand(
+            TaskId: Guid.Empty,
+            UserId: Guid.NewGuid(),
+            Text: "Some text");
 
-        var result = await this._validator.ValidateAsync(command);
+        var result = this._validator.TestValidate(command);
 
-        Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "Text");
-        Assert.Equal("Comment text cannot be null or empty.", error.ErrorMessage);
+        result.ShouldHaveValidationErrorFor(c => c.TaskId)
+              .WithErrorMessage("Task ID is required.");
     }
 
     /// <summary>
-    /// Tests that validation fails when the comments text exceeds the maximum length (1000 characters).
+    /// Fails validation when Text is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenTextIsTooLong()
+    public void Should_Have_Error_When_Text_Is_Empty()
     {
-        var text = new string('a', 1001);
-        var command = new CreateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), text);
+        var command = new CreateCommentCommand(
+            TaskId: Guid.Empty,
+            UserId: Guid.NewGuid(),
+            Text: string.Empty);
 
-        var result = await this._validator.ValidateAsync(command);
+        var result = this._validator.TestValidate(command);
 
-        Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "Text");
-        Assert.Equal("Comment text cannot exceed 1000 characters.", error.ErrorMessage);
+        result.ShouldHaveValidationErrorFor(c => c.Text)
+              .WithErrorMessage("Comment text cannot be null or empty.");
     }
 
     /// <summary>
-    /// Tests that validation passes when the tag name is not empty and within length limit.
+    /// Fails validation when Text exceeds maximum length.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Validate_ShouldNotHaveError_WhenTextIsValid()
+    public void Should_Have_Error_When_Text_Exceeds_MaxLength()
     {
-        var command = new CreateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), "Text");
+        var longText = new string('a', 1001);
+        var command = new CreateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), longText);
 
-        var result = await this._validator.ValidateAsync(command);
+        var result = this._validator.TestValidate(command);
 
-        Assert.True(result.IsValid);
+        result.ShouldHaveValidationErrorFor(c => c.Text)
+              .WithErrorMessage("Comment text cannot exceed 1000 characters.");
     }
 
     /// <summary>
-    /// Tests that validation fails when the task does not exist.
+    /// Passes validation when command is valid.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenTaskDoesNotExist()
+    public void Should_Not_Have_Error_When_Command_Is_Valid()
     {
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        unitOfWorkMock.Setup(u => u.Tasks.ExistsAsync(It.IsAny<Guid>(), default))
-                      .ReturnsAsync(false); // Task не існує
+        var command = new CreateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), "Valid comment");
 
-        var validator = new CreateCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new CreateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), "Valid text");
+        var result = this._validator.TestValidate(command);
 
-        var result = await validator.ValidateAsync(command);
-
-        Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "TaskId");
-        Assert.Equal("Task not found.", error.ErrorMessage);
+        result.ShouldNotHaveAnyValidationErrors();
     }
 }

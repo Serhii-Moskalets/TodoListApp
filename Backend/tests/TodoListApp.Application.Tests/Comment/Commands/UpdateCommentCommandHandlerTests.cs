@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using Moq;
-using TodoListApp.Application.Abstractions.Interfaces.Repositories;
+using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Comment.Commands.UpdateComment;
 using TodoListApp.Domain.Entities;
@@ -9,131 +9,130 @@ using TodoListApp.Domain.Entities;
 namespace TodoListApp.Application.Tests.Comment.Commands;
 
 /// <summary>
-/// Contains unit tests for <see cref="UpdateCommentCommandHandler"/>.
-/// Ensures that the command handler correctly validates, finds, and updates comments.
+/// Unit tests for <see cref="UpdateCommentCommandHandler"/>.
+/// Verifies validation, existence, permission checks, and comment updating.
 /// </summary>
 public class UpdateCommentCommandHandlerTests
 {
     /// <summary>
-    /// Tests that the handler returns a failure result when validation fails.
+    /// Returns failure if validation fails.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
+    public async Task HandleAsync_ShouldReturnFailure_WhenValidationFails()
     {
+        // Arrange
         var validatorMock = new Mock<IValidator<UpdateCommentCommand>>();
         validatorMock
-            .Setup(v => v.ValidateAsync(
-                It.IsAny<UpdateCommentCommand>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult(
-                [new ValidationFailure("NewText", "Required")]));
+            .Setup(v => v.ValidateAsync(It.IsAny<UpdateCommentCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult(new[] { new ValidationFailure("NewText", "Required") }));
 
         var uowMock = new Mock<IUnitOfWork>();
+        var handler = new UpdateCommentCommandHandler(uowMock.Object, validatorMock.Object);
 
-        var handler = new UpdateCommentCommandHandler(
-            uowMock.Object,
-            validatorMock.Object);
+        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
 
-        var command = new UpdateCommentCommand(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            string.Empty);
-
+        // Act
         var result = await handler.HandleAsync(command, CancellationToken.None);
 
+        // Assert
         Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-        Assert.Equal("Required", result.Error.Message);
+        Assert.Equal("Required", result.Error!.Message);
     }
 
     /// <summary>
-    /// Tests that the handler returns a failure result when the comment is not found.
+    /// Returns failure if the comment does not exist.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenCommentNotFound()
+    public async Task HandleAsync_ShouldReturnFailure_WhenCommentNotFound()
     {
+        // Arrange
         var validatorMock = new Mock<IValidator<UpdateCommentCommand>>();
         validatorMock
             .Setup(v => v.ValidateAsync(It.IsAny<UpdateCommentCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
 
-        var commentRepositoryMock = new Mock<ICommentRepository>();
-        commentRepositoryMock
-            .Setup(r => r.GetByIdAsync(
-                It.IsAny<Guid>(),
-                asNoTracking: true,
-                cancellationToken: It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CommentEntity?)null);
-
         var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Comments).Returns(commentRepositoryMock.Object);
+        uowMock.Setup(u => u.Comments.GetByIdAsync(It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
+               .ReturnsAsync((CommentEntity?)null);
 
-        var handler = new UpdateCommentCommandHandler(
-            uowMock.Object,
-            validatorMock.Object);
+        var handler = new UpdateCommentCommandHandler(uowMock.Object, validatorMock.Object);
 
-        var command = new UpdateCommentCommand(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            "New text");
+        var command = new UpdateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), "New Text");
 
+        // Act
         var result = await handler.HandleAsync(command, CancellationToken.None);
 
+        // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal("Comment not found.", result.Error?.Message);
+        Assert.Equal(ErrorCode.NotFound, result.Error!.Code);
+        Assert.Equal("Comment not found.", result.Error.Message);
     }
 
     /// <summary>
-    /// Tests that the handler updates the comment when validation passes and the comment exists.
+    /// Returns failure if the user is not the owner of the comment.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldUpdateComment_WhenValidationPasses()
+    public async Task HandleAsync_ShouldReturnFailure_WhenUserIsNotOwner()
     {
-        var userId = Guid.NewGuid();
-
+        // Arrange
         var validatorMock = new Mock<IValidator<UpdateCommentCommand>>();
         validatorMock
-            .Setup(v => v.ValidateAsync(
-                It.IsAny<UpdateCommentCommand>(),
-                It.IsAny<CancellationToken>()))
+            .Setup(v => v.ValidateAsync(It.IsAny<UpdateCommentCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
 
-        var commentEntity = new CommentEntity(Guid.NewGuid(), userId, "Old text");
-
-        var commentRepositoryMock = new Mock<ICommentRepository>();
-        commentRepositoryMock
-            .Setup(r => r.GetByIdAsync(
-                commentEntity.Id,
-                asNoTracking: false,
-                cancellationToken: It.IsAny<CancellationToken>()))
-            .ReturnsAsync(commentEntity);
+        var comment = new CommentEntity(Guid.NewGuid(), Guid.NewGuid(), "Old Text");
 
         var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Comments).Returns(commentRepositoryMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-               .ReturnsAsync(1);
+        uowMock.Setup(u => u.Comments.GetByIdAsync(comment.Id, false, It.IsAny<CancellationToken>()))
+               .ReturnsAsync(comment);
 
-        var handler = new UpdateCommentCommandHandler(
-            uowMock.Object,
-            validatorMock.Object);
+        var handler = new UpdateCommentCommandHandler(uowMock.Object, validatorMock.Object);
 
-        var command = new UpdateCommentCommand(
-            commentEntity.TaskId,
-            commentEntity.Id,
-            userId,
-            "Updated text");
+        var command = new UpdateCommentCommand(comment.Id, Guid.NewGuid(), "New Text");
 
+        // Act
         var result = await handler.HandleAsync(command, CancellationToken.None);
 
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorCode.InvalidOperation, result.Error!.Code);
+        Assert.Equal("You don't have permission to update this comment.", result.Error.Message);
+    }
+
+    /// <summary>
+    /// Updates the comment successfully when the user is the owner.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task HandleAsync_ShouldUpdateComment_WhenUserIsOwner()
+    {
+        // Arrange
+        var validatorMock = new Mock<IValidator<UpdateCommentCommand>>();
+        validatorMock
+            .Setup(v => v.ValidateAsync(It.IsAny<UpdateCommentCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
+
+        var userId = Guid.NewGuid();
+        var comment = new CommentEntity(Guid.NewGuid(), userId, "Old Text");
+
+        var uowMock = new Mock<IUnitOfWork>();
+        uowMock.Setup(u => u.Comments.GetByIdAsync(comment.Id, false, It.IsAny<CancellationToken>()))
+               .ReturnsAsync(comment);
+        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var handler = new UpdateCommentCommandHandler(uowMock.Object, validatorMock.Object);
+
+        var command = new UpdateCommentCommand(comment.Id, userId, "New Text");
+
+        // Act
+        var result = await handler.HandleAsync(command, CancellationToken.None);
+
+        // Assert
         Assert.True(result.IsSuccess);
-        Assert.Equal("Updated text", commentEntity.Text);
-        uowMock.Verify(
-            u => u.SaveChangesAsync(It.IsAny<CancellationToken>()),
-            Times.Once);
+        Assert.Equal("New Text", comment.Text);
+        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

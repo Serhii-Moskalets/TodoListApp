@@ -1,80 +1,54 @@
-﻿using Moq;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+﻿using FluentValidation.TestHelper;
 using TodoListApp.Application.Comment.Queries.GetComments;
 
 namespace TodoListApp.Application.Tests.Comment.Queries;
 
 /// <summary>
 /// Unit tests for <see cref="GetCommentsQueryValidator"/>.
-/// Ensures that the validator correctly enforces access rules for getting comments.
+/// Ensures that the validator correctly enforces rules for retrieving comments.
 /// </summary>
 public class GetCommentsQueryValidatorTests
 {
+    private readonly GetCommentsQueryValidator _validator = new();
+
     /// <summary>
-    /// Tests that validation passes when the user is the owner of the task.
+    /// Fails validation when UserId is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Validate_ShouldNotHaveError_WhenUserIsOwner()
+    public void Should_Have_Error_When_UserId_Is_Empty()
     {
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var query = new GetCommentsQuery(Guid.NewGuid(), Guid.NewGuid());
+        var query = new GetCommentsQuery(Guid.NewGuid(), Guid.Empty);
 
-        unitOfWorkMock.Setup(u => u.Tasks.ExistsForUserAsync(query.TaskId, query.UserId, default))
-                      .ReturnsAsync(true);
-        unitOfWorkMock.Setup(u => u.UserTaskAccesses.ExistsAsync(query.TaskId, query.UserId, default))
-                      .ReturnsAsync(false);
+        var result = this._validator.TestValidate(query);
 
-        var validator = new GetCommentsQueryValidator(unitOfWorkMock.Object);
-
-        var result = await validator.ValidateAsync(query);
-
-        Assert.True(result.IsValid);
+        result.ShouldHaveValidationErrorFor(q => q.UserId)
+              .WithErrorMessage("User ID is required.");
     }
 
     /// <summary>
-    /// Tests that validation passes when the user has shared access to the task.
+    /// Fails validation when TaskId is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Validate_ShouldNotHaveError_WhenUserHasSharedAccess()
+    public void Should_Have_Error_When_TaskId_Is_Empty()
     {
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        var query = new GetCommentsQuery(Guid.NewGuid(), Guid.NewGuid());
+        var query = new GetCommentsQuery(Guid.Empty, Guid.NewGuid());
 
-        unitOfWorkMock.Setup(u => u.Tasks.ExistsForUserAsync(query.TaskId, query.UserId, default))
-                      .ReturnsAsync(false);
-        unitOfWorkMock.Setup(u => u.UserTaskAccesses.ExistsAsync(query.TaskId, query.UserId, default))
-                      .ReturnsAsync(true);
+        var result = this._validator.TestValidate(query);
 
-        var validator = new GetCommentsQueryValidator(unitOfWorkMock.Object);
-
-        var result = await validator.ValidateAsync(query);
-
-        Assert.True(result.IsValid);
+        result.ShouldHaveValidationErrorFor(q => q.TaskId)
+              .WithErrorMessage("Task ID is required.");
     }
 
     /// <summary>
-    /// Tests that validation fails when the user has no access to the task.
+    /// Passes validation when the query is valid.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenUserHasNoAccess()
+    public void Should_Not_Have_Error_When_Query_Is_Valid()
     {
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
         var query = new GetCommentsQuery(Guid.NewGuid(), Guid.NewGuid());
 
-        unitOfWorkMock.Setup(u => u.Tasks.ExistsForUserAsync(query.TaskId, query.UserId, default))
-                      .ReturnsAsync(false);
-        unitOfWorkMock.Setup(u => u.UserTaskAccesses.ExistsAsync(query.TaskId, query.UserId, default))
-                      .ReturnsAsync(false);
+        var result = this._validator.TestValidate(query);
 
-        var validator = new GetCommentsQueryValidator(unitOfWorkMock.Object);
-
-        var result = await validator.ValidateAsync(query);
-
-        Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "TaskId");
-        Assert.Equal("Task not found or does not belong to the user.", error.ErrorMessage);
+        result.ShouldNotHaveAnyValidationErrors();
     }
 }

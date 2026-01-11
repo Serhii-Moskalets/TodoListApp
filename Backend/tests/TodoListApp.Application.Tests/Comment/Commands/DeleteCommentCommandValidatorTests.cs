@@ -1,69 +1,54 @@
-﻿using Moq;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+﻿using FluentValidation.TestHelper;
 using TodoListApp.Application.Comment.Commands.DeleteComment;
 
 namespace TodoListApp.Application.Tests.Comment.Commands;
 
 /// <summary>
 /// Unit tests for <see cref="DeleteCommentCommandValidator"/>.
-/// Verifies validation rules for deleting a comment.
+/// Validates command properties and ensures correct validation messages.
 /// </summary>
 public class DeleteCommentCommandValidatorTests
 {
+    private readonly DeleteCommentCommandValidator _validator = new();
+
     /// <summary>
-    /// Tests that validation passes when the user owns the comment.
+    /// Fails validation when UserId is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldPass_WhenUserOwnsComment()
+    public void Should_Have_Error_When_UserId_Is_Empty()
     {
-        var commentId = Guid.NewGuid();
-        var taskId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
+        var command = new DeleteCommentCommand(Guid.NewGuid(), Guid.Empty);
 
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        unitOfWorkMock
-            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(
-                It.IsAny<Guid>(),
-                It.IsAny<Guid>(),
-                It.IsAny<Guid>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        var result = this._validator.TestValidate(command);
 
-        var validator = new DeleteCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new DeleteCommentCommand(taskId, commentId, userId);
-
-        var result = await validator.ValidateAsync(command);
-
-        Assert.True(result.IsValid);
+        result.ShouldHaveValidationErrorFor(c => c.UserId)
+              .WithErrorMessage("User ID is required.");
     }
 
     /// <summary>
-    /// Tests that validation fails when the user does not own the comment.
-    /// Ensures the proper error message is returned.
+    /// Fails validation when CommentId is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldFail_WhenUserDoesNotOwnComment()
+    public void Should_Have_Error_When_CommentId_Is_Empty()
     {
-        var unitOfWorkMock = new Mock<IUnitOfWork>();
-        unitOfWorkMock
-            .Setup(u => u.Comments.ExistsInTaskAndOwnedByUserAsync(
-                It.IsAny<Guid>(),
-                It.IsAny<Guid>(),
-                It.IsAny<Guid>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        var command = new DeleteCommentCommand(Guid.Empty, Guid.NewGuid());
 
-        var validator = new DeleteCommentCommandValidator(unitOfWorkMock.Object);
-        var command = new DeleteCommentCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var result = this._validator.TestValidate(command);
 
-        var result = await validator.ValidateAsync(command);
+        result.ShouldHaveValidationErrorFor(c => c.CommentId)
+              .WithErrorMessage("Task ID is required.");
+    }
 
-        Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "CommentId");
-        Assert.Equal(
-            "Comment not found or does not belong to the user.",
-            error.ErrorMessage);
+    /// <summary>
+    /// Passes validation when command is valid.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_Command_Is_Valid()
+    {
+        var command = new DeleteCommentCommand(Guid.NewGuid(), Guid.NewGuid());
+
+        var result = this._validator.TestValidate(command);
+
+        result.ShouldNotHaveAnyValidationErrors();
     }
 }
