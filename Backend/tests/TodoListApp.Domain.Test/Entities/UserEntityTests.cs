@@ -1,5 +1,6 @@
 ﻿using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Enums;
+using TodoListApp.Domain.Exceptions;
 
 namespace TodoListApp.Domain.Test.Entities;
 
@@ -32,7 +33,7 @@ public class UserEntityTests
     }
 
     /// <summary>
-    /// Tests that the constructor throws <see cref="ArgumentException"/>
+    /// Tests that the constructor throws <see cref="DomainException"/>
     /// when the first name is null, empty, or whitespace.
     /// </summary>
     /// <param name="firstName">The first name to test.</param>
@@ -42,12 +43,12 @@ public class UserEntityTests
     [InlineData(" ")]
     public void Constructor_Should_Throw_When_FirstNameIsInvalid(string? firstName)
     {
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<DomainException>(() =>
             new UserEntity(firstName!, UserName, Email, PasswordHash));
     }
 
     /// <summary>
-    /// Tests that the constructor throws <see cref="ArgumentException"/>
+    /// Tests that the constructor throws <see cref="DomainException"/>
     /// when the user name is null, empty, or whitespace.
     /// </summary>
     /// <param name="userName">The user name to test.</param>
@@ -57,12 +58,12 @@ public class UserEntityTests
     [InlineData(" ")]
     public void Constructor_Should_Throw_When_UserNameIsInvalid(string? userName)
     {
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<DomainException>(() =>
             new UserEntity(FirstName, userName!, Email, PasswordHash));
     }
 
     /// <summary>
-    /// Tests that the constructor throws <see cref="ArgumentException"/>
+    /// Tests that the constructor throws <see cref="DomainException"/>
     /// when the email is null, empty, or whitespace.
     /// </summary>
     /// <param name="email">The email to test.</param>
@@ -72,7 +73,7 @@ public class UserEntityTests
     [InlineData(" ")]
     public void Constructor_Should_Throw_When_EmailIsInvalid(string? email)
     {
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<DomainException>(() =>
             new UserEntity(FirstName, UserName, email!, PasswordHash));
     }
 
@@ -197,7 +198,7 @@ public class UserEntityTests
     }
 
     /// <summary>
-    /// Tests that <see cref="UserEntity.UpdateFirstAndLastName"/> throws <see cref="ArgumentException"/>
+    /// Tests that <see cref="UserEntity.UpdateFirstAndLastName"/> throws <see cref="DomainException"/>
     /// when the first name is null, empty, or whitespace.
     /// </summary>
     /// <param name="newFirstName">The new first name to test.</param>
@@ -208,11 +209,11 @@ public class UserEntityTests
     public void UpdateFirst_ShouldThrow_InvalidFirstName(string? newFirstName)
     {
         var user = new UserEntity(FirstName, UserName, Email, PasswordHash);
-        Assert.Throws<ArgumentException>(() => user.UpdateFirstAndLastName(newFirstName!));
+        Assert.Throws<DomainException>(() => user.UpdateFirstAndLastName(newFirstName!));
     }
 
     /// <summary>
-    /// Tests that the <see cref="UserEntity"/> constructor throws an <see cref="ArgumentException"/>
+    /// Tests that the <see cref="UserEntity"/> constructor throws an <see cref="DomainException"/>
     /// when the password hash is null, empty, or whitespace.
     /// </summary>
     /// <param name="passwordHash">The password hash to test.</param>
@@ -222,12 +223,12 @@ public class UserEntityTests
     [InlineData(" ")]
     public void Constructor_Should_Throw_When_PasswordHashIsInvalid(string? passwordHash)
     {
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<DomainException>(() =>
             new UserEntity(FirstName, UserName, Email, passwordHash!));
     }
 
     /// <summary>
-    /// Tests that <see cref="UserEntity.ResetPassword"/> throws <see cref="InvalidOperationException"/>
+    /// Tests that <see cref="UserEntity.ResetPassword"/> throws <see cref="DomainException"/>
     /// when the token type is invalid.
     /// </summary>
     [Fact]
@@ -236,11 +237,11 @@ public class UserEntityTests
         var user = new UserEntity(FirstName, UserName, Email, PasswordHash);
         user.SetEmailVerificationToken(TokenValue, TokenExpires);
 
-        Assert.Throws<InvalidOperationException>(() => user.ResetPassword("newHash"));
+        Assert.Throws<DomainException>(() => user.ResetPassword("newHash"));
     }
 
     /// <summary>
-    /// Tests that <see cref="UserEntity.ResetPassword"/> throws <see cref="InvalidOperationException"/>
+    /// Tests that <see cref="UserEntity.ResetPassword"/> throws <see cref="DomainException"/>
     /// when the password reset token has expired.
     /// </summary>
     [Fact]
@@ -249,18 +250,18 @@ public class UserEntityTests
         var user = new UserEntity(FirstName, UserName, Email, PasswordHash);
         user.SetPasswordResetToken(TokenValue, DateTime.UtcNow.AddMinutes(-1));
 
-        Assert.Throws<InvalidOperationException>(() => user.ResetPassword("newHash"));
+        Assert.Throws<DomainException>(() => user.ResetPassword("newHash"));
     }
 
     /// <summary>
-    /// Tests that <see cref="UserEntity.SetPendingEmail"/> throws <see cref="InvalidOperationException"/>
+    /// Tests that <see cref="UserEntity.SetPendingEmail"/> throws <see cref="DomainException"/>
     /// when the pending email is the same as the current email.
     /// </summary>
     [Fact]
     public void SetPendingEmail_Should_Throw_When_EmailSameAsCurrent()
     {
         var user = new UserEntity(FirstName, UserName, Email, PasswordHash);
-        Assert.Throws<InvalidOperationException>(() => user.SetPendingEmail(Email));
+        Assert.Throws<DomainException>(() => user.SetPendingEmail(Email));
     }
 
     /// <summary>

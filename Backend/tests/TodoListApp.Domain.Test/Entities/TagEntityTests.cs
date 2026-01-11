@@ -1,4 +1,5 @@
 ﻿using TodoListApp.Domain.Entities;
+using TodoListApp.Domain.Exceptions;
 
 namespace TodoListApp.Domain.Test.Entities;
 
@@ -24,7 +25,7 @@ public class TagEntityTests
     }
 
     /// <summary>
-    /// Verifies that the constructor throws an <see cref="ArgumentException"/>
+    /// Verifies that the constructor throws an <see cref="DomainException"/>
     /// when the tag name is invalid.
     /// </summary>
     /// <param name="invalidText">An invalid tag name.</param>
@@ -36,7 +37,7 @@ public class TagEntityTests
     {
         var userId = Guid.NewGuid();
 
-        Assert.Throws<ArgumentException>(() => new TagEntity(invalidText!, userId));
+        Assert.Throws<DomainException>(() => new TagEntity(invalidText!, userId));
     }
 
     /// <summary>

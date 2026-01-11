@@ -1,4 +1,5 @@
 ﻿using TodoListApp.Domain.Entities;
+using TodoListApp.Domain.Exceptions;
 
 namespace TodoListApp.Domain.Test.Entities;
 
@@ -26,7 +27,7 @@ public class TaskListEntityTest
     }
 
     /// <summary>
-    /// Verifies that the constructor throws an <see cref="ArgumentException"/>
+    /// Verifies that the constructor throws an <see cref="DomainException"/>
     /// when the title is null, empty, or whitespace.
     /// </summary>
     /// <param name="invalidTitle">An invalid task list title.</param>
@@ -36,7 +37,7 @@ public class TaskListEntityTest
     [InlineData("   ")]
     public void Constructor_ShouldThrow_WhenTitleInvalid(string? invalidTitle)
     {
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<DomainException>(() =>
         new TaskListEntity(
             Guid.NewGuid(),
             invalidTitle!));
@@ -92,7 +93,7 @@ public class TaskListEntityTest
 
     /// <summary>
     /// Verifies that <see cref="TaskListEntity.UpdateTitle"/>
-    /// throws an <see cref="ArgumentException"/>
+    /// throws an <see cref="DomainException"/>
     /// when the new title is invalid.
     /// </summary>
     /// <param name="invalidTitle">An invalid new title.</param>
@@ -106,7 +107,7 @@ public class TaskListEntityTest
             Guid.NewGuid(),
             "Old title");
 
-        Assert.Throws<ArgumentException>(() => taskList.UpdateTitle(invalidTitle!));
+        Assert.Throws<DomainException>(() => taskList.UpdateTitle(invalidTitle!));
     }
 
     /// <summary>

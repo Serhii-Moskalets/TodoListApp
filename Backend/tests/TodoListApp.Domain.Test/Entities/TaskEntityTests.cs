@@ -21,7 +21,7 @@ public class TaskEntityTests
     {
         var ownerId = Guid.NewGuid();
         var taskListId = Guid.NewGuid();
-        var dueDate = DateTime.UtcNow;
+        var dueDate = DateTime.UtcNow.AddMinutes(5);
 
         var task = new TaskEntity(ownerId, taskListId, Title, dueDate, Description);
 
@@ -61,7 +61,7 @@ public class TaskEntityTests
     {
         var ownerId = Guid.NewGuid();
         var taskListId = Guid.NewGuid();
-        var dueDate = DateTime.UtcNow;
+        var dueDate = DateTime.UtcNow.AddMinutes(5);
 
         var task = new TaskEntity(ownerId, taskListId, Title, dueDate: dueDate);
 
@@ -93,7 +93,7 @@ public class TaskEntityTests
     }
 
     /// <summary>
-    /// Verifies that the constructor throws an <see cref="ArgumentException"/>
+    /// Verifies that the constructor throws an <see cref="DomainException"/>
     /// when the task title is invalid.
     /// </summary>
     /// <param name="invalidTitle">An invalid task title.</param>
@@ -103,7 +103,7 @@ public class TaskEntityTests
     [InlineData("   ")]
     public void Constructor_ShouldThrow_WhenTitleInvalid(string? invalidTitle)
     {
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<DomainException>(() =>
         new TaskEntity(
             Guid.NewGuid(),
             Guid.NewGuid(),
@@ -192,7 +192,7 @@ public class TaskEntityTests
     }
 
     /// <summary>
-    /// Verifies that updating task details throws an <see cref="ArgumentException"/>
+    /// Verifies that updating task details throws an <see cref="DomainException"/>
     /// when the title is invalid.
     /// </summary>
     /// <param name="invalidTitle">An invalid task title.</param>
@@ -207,7 +207,7 @@ public class TaskEntityTests
             Guid.NewGuid(),
             "Old title");
 
-        Assert.Throws<ArgumentException>(() => task.UpdateDetails(invalidTitle!));
+        Assert.Throws<DomainException>(() => task.UpdateDetails(invalidTitle!));
     }
 
     /// <summary>
@@ -221,7 +221,7 @@ public class TaskEntityTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             "Old title");
-        var newDueDate = DateTime.UtcNow;
+        var newDueDate = DateTime.UtcNow.AddMinutes(5);
 
         task.UpdateDetails("New title", Description, newDueDate);
 

@@ -1,4 +1,5 @@
 ﻿using TodoListApp.Domain.Entities;
+using TodoListApp.Domain.Exceptions;
 
 namespace TodoListApp.Domain.Test.Entities;
 
@@ -28,7 +29,7 @@ public class CommentEntityTests
     }
 
     /// <summary>
-    /// Verifies that the constructor throws an <see cref="ArgumentException"/>
+    /// Verifies that the constructor throws an <see cref="DomainException"/>
     /// when the comment text is null, empty, or whitespace.
     /// </summary>
     /// <param name="invalidText">An invalid comment text.</param>
@@ -41,7 +42,7 @@ public class CommentEntityTests
         var taskId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
-        Assert.Throws<ArgumentException>(() => new CommentEntity(taskId, userId, invalidText!));
+        Assert.Throws<DomainException>(() => new CommentEntity(taskId, userId, invalidText!));
     }
 
     /// <summary>
@@ -73,7 +74,7 @@ public class CommentEntityTests
 
     /// <summary>
     /// Verifies that <see cref="CommentEntity.Update"/>
-    /// throws an <see cref="ArgumentException"/>
+    /// throws an <see cref="DomainException"/>
     /// when the new text is invalid.
     /// </summary>
     /// <param name="invalidText">An invalid new comment text.</param>
@@ -84,7 +85,7 @@ public class CommentEntityTests
     public void Update_ShouldThrow_WhenTextInvalid(string? invalidText)
     {
         var comment = new CommentEntity(Guid.NewGuid(), Guid.NewGuid(), "Old");
-        Assert.Throws<ArgumentException>(() => comment.Update(invalidText!));
+        Assert.Throws<DomainException>(() => comment.Update(invalidText!));
     }
 
     /// <summary>
