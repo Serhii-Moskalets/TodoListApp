@@ -1,9 +1,11 @@
 ﻿using FluentValidation;
-using FluentValidation.Results;
 using Moq;
+using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Tasks.Commands.DeleteOverdueTasks;
+using TodoListApp.Domain.Entities;
+using FVResult = FluentValidation.Results.ValidationResult;
 
 namespace TodoListApp.Application.Tests.Tasks.Commands;
 
@@ -14,81 +16,97 @@ namespace TodoListApp.Application.Tests.Tasks.Commands;
 public class DeleteOverdueTasksCommandHandlerTests
 {
     /// <summary>
-    /// Tests that the handler returns a failure result when validation fails,
-    /// and does not call repository or SaveChangesAsync.
+    /// Ensures the handler returns a failure result when validation fails.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task Handle_ShouldReturnFailure_WhenValidationFails()
     {
+        // Arrange
         var validatorMock = new Mock<IValidator<DeleteOverdueTasksCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteOverdueTasksCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult(
-                [new ValidationFailure("TaskListId", "TaskList not found")]));
+        validatorMock
+            .Setup(v => v.ValidateAsync(It.IsAny<DeleteOverdueTasksCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FVResult([new FluentValidation.Results.ValidationFailure("TaskListId", "Validation failed")]));
 
         var uowMock = new Mock<IUnitOfWork>();
+        var handler = new DeleteOverdueTasksCommandHandler(uowMock.Object, validatorMock.Object);
+
+        var command = new DeleteOverdueTasksCommand(Guid.NewGuid(), Guid.NewGuid());
+
+        // Act
+        var result = await handler.HandleAsync(command, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Validation failed", result.Error!.Message);
+    }
+
+    /// <summary>
+    /// Ensures the handler returns a not-found error when the task list does not exist.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Handle_ShouldReturnNotFound_WhenTaskListDoesNotExist()
+    {
+        // Arrange
+        var validatorMock = new Mock<IValidator<DeleteOverdueTasksCommand>>();
+        validatorMock
+            .Setup(v => v.ValidateAsync(It.IsAny<DeleteOverdueTasksCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FVResult());
+
+        var taskListRepoMock = new Mock<ITaskListRepository>();
+        taskListRepoMock
+            .Setup(r => r.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TaskListEntity?)null);
+
+        var uowMock = new Mock<IUnitOfWork>();
+        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
 
         var handler = new DeleteOverdueTasksCommandHandler(uowMock.Object, validatorMock.Object);
         var command = new DeleteOverdueTasksCommand(Guid.NewGuid(), Guid.NewGuid());
 
-        var ct = CancellationToken.None;
-        var result = await handler.HandleAsync(command, ct);
+        // Act
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
+        // Assert
         Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-        Assert.Equal("TaskList not found", result.Error.Message);
-
-        uowMock.Verify(
-            u => u.Tasks.DeleteOverdueTasksAsync(
-            It.IsAny<Guid>(),
-            It.IsAny<Guid>(),
-            It.IsAny<DateTime>(),
-            It.IsAny<CancellationToken>()),
-            Times.Never);
-        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        Assert.Equal(ErrorCode.NotFound, result.Error!.Code);
     }
 
     /// <summary>
-    /// Tests that the handler deletes overdue tasks successfully when validation passes,
-    /// and calls DeleteOverdueTasksAsync and SaveChangesAsync exactly once.
+    /// Ensures the handler deletes overdue tasks when the task list exists.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldDeleteOverDueTasks_WhenValidationPasses()
+    public async Task Handle_ShouldDeleteOverdueTasks_WhenTaskListExists()
     {
+        // Arrange
         var validatorMock = new Mock<IValidator<DeleteOverdueTasksCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteOverdueTasksCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FluentValidation.Results.ValidationResult());
+        validatorMock
+            .Setup(v => v.ValidateAsync(It.IsAny<DeleteOverdueTasksCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FVResult());
 
-        var taskRespository = new Mock<ITaskRepository>();
-        taskRespository.Setup(r => r.DeleteOverdueTasksAsync(
-            It.IsAny<Guid>(),
-            It.IsAny<Guid>(),
-            It.IsAny<DateTime>(),
-            It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        var taskList = new Mock<TaskListEntity>(Guid.NewGuid(), "My list") { CallBase = true };
+        taskList.Setup(t => t.DeleteOverdueTasks(It.IsAny<DateTime>()));
+
+        var taskListRepoMock = new Mock<ITaskListRepository>();
+        taskListRepoMock
+            .Setup(r => r.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(taskList.Object);
 
         var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Tasks).Returns(taskRespository.Object);
+        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
         uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var handler = new DeleteOverdueTasksCommandHandler(uowMock.Object, validatorMock.Object);
-        var taskListId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var command = new DeleteOverdueTasksCommand(taskListId, userId);
+        var command = new DeleteOverdueTasksCommand(Guid.NewGuid(), Guid.NewGuid());
 
-        var ct = CancellationToken.None;
-        var result = await handler.HandleAsync(command, ct);
+        // Act
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
+        // Assert
         Assert.True(result.IsSuccess);
-        taskRespository.Verify(
-            r => r.DeleteOverdueTasksAsync(
-                userId,
-                taskListId,
-                It.Is<DateTime>(d => (DateTime.UtcNow - d).TotalSeconds < 1),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
-
+        taskList.Verify(t => t.DeleteOverdueTasks(It.IsAny<DateTime>()), Times.Once);
         uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

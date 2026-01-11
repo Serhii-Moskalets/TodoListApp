@@ -1,11 +1,12 @@
-﻿using Moq;
+﻿using FluentValidation;
+using Moq;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Tasks.Commands.ChangeTaskStatus;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Enums;
-using TodoListApp.Domain.Exceptions;
+using FVResult = FluentValidation.Results.ValidationResult;
 
 namespace TodoListApp.Application.Tests.Tasks.Commands;
 
@@ -24,7 +25,7 @@ public class ChangeTaskStatusCommandHandlerTests
     {
         var taskId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        var command = new ChangeTaskStatusCommand(taskId, userId, Domain.Enums.StatusTask.InProgress);
+        var command = new ChangeTaskStatusCommand(taskId, userId, StatusTask.InProgress);
 
         var taskRepoMock = new Mock<ITaskRepository>();
         taskRepoMock.Setup(r => r.GetByIdAsync(taskId, false, It.IsAny<CancellationToken>()))
@@ -33,7 +34,12 @@ public class ChangeTaskStatusCommandHandlerTests
         var uowMock = new Mock<IUnitOfWork>();
         uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
 
-        var handler = new ChangeTaskStatusCommandHandler(uowMock.Object);
+        var validatorMock = new Mock<IValidator<ChangeTaskStatusCommand>>();
+        validatorMock
+            .Setup(v => v.ValidateAsync(It.IsAny<ChangeTaskStatusCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FVResult());
+
+        var handler = new ChangeTaskStatusCommandHandler(uowMock.Object, validatorMock.Object);
 
         var ct = CancellationToken.None;
         var result = await handler.HandleAsync(command, ct);
@@ -57,14 +63,19 @@ public class ChangeTaskStatusCommandHandlerTests
 
         var taskEntity = new TaskEntity(userId, Guid.NewGuid(), "Task");
         var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetByIdAsync(taskId, false, It.IsAny<CancellationToken>()))
+        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(taskId, userId, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync(taskEntity);
 
         var uowMock = new Mock<IUnitOfWork>();
         uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
         uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var handler = new ChangeTaskStatusCommandHandler(uowMock.Object);
+        var validatorMock = new Mock<IValidator<ChangeTaskStatusCommand>>();
+        validatorMock
+            .Setup(v => v.ValidateAsync(It.IsAny<ChangeTaskStatusCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FVResult());
+
+        var handler = new ChangeTaskStatusCommandHandler(uowMock.Object, validatorMock.Object);
 
         var ct = CancellationToken.None;
         var result = await handler.HandleAsync(command, ct);

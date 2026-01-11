@@ -1,91 +1,152 @@
-﻿using TodoListApp.Application.Tasks.Commands.UpdateTask;
+﻿using FluentValidation.TestHelper;
+using TodoListApp.Application.Tasks.Commands.UpdateTask;
 using TodoListApp.Application.Tasks.Dtos;
 
 namespace TodoListApp.Application.Tests.Tasks.Commands;
 
 /// <summary>
 /// Contains unit tests for <see cref="UpdateTaskCommandValidator"/>.
-/// Ensures that the validator correctly enforces rules for updating a task list.
+/// Ensures that the validator correctly enforces rules for updating a task.
 /// </summary>
 public class UpdateTaskCommandValidatorTests
 {
     private readonly UpdateTaskCommandValidator _validator = new();
 
     /// <summary>
-    /// Tests that the validator returns an error when
-    /// <see cref="UpdateTaskDto.Title"/> is empty.
+    /// Ensures validation fails when the task ID is empty.
     /// </summary>
     [Fact]
-    public void Validate_ShouldHaveError_WhenTitleIsEmpty()
+    public void Should_Have_Error_When_TaskId_Is_Empty()
     {
-        var command = new UpdateTaskCommand(new UpdateTaskDto
-        {
-            OwnerId = Guid.NewGuid(),
-            TaskId = Guid.NewGuid(),
-            Title = string.Empty,
-        });
+        var command = new UpdateTaskCommand(
+            new UpdateTaskDto
+            {
+                TaskId = Guid.Empty,
+                Title = "Valid title",
+            },
+            Guid.NewGuid());
 
-        var result = this._validator.Validate(command);
-
-        Assert.False(result.IsValid);
-        var titleError = Assert.Single(result.Errors, e => e.PropertyName == "Dto.Title");
-        Assert.Equal("Task title cannot be empty.", titleError.ErrorMessage);
+        var result = this._validator.TestValidate(command);
+        result.ShouldHaveValidationErrorFor(c => c.Dto.TaskId)
+              .WithErrorMessage("Task ID is required.");
     }
 
     /// <summary>
-    /// Tests that the validator does not return any error when
-    /// <see cref="UpdateTaskDto.Title"/> is not empty.
+    /// Ensures validation fails when the user ID is empty.
     /// </summary>
     [Fact]
-    public void Validate_ShouldHaveNotHaveError_WhenTitleIsNotEmpty()
+    public void Should_Have_Error_When_UserId_Is_Empty()
     {
-        var command = new UpdateTaskCommand(new UpdateTaskDto
-        {
-            OwnerId = Guid.NewGuid(),
-            TaskId = Guid.NewGuid(),
-            Title = "New title.",
-        });
+        var command = new UpdateTaskCommand(
+            new UpdateTaskDto
+            {
+                TaskId = Guid.NewGuid(),
+                Title = "Valid title",
+            },
+            Guid.Empty);
 
-        var result = this._validator.Validate(command);
-
-        Assert.True(result.IsValid);
+        var result = this._validator.TestValidate(command);
+        result.ShouldHaveValidationErrorFor(c => c.UserId)
+              .WithErrorMessage("User ID is required.");
     }
 
     /// <summary>
-    /// Tests that validation fails when the due date is in the past.
+    /// Ensures validation fails when the title is empty.
     /// </summary>
     [Fact]
-    public void Validate_ShouldHaveError_WhenDueDateInThePast()
+    public void Should_Have_Error_When_Title_Is_Empty()
     {
-        var command = new UpdateTaskCommand(new Application.Tasks.Dtos.UpdateTaskDto
-        {
-            OwnerId = Guid.NewGuid(),
-            Title = "Task",
-            DueDate = DateTime.UtcNow.AddDays(-1),
-        });
+        var command = new UpdateTaskCommand(
+            new UpdateTaskDto
+            {
+                TaskId = Guid.NewGuid(),
+                Title = string.Empty,
+            },
+            Guid.NewGuid());
 
-        var result = this._validator.Validate(command);
-
-        Assert.False(result.IsValid);
-        var dueDateError = Assert.Single(result.Errors, e => e.PropertyName == "Dto.DueDate");
-        Assert.Equal("Due date cannot be in the past.", dueDateError.ErrorMessage);
+        var result = this._validator.TestValidate(command);
+        result.ShouldHaveValidationErrorFor(c => c.Dto.Title)
+              .WithErrorMessage("Task title cannot be empty.");
     }
 
     /// <summary>
-    /// Tests that validation passes when the due date is in the future.
+    /// Ensures validation fails when the title exceeds the maximum length.
     /// </summary>
     [Fact]
-    public void Validate_ShouldNotHaveError_WhenDueDateInTheFuture()
+    public void Should_Have_Error_When_Title_TooLong()
     {
-        var command = new UpdateTaskCommand(new UpdateTaskDto
-        {
-            OwnerId = Guid.NewGuid(),
-            Title = "Task",
-            DueDate = DateTime.UtcNow.AddDays(1),
-        });
+        var longTitle = new string('A', 101);
+        var command = new UpdateTaskCommand(
+            new UpdateTaskDto
+            {
+                TaskId = Guid.NewGuid(),
+                Title = longTitle,
+            },
+            Guid.NewGuid());
 
-        var result = this._validator.Validate(command);
+        var result = this._validator.TestValidate(command);
+        result.ShouldHaveValidationErrorFor(c => c.Dto.Title)
+              .WithErrorMessage("Title cannot exceed 100 characters.");
+    }
 
-        Assert.True(result.IsValid);
+    /// <summary>
+    /// Ensures validation fails when the description exceeds the maximum length.
+    /// </summary>
+    [Fact]
+    public void Should_Have_Error_When_Description_TooLong()
+    {
+        var longDescription = new string('B', 1001);
+        var command = new UpdateTaskCommand(
+            new UpdateTaskDto
+            {
+                TaskId = Guid.NewGuid(),
+                Title = "Valid title",
+                Description = longDescription,
+            },
+            Guid.NewGuid());
+
+        var result = this._validator.TestValidate(command);
+        result.ShouldHaveValidationErrorFor(c => c.Dto.Description)
+              .WithErrorMessage("Description cannot exceed 1000 characters.");
+    }
+
+    /// <summary>
+    /// Ensures validation fails when the due date is in the past.
+    /// </summary>
+    [Fact]
+    public void Should_Have_Error_When_DueDate_IsInPast()
+    {
+        var command = new UpdateTaskCommand(
+            new UpdateTaskDto
+            {
+                TaskId = Guid.NewGuid(),
+                Title = "Valid title",
+                DueDate = DateTime.UtcNow.AddMinutes(-1),
+            },
+            Guid.NewGuid());
+
+        var result = this._validator.TestValidate(command);
+        result.ShouldHaveValidationErrorFor(c => c.Dto.DueDate)
+              .WithErrorMessage("Due date cannot be in the past.");
+    }
+
+    /// <summary>
+    /// Ensures no validation errors occur when the command is valid.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_CommandIsValid()
+    {
+        var command = new UpdateTaskCommand(
+            new UpdateTaskDto
+            {
+                TaskId = Guid.NewGuid(),
+                Title = "Valid title",
+                Description = "Valid description",
+                DueDate = DateTime.UtcNow.AddMinutes(5),
+            },
+            Guid.NewGuid());
+
+        var result = this._validator.TestValidate(command);
+        result.ShouldNotHaveAnyValidationErrors();
     }
 }

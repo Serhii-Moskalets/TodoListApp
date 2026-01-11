@@ -1,80 +1,146 @@
-﻿using Moq;
+﻿using FluentValidation;
+using Moq;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Tasks.Commands.RemoveTagFromTask;
 using TodoListApp.Domain.Entities;
+using FVResult = FluentValidation.Results.ValidationResult;
 
 namespace TodoListApp.Application.Tests.Tasks.Commands;
 
 /// <summary>
 /// Unit tests for <see cref="RemoveTagFromTaskCommandHandler"/>.
-/// Verifies behavior when removing a tag from a task.
+/// Verifies the behavior of the handler for removing a tag from a task.
 /// </summary>
 public class RemoveTagFromTaskCommandHandlerTests
 {
     /// <summary>
-    /// Tests that the handler returns a failure result when the specified task does not exist.
-    /// Ensures that <see cref="IUnitOfWork.SaveChangesAsync"/> is not called.
+    /// Ensures the handler returns a failure result when validation fails.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenTaskNotFound()
+    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
     {
-        var taskId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var command = new RemoveTagFromTaskCommand(taskId, userId);
+        // Arrange
+        var validatorMock = new Mock<IValidator<RemoveTagFromTaskCommand>>();
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<RemoveTagFromTaskCommand>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(new FVResult([new FluentValidation.Results.ValidationFailure("TaskId", "Task ID is required")]));
+
+        var uowMock = new Mock<IUnitOfWork>();
+        var handler = new RemoveTagFromTaskCommandHandler(uowMock.Object, validatorMock.Object);
+
+        var command = new RemoveTagFromTaskCommand(Guid.Empty, Guid.NewGuid());
+
+        // Act
+        var result = await handler.HandleAsync(command, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.Error);
+        Assert.Equal("Task ID is required", result.Error.Message);
+    }
+
+    /// <summary>
+    /// Ensures the handler returns a not-found error when the task does not exist.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Handle_ShouldReturnNotFound_WhenTaskDoesNotExist()
+    {
+        // Arrange
+        var validatorMock = new Mock<IValidator<RemoveTagFromTaskCommand>>();
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<RemoveTagFromTaskCommand>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(new FVResult());
 
         var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetByIdAsync(taskId, false, It.IsAny<CancellationToken>()))
+        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
                     .ReturnsAsync((TaskEntity?)null);
 
         var uowMock = new Mock<IUnitOfWork>();
         uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
 
-        var handler = new RemoveTagFromTaskCommandHandler(uowMock.Object);
+        var handler = new RemoveTagFromTaskCommandHandler(uowMock.Object, validatorMock.Object);
+        var command = new RemoveTagFromTaskCommand(Guid.NewGuid(), Guid.NewGuid());
 
-        var ct = CancellationToken.None;
-        var result = await handler.HandleAsync(command, ct);
+        // Act
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
+        // Assert
         Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-        Assert.Equal("Task not found.", result.Error.Message);
-        Assert.Equal(ErrorCode.NotFound, result.Error.Code);
+        Assert.Equal(ErrorCode.NotFound, result.Error!.Code);
+    }
 
+    /// <summary>
+    /// Ensures the handler returns success when the task exists but has no tag.
+    /// No changes are saved to the database in this case.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Handle_ShouldReturnSuccess_WhenTaskHasNoTag()
+    {
+        // Arrange
+        var validatorMock = new Mock<IValidator<RemoveTagFromTaskCommand>>();
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<RemoveTagFromTaskCommand>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(new FVResult());
+
+        var userId = Guid.NewGuid();
+        var task = new TaskEntity(userId, Guid.NewGuid(), "Title");
+
+        task.SetTag(null);
+
+        var taskRepoMock = new Mock<ITaskRepository>();
+        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(task);
+
+        var uowMock = new Mock<IUnitOfWork>();
+        uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
+
+        var handler = new RemoveTagFromTaskCommandHandler(uowMock.Object, validatorMock.Object);
+        var command = new RemoveTagFromTaskCommand(Guid.NewGuid(), Guid.NewGuid());
+
+        // Act
+        var result = await handler.HandleAsync(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
         uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
-    /// Tests that the handler successfully removes a tag from an existing task.
-    /// Ensures that <see cref="TaskEntity.SetTag"/> is called with null and <see cref="IUnitOfWork.SaveChangesAsync"/> is invoked once.
+    /// Ensures the handler removes the tag from the task and saves changes when the task has a tag.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldRemoveTag_WhenTaskExists()
+    public async Task Handle_ShouldRemoveTag_WhenTaskHasTag()
     {
-        var taskId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var command = new RemoveTagFromTaskCommand(taskId, userId);
+        // Arrange
+        var validatorMock = new Mock<IValidator<RemoveTagFromTaskCommand>>();
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<RemoveTagFromTaskCommand>(), It.IsAny<CancellationToken>()))
+                     .ReturnsAsync(new FVResult());
 
-        var taskEntity = new TaskEntity(userId, Guid.NewGuid(), "Test Task");
-        taskEntity.SetTag(Guid.NewGuid());
+        var userId = Guid.NewGuid();
+        var task = new TaskEntity(userId, Guid.NewGuid(), "Title");
+
+        task.SetTag(Guid.NewGuid());
+
         var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetByIdAsync(taskId, false, It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(taskEntity);
+        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(task);
 
         var uowMock = new Mock<IUnitOfWork>();
         uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
         uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var handler = new RemoveTagFromTaskCommandHandler(uowMock.Object);
+        var handler = new RemoveTagFromTaskCommandHandler(uowMock.Object, validatorMock.Object);
+        var command = new RemoveTagFromTaskCommand(Guid.NewGuid(), Guid.NewGuid());
 
-        var ct = CancellationToken.None;
-        var result = await handler.HandleAsync(command, ct);
+        // Act
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
+        // Assert
         Assert.True(result.IsSuccess);
-        Assert.Null(taskEntity.TagId);
-
+        Assert.Null(task.TagId);
         uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

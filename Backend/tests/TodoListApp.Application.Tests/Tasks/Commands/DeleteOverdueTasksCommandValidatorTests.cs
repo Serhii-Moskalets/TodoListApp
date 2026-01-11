@@ -1,6 +1,4 @@
-﻿using Moq;
-using TodoListApp.Application.Abstractions.Interfaces.Repositories;
-using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+﻿using FluentValidation.TestHelper;
 using TodoListApp.Application.Tasks.Commands.DeleteOverdueTasks;
 
 namespace TodoListApp.Application.Tests.Tasks.Commands;
@@ -11,57 +9,56 @@ namespace TodoListApp.Application.Tests.Tasks.Commands;
 /// </summary>
 public class DeleteOverdueTasksCommandValidatorTests
 {
+    private readonly DeleteOverdueTasksCommandValidator _validator = new();
+
     /// <summary>
-    /// Validates that the command fails when the user is not the owner of the task list.
+    /// Fails validation when TaskListId is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldHaveError_WhenUserIsNotOwner()
+    public void Should_Have_Error_When_TaskListId_Is_Empty()
     {
-        var taskListId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var command = new DeleteOverdueTasksCommand(taskListId, userId);
+        // Arrange
+        var command = new DeleteOverdueTasksCommand(TaskListId: Guid.Empty, UserId: Guid.NewGuid());
 
-        var taskRepoMock = new Mock<ITaskListRepository>();
-        taskRepoMock.Setup(r => r.IsTaskListOwnerAsync(taskListId, userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        // Act
+        var result = this._validator.TestValidate(command);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskRepoMock.Object);
-
-        var validator = new DeleteOverdueTasksCommandValidator(uowMock.Object);
-
-        var result = await validator.ValidateAsync(command);
-
-        Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors);
-        Assert.NotNull(error);
-        Assert.Equal("TaskList not found or does not belong to the user.", error.ErrorMessage);
-        Assert.Equal("TaskListId", error.PropertyName);
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.TaskListId)
+              .WithErrorMessage("Task list ID is required.");
     }
 
     /// <summary>
-    /// Validates that the command passes when the user is the owner of the task list.
+    /// Fails validation when UserId is empty.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Validate_ShouldNotHaveError_WhenUserIsOwner()
+    public void Should_Have_Error_When_UserId_Is_Empty()
     {
-        var taskListId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var command = new DeleteOverdueTasksCommand(taskListId, userId);
+        // Arrange
+        var command = new DeleteOverdueTasksCommand(TaskListId: Guid.NewGuid(), UserId: Guid.Empty);
 
-        var taskRepoMock = new Mock<ITaskListRepository>();
-        taskRepoMock.Setup(r => r.IsTaskListOwnerAsync(taskListId, userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        // Act
+        var result = this._validator.TestValidate(command);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskRepoMock.Object);
+        // Assert
+        result.ShouldHaveValidationErrorFor(c => c.UserId)
+              .WithErrorMessage("Task list ID is required.");
+    }
 
-        var validator = new DeleteOverdueTasksCommandValidator(uowMock.Object);
+    /// <summary>
+    /// Passes validation when both TaskListId and UserId are valid.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_TaskListId_And_UserId_Are_Valid()
+    {
+        // Arrange
+        var command = new DeleteOverdueTasksCommand(TaskListId: Guid.NewGuid(), UserId: Guid.NewGuid());
 
-        var result = await validator.ValidateAsync(command);
+        // Act
+        var result = this._validator.TestValidate(command);
 
-        Assert.True(result.IsValid);
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(c => c.TaskListId);
+        result.ShouldNotHaveValidationErrorFor(c => c.UserId);
     }
 }
