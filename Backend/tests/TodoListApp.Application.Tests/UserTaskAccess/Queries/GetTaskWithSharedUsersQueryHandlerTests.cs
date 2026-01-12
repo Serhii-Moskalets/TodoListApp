@@ -1,7 +1,8 @@
-﻿using Moq;
+﻿using FluentValidation;
+using FluentValidation.Results;
+using Moq;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
-using TodoListApp.Application.UserTaskAccess.Mappers;
 using TodoListApp.Application.UserTaskAccess.Queries.GetTaskWithSharedUsers;
 using TodoListApp.Domain.Entities;
 
@@ -16,6 +17,7 @@ public class GetTaskWithSharedUsersQueryHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<ITaskRepository> _tasksRepoMock = new();
     private readonly Mock<IUserTaskAccessRepository> _userTaskAccessRepoMock = new();
+    private readonly Mock<IValidator<GetTaskWithSharedUsersQuery>> _validatorMock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetTaskWithSharedUsersQueryHandlerTests"/> class.
@@ -28,39 +30,66 @@ public class GetTaskWithSharedUsersQueryHandlerTests
     }
 
     /// <summary>
-    /// Tests that the handler returns a failure result when the requesting user is not the task owner.
+    /// Ensures that the handler returns a failure result when validation fails.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
+    {
+        var query = new GetTaskWithSharedUsersQuery(Guid.Empty, Guid.NewGuid());
+
+        this._validatorMock
+            .Setup(v => v.ValidateAsync(query, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult([new ValidationFailure("TaskId", "TaskId is required."),]));
+
+        var handler = new GetTaskWithSharedUsersQueryHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.Error);
+        Assert.Equal("TaskId is required.", result.Error.Message);
+    }
+
+    /// <summary>
+    /// Ensures that the handler returns a failure result when the user is not the task owner.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
     public async Task Handle_ShouldReturnFailure_WhenUserIsNotTaskOwner()
     {
-        var taskOwnerId = Guid.NewGuid();
-        var requestingUserId = Guid.NewGuid();
-        var task = new TaskEntity(taskOwnerId, Guid.NewGuid(), "Task");
-        var query = new GetTaskWithSharedUsersQuery(task.Id, requestingUserId);
+        var ownerId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
+        var task = new TaskEntity(ownerId, Guid.NewGuid(), "Task");
+        var query = new GetTaskWithSharedUsersQuery(task.Id, otherUserId);
 
-        this._tasksRepoMock.Setup(r => r.GetByIdAsync(task.Id))
-            .ReturnsAsync(task);
+        this._validatorMock.Setup(v => v.ValidateAsync(query, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
 
-        var handler = new GetTaskWithSharedUsersQueryHandler(this._unitOfWorkMock.Object);
+        this._tasksRepoMock.Setup(r => r.GetTaskByIdForUserAsync(task.Id, otherUserId, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TaskEntity?)null);
+
+        var handler = new GetTaskWithSharedUsersQueryHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
         var result = await handler.Handle(query, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal("Only task owner can retrieve shared access.", result.Error!.Message);
+        Assert.NotNull(result.Error);
+        Assert.Equal("Task not found or you do not have permission.", result.Error.Message);
     }
 
     /// <summary>
-    /// Tests that the handler returns a list of users with shared access when the user is the task owner.
+    /// Ensures that the handler returns the task with its shared users when the requesting user is the task owner.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
     public async Task Handle_ShouldReturnSharedUsers_WhenUserIsTaskOwner()
     {
-        // Arrange
         var ownerId = Guid.NewGuid();
         var task = new TaskEntity(ownerId, Guid.NewGuid(), "Task");
 
-        this._tasksRepoMock.Setup(r => r.GetByIdAsync(task.Id))
+        this._validatorMock.Setup(v => v.ValidateAsync(It.IsAny<GetTaskWithSharedUsersQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
+
+        this._tasksRepoMock.Setup(r => r.GetTaskByIdForUserAsync(task.Id, ownerId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(task);
 
         var sharedAccessList = new List<UserTaskAccessEntity>
@@ -73,7 +102,7 @@ public class GetTaskWithSharedUsersQueryHandlerTests
             .ReturnsAsync(sharedAccessList);
 
         var query = new GetTaskWithSharedUsersQuery(task.Id, ownerId);
-        var handler = new GetTaskWithSharedUsersQueryHandler(this._unitOfWorkMock.Object);
+        var handler = new GetTaskWithSharedUsersQueryHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
 
         var result = await handler.Handle(query, CancellationToken.None);
 
