@@ -39,7 +39,7 @@ public class CreateTaskCommandHandlerTests
 
         var createTaskDto = new CreateTaskDto
         {
-            DueDate = DateTime.Now,
+            DueDate = DateTime.Now.AddDays(1),
             TaskListId = Guid.NewGuid(),
             Title = string.Empty,
         };
@@ -86,7 +86,7 @@ public class CreateTaskCommandHandlerTests
 
         var createTaskDto = new CreateTaskDto
         {
-            DueDate = DateTime.Now,
+            DueDate = DateTime.Now.AddDays(1),
             TaskListId = Guid.NewGuid(),
             Title = "Title",
         };
@@ -142,7 +142,7 @@ public class CreateTaskCommandHandlerTests
 
         var createTaskDto = new CreateTaskDto
         {
-            DueDate = DateTime.Now,
+            DueDate = DateTime.UtcNow.AddDays(1),
             TaskListId = taskListId,
             Title = "New task",
         };
