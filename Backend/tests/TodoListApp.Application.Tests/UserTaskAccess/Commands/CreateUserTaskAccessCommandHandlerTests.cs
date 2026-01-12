@@ -1,11 +1,14 @@
 ﻿using FluentValidation;
 using FluentValidation.Results;
 using Moq;
+using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
+using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
 using TodoListApp.Domain.Entities;
+using FVResult = FluentValidation.Results.ValidationResult;
 
 namespace TodoListApp.Application.Tests.UserTaskAccess.Commands;
 
@@ -26,13 +29,14 @@ public class CreateUserTaskAccessCommandHandlerTests
         var validatorMock = new Mock<IValidator<CreateUserTaskAccessCommand>>();
         validatorMock
             .Setup(v => v.ValidateAsync(It.IsAny<CreateUserTaskAccessCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult(
-                [new ValidationFailure("Email", "Required")]));
+            .ReturnsAsync(new FVResult([new ValidationFailure("Email", "Required")]));
 
         var uowMock = new Mock<IUnitOfWork>();
+        var serviceMock = MockService(await Result<bool>.SuccessAsync(true));
 
         var handler = new CreateUserTaskAccessCommandHandler(
             uowMock.Object,
+            serviceMock.Object,
             validatorMock.Object);
 
         var command = new CreateUserTaskAccessCommand(
@@ -63,7 +67,9 @@ public class CreateUserTaskAccessCommandHandlerTests
         var uowMock = new Mock<IUnitOfWork>();
         uowMock.Setup(u => u.Users).Returns(usersRepoMock.Object);
 
-        var handler = CreateHandler(uowMock, validatorMock);
+        var serviceMock = MockService(await Result<bool>.FailureAsync(ErrorCode.NotFound, "User not found"));
+
+        var handler = CreateHandler(uowMock, serviceMock, validatorMock);
 
         var result = await handler.HandleAsync(
             new CreateUserTaskAccessCommand(Guid.NewGuid(), Guid.NewGuid(), "test@test.com"),
@@ -90,7 +96,9 @@ public class CreateUserTaskAccessCommandHandlerTests
         uowMock.Setup(u => u.Users).Returns(userRepoMock.Object);
         uowMock.Setup(t => t.Tasks).Returns(taskRepoMock.Object);
 
-        var handler = CreateHandler(uowMock, validatorMock);
+        var serviceMock = MockService(await Result<bool>.FailureAsync(ErrorCode.ValidationError, "User is owner"));
+
+        var handler = CreateHandler(uowMock, serviceMock, validatorMock);
 
         var result = await handler.HandleAsync(
             new CreateUserTaskAccessCommand(Guid.NewGuid(), Guid.NewGuid(), user.Email),
@@ -124,7 +132,9 @@ public class CreateUserTaskAccessCommandHandlerTests
         uowMock.Setup(t => t.Tasks).Returns(taskRepoMock.Object);
         uowMock.Setup(u => u.UserTaskAccesses).Returns(accessRepoMock.Object);
 
-        var handler = CreateHandler(uowMock, validatorMock);
+        var serviceMock = MockService(await Result<bool>.FailureAsync(ErrorCode.ValidationError, "User already has access"));
+
+        var handler = CreateHandler(uowMock, serviceMock, validatorMock);
 
         var result = await handler.HandleAsync(
             new CreateUserTaskAccessCommand(Guid.NewGuid(), Guid.NewGuid(), user.Email),
@@ -172,7 +182,9 @@ public class CreateUserTaskAccessCommandHandlerTests
         uowMock.Setup(u => u.UserTaskAccesses).Returns(accessRepoMock.Object);
         uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var handler = CreateHandler(uowMock, validatorMock);
+        var serviceMock = MockService(await Result<bool>.SuccessAsync(true));
+
+        var handler = CreateHandler(uowMock, serviceMock, validatorMock);
 
         var result = await handler.HandleAsync(
             new CreateUserTaskAccessCommand(task.Id, ownerId, user.Email),
@@ -185,12 +197,12 @@ public class CreateUserTaskAccessCommandHandlerTests
     /// <summary>
     /// Creates a validator mock that always succeeds.
     /// </summary>
-    /// <returns>A <see cref="Mock{IValidator}"/> that returns a valid <see cref="ValidationResult"/>.</returns>
+    /// <returns>A <see cref="Mock{IValidator}"/> that returns a valid <see cref="FVResult"/>.</returns>
     private static Mock<IValidator<CreateUserTaskAccessCommand>> ValidatorSuccess()
     {
         var mock = new Mock<IValidator<CreateUserTaskAccessCommand>>();
         mock.Setup(v => v.ValidateAsync(It.IsAny<CreateUserTaskAccessCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
+            .ReturnsAsync(new FVResult());
         return mock;
     }
 
@@ -204,6 +216,22 @@ public class CreateUserTaskAccessCommandHandlerTests
         var mock = new Mock<IUserRepository>();
         mock.Setup(r => r.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
+        return mock;
+    }
+
+    /// <summary>
+    /// Creates a mock <see cref="IUserTaskAccessService"/> that returns the given user.
+    /// </summary>
+    /// <returns>A <see cref="Mock{IUserTaskAccessService}"/> that returns the user.</returns>
+    private static Mock<IUserTaskAccessService> MockService(Result<bool> result)
+    {
+        var mock = new Mock<IUserTaskAccessService>();
+        mock.Setup(s => s.CanGrantAccessAsync(
+            It.IsAny<Guid>(),
+            It.IsAny<Guid>(),
+            It.IsAny<UserEntity?>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(result);
         return mock;
     }
 
@@ -225,10 +253,12 @@ public class CreateUserTaskAccessCommandHandlerTests
     /// unit of work and validator mocks.
     /// </summary>
     /// <param name="uow">The unit of work mock.</param>
+    /// <param name="service">The user task access service mock.</param>
     /// <param name="validator">The validator mock.</param>
     /// <returns>A new <see cref="CreateUserTaskAccessCommandHandler"/> instance.</returns>
     private static CreateUserTaskAccessCommandHandler CreateHandler(
         Mock<IUnitOfWork> uow,
+        Mock<IUserTaskAccessService> service,
         Mock<IValidator<CreateUserTaskAccessCommand>> validator)
-        => new(uow.Object, validator.Object);
+        => new(uow.Object, service.Object, validator.Object);
 }

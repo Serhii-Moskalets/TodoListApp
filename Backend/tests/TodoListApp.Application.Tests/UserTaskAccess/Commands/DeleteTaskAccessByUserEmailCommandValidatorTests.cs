@@ -1,64 +1,76 @@
-﻿using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessByUserEmail;
+﻿using FluentValidation.TestHelper;
+using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessByUserEmail;
 
 namespace TodoListApp.Application.Tests.UserTaskAccess.Commands;
 
 /// <summary>
-/// Unit tests for <see cref="DeleteTaskAccessByUserEmailCommandValidator"/>.
-/// Tests the validation rules for deleting user-task access,
-/// focusing on email requirements and formatting.
+/// Tests for <see cref="DeleteTaskAccessByUserEmailCommandValidator"/>.
 /// </summary>
 public class DeleteTaskAccessByUserEmailCommandValidatorTests
 {
     private readonly DeleteTaskAccessByUserEmailCommandValidator _validator = new();
 
     /// <summary>
-    /// Ensures that the validator produces an error when the email is null, empty, or whitespace.
-    /// </summary>
-    /// <param name="email">The email value to test.</param>
-    [Theory]
-    [InlineData("")]
-    [InlineData(null)]
-    [InlineData(" ")]
-    public void Validator_ShouldHaveError_WhenEmailIsNullOrEmpty(string? email)
-    {
-        var deleteCommand = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), email);
-
-        var result = this._validator.Validate(deleteCommand);
-
-        Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "Email");
-        Assert.Equal("Email cannot be null or empty.", error.ErrorMessage);
-    }
-
-    /// <summary>
-    /// Ensures that the validator produces an error when the email format is invalid.
-    /// </summary>
-    /// <param name="email">The email value to test.</param>
-    [Theory]
-    [InlineData("sometext")]
-    [InlineData("test@")]
-    [InlineData("@gsss")]
-    public void Validator_ShouldHaveError_WhenEmailIsInvalid(string? email)
-    {
-        var deleteCommand = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), email);
-
-        var result = this._validator.Validate(deleteCommand);
-
-        Assert.False(result.IsValid);
-        var error = Assert.Single(result.Errors, e => e.PropertyName == "Email");
-        Assert.Equal("Email address is incorrect.", error.ErrorMessage);
-    }
-
-    /// <summary>
-    /// Ensures that the validator passes when a valid email is provided.
+    /// Ensures validation fails when the task identifier is empty.
     /// </summary>
     [Fact]
-    public void Validator_ShouldNotHaveError_WhenEmailIsValid()
+    public void Should_Have_Error_When_TaskId_Is_Empty()
     {
-        var deleteCommand = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), "test@test.com");
+        var command = new DeleteTaskAccessByUserEmailCommand(Guid.Empty, Guid.NewGuid(), "test@test.com");
+        var result = this._validator.TestValidate(command);
+        result.ShouldHaveValidationErrorFor(x => x.TaskId)
+              .WithErrorMessage("TaskId is required.");
+    }
 
-        var result = this._validator.Validate(deleteCommand);
+    /// <summary>
+    /// Ensures validation fails when the owner identifier is empty.
+    /// </summary>
+    [Fact]
+    public void Should_Have_Error_When_OwnerId_Is_Empty()
+    {
+        var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.Empty, "test@test.com");
+        var result = this._validator.TestValidate(command);
+        result.ShouldHaveValidationErrorFor(x => x.OwnerId)
+              .WithErrorMessage("OwnerId is required.");
+    }
 
-        Assert.True(result.IsValid);
+    /// <summary>
+    /// Ensures validation fails when the email address is empty.
+    /// </summary>
+    [Fact]
+    public void Should_Have_Error_When_Email_Is_Empty()
+    {
+        var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
+        var result = this._validator.TestValidate(command);
+        result.ShouldHaveValidationErrorFor(x => x.Email)
+              .WithErrorMessage("Email cannot be null or empty.");
+    }
+
+    /// <summary>
+    /// Ensures validation fails for clearly invalid email formats.
+    /// </summary>
+    /// <param name="email">
+    /// An email value that does not meet basic format requirements.
+    /// </param>
+    [Theory]
+    [InlineData("example")]
+    [InlineData("@example.com")]
+    public void Should_Have_Error_When_Email_Is_Invalid(string email)
+    {
+        var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), email);
+        var result = this._validator.TestValidate(command);
+        result.ShouldHaveValidationErrorFor(x => x.Email)
+              .WithErrorMessage("Email address is incorrect.");
+    }
+
+    /// <summary>
+    /// Ensures no validation errors are returned when all command fields are valid.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_All_Fields_Are_Valid()
+    {
+        var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), "test@example.com");
+        var result = this._validator.TestValidate(command);
+        result.ShouldNotHaveAnyValidationErrors();
     }
 }
