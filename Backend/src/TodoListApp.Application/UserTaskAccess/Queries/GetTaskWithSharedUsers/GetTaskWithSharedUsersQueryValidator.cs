@@ -5,12 +5,12 @@ namespace TodoListApp.Application.UserTaskAccess.Queries.GetTaskWithSharedUsers;
 /// <summary>
 /// Validator for <see cref="GetTaskWithSharedUsersQuery"/>.
 /// </summary>
-public class GetTaskWithSharedUsersQueryValidatore : AbstractValidator<GetTaskWithSharedUsersQuery>
+public class GetTaskWithSharedUsersQueryValidator : AbstractValidator<GetTaskWithSharedUsersQuery>
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="GetTaskWithSharedUsersQueryValidatore"/> class.
+    /// Initializes a new instance of the <see cref="GetTaskWithSharedUsersQueryValidator"/> class.
     /// </summary>
-    public GetTaskWithSharedUsersQueryValidatore()
+    public GetTaskWithSharedUsersQueryValidator()
     {
         this.RuleFor(x => x.TaskId)
             .NotEmpty().WithMessage("TaskId is required.");

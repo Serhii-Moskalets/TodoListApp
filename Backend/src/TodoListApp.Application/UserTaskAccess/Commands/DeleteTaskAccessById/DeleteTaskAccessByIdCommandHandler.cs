@@ -37,7 +37,7 @@ public class DeleteTaskAccessByIdCommandHandler(
             return await Result<bool>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
-        var hasAccess = !await this._userTaskAccessService.HasAccessAsync(command.TaskId, command.UserId, cancellationToken);
+        var hasAccess = await this._userTaskAccessService.HasAccessAsync(command.TaskId, command.UserId, cancellationToken);
 
         if (!hasAccess)
         {
