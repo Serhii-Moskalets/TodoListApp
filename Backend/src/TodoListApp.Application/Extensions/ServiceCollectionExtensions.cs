@@ -1,11 +1,13 @@
 ﻿using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Comment.Commands.CreateComment;
 using TodoListApp.Application.Comment.Commands.DeleteComment;
 using TodoListApp.Application.Comment.Commands.UpdateComment;
 using TodoListApp.Application.Comment.Queries.GetComments;
 using TodoListApp.Application.Common.Dtos;
+using TodoListApp.Application.Common.Services;
 using TodoListApp.Application.Tag.Commands.CreateTag;
 using TodoListApp.Application.Tag.Commands.DeleteTag;
 using TodoListApp.Application.Tag.Queries.GetAllTags;
@@ -50,6 +52,11 @@ public static class ServiceCollectionExtensions
     {
         AddApplicationValidators(services);
         AddApplicationHandlers(services);
+
+        // --- Application Services ---
+        services.AddScoped<ITaskAccessService, TaskAccessService>();
+        services.AddScoped<ITaskListNameUniquenessService, TaskListNameUniquenessService>();
+        services.AddScoped<IUserTaskAccessService, UserTaskAccessService>();
     }
 
     /// <summary>
@@ -61,26 +68,41 @@ public static class ServiceCollectionExtensions
         // --- Tag Validators ---
         services.AddScoped<IValidator<CreateTagCommand>, CreateTagCommandValidator>();
         services.AddScoped<IValidator<DeleteTagCommand>, DeleteTagCommandValidator>();
+        services.AddScoped<IValidator<GetAllTagsQuery>, GetAllTagsQueryValidator>();
 
         // --- Comment Validators ---
         services.AddScoped<IValidator<CreateCommentCommand>, CreateCommentCommandValidator>();
         services.AddScoped<IValidator<DeleteCommentCommand>, DeleteCommentCommandValidator>();
         services.AddScoped<IValidator<UpdateCommentCommand>, UpdateCommentCommandValidator>();
+        services.AddScoped<IValidator<GetCommentsQuery>, GetCommentsQueryValidator>();
 
         // --- Task Validators ---
+        services.AddScoped<IValidator<AddTagToTaskCommand>, AddTagToTaskCommandValidator>();
+        services.AddScoped<IValidator<ChangeTaskStatusCommand>, ChangeTaskStatusCommandValidator>();
         services.AddScoped<IValidator<CreateTaskCommand>, CreateTaskCommandValidator>();
         services.AddScoped<IValidator<DeleteOverdueTasksCommand>, DeleteOverdueTasksCommandValidator>();
         services.AddScoped<IValidator<DeleteTaskCommand>, DeleteTaskCommandValidator>();
+        services.AddScoped<IValidator<RemoveTagFromTaskCommand>, RemoveTagFromTaskCommandValidator>();
         services.AddScoped<IValidator<UpdateTaskCommand>, UpdateTaskCommandValidator>();
+        services.AddScoped<IValidator<GetTaskByIdQuery>, GetTaskByIdQueryValidator>();
+        services.AddScoped<IValidator<GetTaskByTitleQuery>, GetTaskByTitleQueryValidator>();
+        services.AddScoped<IValidator<GetTasksQuery>, GetTasksQueryValidator>();
 
         // --- TaskList Validators ---
         services.AddScoped<IValidator<CreateTaskListCommand>, CreateTaskListCommandValidator>();
         services.AddScoped<IValidator<DeleteTaskListCommand>, DeleteTaskListCommandValidator>();
         services.AddScoped<IValidator<UpdateTaskListCommand>, UpdateTaskListCommandValidator>();
+        services.AddScoped<IValidator<GetAllTaskListQuery>, GetAllTaskListQueryValidator>();
 
         // --- UserTaskAccess Validators ---
         services.AddScoped<IValidator<CreateUserTaskAccessCommand>, CreateUserTaskAccessCommandValidator>();
+        services.AddScoped<IValidator<DeleteTaskAccessByIdCommand>, DeleteTaskAccessByIdCommandValidator>();
         services.AddScoped<IValidator<DeleteTaskAccessByUserEmailCommand>, DeleteTaskAccessByUserEmailCommandValidator>();
+        services.AddScoped<IValidator<DeleteTaskAccessesByTaskCommand>, DeleteTaskAccessesByTaskCommandValidator>();
+        services.AddScoped<IValidator<DeleteTaskAccessesByUserCommand>, DeleteTaskAccessesByUserCommandValidator>();
+        services.AddScoped<IValidator<GetSharedTaskByIdQuery>, GetSharedTaskByIdQueryValidator>();
+        services.AddScoped<IValidator<GetSharedTasksByUserIdQuery>, GetSharedTasksByUserIdQueryValidator>();
+        services.AddScoped<IValidator<GetTaskWithSharedUsersQuery>, GetTaskWithSharedUsersQueryValidator>();
     }
 
     /// <summary>
@@ -101,13 +123,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IQueryHandler<GetCommentsQuery, IEnumerable<CommentDto>>, GetCommentsQueryHandler>();
 
         // --- Task Handlers ---
-        services.AddScoped<ICommandHandler<CreateTaskCommand, Guid>, CreateTaskCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteTaskCommand, bool>, DeleteTaskCommandHandler>();
-        services.AddScoped<ICommandHandler<UpdateTaskCommand, bool>, UpdateTaskCommandHandler>();
         services.AddScoped<ICommandHandler<AddTagToTaskCommand, bool>, AddTagToTaskCommandHandler>();
         services.AddScoped<ICommandHandler<ChangeTaskStatusCommand, bool>, ChangeTaskStatusCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateTaskCommand, Guid>, CreateTaskCommandHandler>();
         services.AddScoped<ICommandHandler<DeleteOverdueTasksCommand, bool>, DeleteOverdueTasksCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskCommand, bool>, DeleteTaskCommandHandler>();
         services.AddScoped<ICommandHandler<RemoveTagFromTaskCommand, bool>, RemoveTagFromTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateTaskCommand, bool>, UpdateTaskCommandHandler>();
         services.AddScoped<IQueryHandler<GetTaskByIdQuery, TaskDto>, GetTaskByIdQueryHandler>();
         services.AddScoped<IQueryHandler<GetTaskByTitleQuery, IEnumerable<TaskDto>>, GetTaskByTitleQueryHandler>();
         services.AddScoped<IQueryHandler<GetTasksQuery, IEnumerable<TaskDto>>, GetTasksQueryHandler>();
