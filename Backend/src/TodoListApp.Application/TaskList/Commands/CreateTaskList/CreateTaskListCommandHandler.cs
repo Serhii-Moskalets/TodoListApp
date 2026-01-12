@@ -1,8 +1,10 @@
 ﻿using FluentValidation;
 using TinyResult;
+using TinyResult.Enums;
+using TodoListApp.Application.Abstractions.Interfaces.Services;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Domain.Entities;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.TaskList.Commands.CreateTaskList;
 
@@ -13,10 +15,12 @@ namespace TodoListApp.Application.TaskList.Commands.CreateTaskList;
 /// </summary>
 public class CreateTaskListCommandHandler(
     IUnitOfWork unitOfWork,
+    ITaskListNameUniquenessService taskListNameUniquenessService,
     IValidator<CreateTaskListCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<CreateTaskListCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<CreateTaskListCommand, Guid>
 {
     private readonly IValidator<CreateTaskListCommand> _validator = validator;
+    private readonly ITaskListNameUniquenessService _taskListNameUniquenessService = taskListNameUniquenessService;
 
     /// <summary>
     /// Processes the command to create a new task list.
@@ -24,27 +28,28 @@ public class CreateTaskListCommandHandler(
     /// <param name="command">The command containing the user ID and title for the new task list.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A <see cref="Result{T}"/> indicating whether the operation was successful.</returns>
-    public async Task<Result<bool>> Handle(CreateTaskListCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> HandleAsync(CreateTaskListCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)
         {
-            return validation;
+            return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
-        var newTitle = command.Title;
-        int suffix = 1;
-
-        while (await this.UnitOfWork.TaskLists.ExistsByTitleAsync(newTitle, command.UserId, cancellationToken))
+        var user = await this.UnitOfWork.Users.GetByIdAsync(command.UserId, asNoTracking: true, cancellationToken);
+        if (user is null)
         {
-            newTitle = $"{command.Title} ({suffix++})";
+            return await Result<Guid>.FailureAsync(ErrorCode.NotFound, "User not found.");
         }
 
-        var taskListentity = new TaskListEntity(command.UserId, newTitle);
+        string uniqueTitle = await this._taskListNameUniquenessService
+            .GetUniqueNameAsync(command.UserId, command.Title!, cancellationToken);
 
-        await this.UnitOfWork.TaskLists.AddAsync(taskListentity, cancellationToken);
+        var taskList = new TaskListEntity(user.Id, uniqueTitle);
+
+        await this.UnitOfWork.TaskLists.AddAsync(taskList, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
-        return await Result<bool>.SuccessAsync(true);
+        return await Result<Guid>.SuccessAsync(taskList.Id);
     }
 }

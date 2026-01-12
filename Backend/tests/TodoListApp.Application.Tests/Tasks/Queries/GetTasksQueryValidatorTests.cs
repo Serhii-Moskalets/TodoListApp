@@ -1,0 +1,163 @@
+﻿using FluentValidation.TestHelper;
+using TodoListApp.Application.Tasks.Queries.GetTasks;
+
+namespace TodoListApp.Application.Tests.Tasks.Queries;
+
+/// <summary>
+/// Unit tests for <see cref="GetTasksQueryValidator"/>.
+/// Verifies validation rules for task list filtering queries.
+/// </summary>
+public class GetTasksQueryValidatorTests
+{
+    private readonly GetTasksQueryValidator _validator = new();
+
+    /// <summary>
+    /// Returns a validation error when UserId is empty.
+    /// </summary>
+    [Fact]
+    public void Should_Have_Error_When_UserId_Is_Empty()
+    {
+        var query = new GetTasksQuery(
+            UserId: Guid.Empty,
+            TaskListId: Guid.NewGuid());
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldHaveValidationErrorFor(x => x.UserId)
+              .WithErrorMessage("User ID is required.");
+    }
+
+    /// <summary>
+    /// Does not return a validation error when UserId is valid.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_UserId_Is_Valid()
+    {
+        var query = new GetTasksQuery(
+            UserId: Guid.NewGuid(),
+            TaskListId: Guid.NewGuid());
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.UserId);
+    }
+
+    /// <summary>
+    /// Returns a validation error when TaskListId is empty.
+    /// </summary>
+    [Fact]
+    public void Should_Have_Error_When_TaskListId_Is_Empty()
+    {
+        var query = new GetTasksQuery(
+            UserId: Guid.NewGuid(),
+            TaskListId: Guid.Empty);
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldHaveValidationErrorFor(x => x.TaskListId)
+              .WithErrorMessage("Task list ID is required.");
+    }
+
+    /// <summary>
+    /// Does not return a validation error when TaskListId is valid.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_TaskListId_Is_Valid()
+    {
+        var query = new GetTasksQuery(
+            UserId: Guid.NewGuid(),
+            TaskListId: Guid.NewGuid());
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.TaskListId);
+    }
+
+    /// <summary>
+    /// Allows both DueBefore and DueAfter to be null.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_DueDates_Are_Null()
+    {
+        var query = new GetTasksQuery(
+            UserId: Guid.NewGuid(),
+            TaskListId: Guid.NewGuid(),
+            DueBefore: null,
+            DueAfter: null);
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    /// <summary>
+    /// Allows DueAfter to be set when DueBefore is null.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_Only_DueAfter_Is_Set()
+    {
+        var query = new GetTasksQuery(
+            UserId: Guid.NewGuid(),
+            TaskListId: Guid.NewGuid(),
+            DueBefore: null,
+            DueAfter: DateTime.UtcNow);
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    /// <summary>
+    /// Allows DueBefore to be set when DueAfter is null.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_Only_DueBefore_Is_Set()
+    {
+        var query = new GetTasksQuery(
+            UserId: Guid.NewGuid(),
+            TaskListId: Guid.NewGuid(),
+            DueBefore: DateTime.UtcNow,
+            DueAfter: null);
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    /// <summary>
+    /// Allows DueAfter to be equal to DueBefore.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_DueAfter_Equals_DueBefore()
+    {
+        var date = DateTime.UtcNow;
+
+        var query = new GetTasksQuery(
+            UserId: Guid.NewGuid(),
+            TaskListId: Guid.NewGuid(),
+            DueBefore: date,
+            DueAfter: date);
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    /// <summary>
+    /// Returns a validation error when DueAfter is greater than DueBefore.
+    /// </summary>
+    [Fact]
+    public void Should_Have_Error_When_DueAfter_Is_Greater_Than_DueBefore()
+    {
+        var query = new GetTasksQuery(
+            UserId: Guid.NewGuid(),
+            TaskListId: Guid.NewGuid(),
+            DueBefore: DateTime.UtcNow,
+            DueAfter: DateTime.UtcNow.AddDays(1));
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldHaveValidationErrorFor(x => x)
+              .WithErrorMessage("DueAfter must be before or equal to DueBefore.");
+    }
+}

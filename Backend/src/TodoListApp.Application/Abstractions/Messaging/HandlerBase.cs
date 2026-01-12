@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 using TinyResult;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.Abstractions.Messaging;
 

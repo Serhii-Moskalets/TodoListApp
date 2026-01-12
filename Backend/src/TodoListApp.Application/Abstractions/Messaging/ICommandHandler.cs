@@ -6,7 +6,8 @@ namespace TodoListApp.Application.Abstractions.Messaging;
 /// Handles a specific command of type <typeparamref name="TCommand"/>.
 /// </summary>
 /// <typeparam name="TCommand">The type of the command to handle. Must implement <see cref="ICommand"/>.</typeparam>
-public interface ICommandHandler<in TCommand>
+/// <typeparam name="TResult">The type of result returned by the handler.</typeparam>
+public interface ICommandHandler<in TCommand, TResult>
     where TCommand : ICommand
 {
     /// <summary>
@@ -16,7 +17,7 @@ public interface ICommandHandler<in TCommand>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>
     /// A <see cref="Task{TResult}"/> representing the asynchronous operation,
-    /// containing a <see cref="Result{Boolean}"/> that indicates success or failure of the command.
+    /// containing a <see cref="Result{TResult}"/> that indicates success or failure of the command.
     /// </returns>
-    Task<Result<bool>> Handle(TCommand command, CancellationToken cancellationToken);
+    Task<Result<TResult>> HandleAsync(TCommand command, CancellationToken cancellationToken);
 }

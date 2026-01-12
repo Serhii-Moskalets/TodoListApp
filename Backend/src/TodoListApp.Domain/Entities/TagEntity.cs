@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using TodoListApp.Domain.Exceptions;
 
 namespace TodoListApp.Domain.Entities;
 
@@ -13,11 +14,20 @@ public class TagEntity : BaseEntity
     /// </summary>
     /// <param name="name">The name of the tag.</param>
     /// <param name="userId">The ID of the user who created the tag.</param>
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="name"/> is null, empty, or consists only of white-space characters
+    /// or exceed 50 characters.
+    /// </exception>
     public TagEntity(string name, Guid userId)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new ArgumentException("Tag name cannot be empty", nameof(name));
+            throw new DomainException("Tag name cannot be empty.");
+        }
+
+        if (name.Length > 50)
+        {
+            throw new DomainException("Tag name cannot exceed 50 characters.");
         }
 
         this.Name = name.Trim();
@@ -41,10 +51,10 @@ public class TagEntity : BaseEntity
     /// <summary>
     /// Gets the user who owns this tag.
     /// </summary>
-    public virtual UserEntity User { get; } = null!;
+    public virtual UserEntity User { get; init; } = null!;
 
     /// <summary>
     /// Gets the collection of tasks associated with this tag.
     /// </summary>
-    public virtual ICollection<TaskEntity> Tasks { get; private set; } = new HashSet<TaskEntity>();
+    public virtual ICollection<TaskEntity> Tasks { get; init; } = new HashSet<TaskEntity>();
 }

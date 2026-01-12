@@ -1,7 +1,8 @@
 ﻿using FluentValidation;
 using TinyResult;
+using TinyResult.Enums;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.Tag.Commands.DeleteTag;
 
@@ -11,7 +12,7 @@ namespace TodoListApp.Application.Tag.Commands.DeleteTag;
 public class DeleteTagCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<DeleteTagCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<DeleteTagCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteTagCommand, bool>
 {
     private readonly IValidator<DeleteTagCommand> _validator = validator;
 
@@ -26,7 +27,7 @@ public class DeleteTagCommandHandler(
     /// A <see cref="Result{T}"/> indicating success if the tag was deleted,
     /// or failure if the tag was not found or the user is not the owner.
     /// </returns>
-    public async Task<Result<bool>> Handle(DeleteTagCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(DeleteTagCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)
@@ -34,7 +35,14 @@ public class DeleteTagCommandHandler(
             return validation;
         }
 
-        await this.UnitOfWork.Tags.DeleteAsync(command.TagId, cancellationToken);
+        var tag = await this.UnitOfWork.Tags
+            .GetTagByIdForUserAsync(command.TagId, command.UserId, asNoTracking: false, cancellationToken);
+        if (tag is null)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Tag not found.");
+        }
+
+        await this.UnitOfWork.Tags.DeleteAsync(tag, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);

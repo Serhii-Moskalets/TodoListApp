@@ -1,7 +1,8 @@
 ﻿using FluentValidation;
 using TinyResult;
+using TinyResult.Enums;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.TaskList.Commands.DeleteTaskList;
 
@@ -12,7 +13,7 @@ namespace TodoListApp.Application.TaskList.Commands.DeleteTaskList;
 public class DeleteTaskListCommandHandler(
     IUnitOfWork unitOfWork,
     IValidator<DeleteTaskListCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskListCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskListCommand, bool>
 {
     private readonly IValidator<DeleteTaskListCommand> _validator = validator;
 
@@ -25,7 +26,7 @@ public class DeleteTaskListCommandHandler(
     /// A <see cref="Result{T}"/> containing <c>true</c> if the task list was successfully deleted;
     /// otherwise, a failure result with an appropriate error code.
     /// </returns>
-    public async Task<Result<bool>> Handle(DeleteTaskListCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(DeleteTaskListCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)
@@ -33,7 +34,14 @@ public class DeleteTaskListCommandHandler(
             return validation;
         }
 
-        await this.UnitOfWork.TaskLists.DeleteAsync(command.TaskListId);
+        var taskList = await this.UnitOfWork.TaskLists
+            .GetTaskListByIdForUserAsync(command.TaskListId, command.UserId, asNoTracking: false, cancellationToken);
+        if (taskList is null)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task list not found.");
+        }
+
+        await this.UnitOfWork.TaskLists.DeleteAsync(taskList, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);

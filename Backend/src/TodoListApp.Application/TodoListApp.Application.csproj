@@ -11,13 +11,20 @@
 		SA1309,SA1010,
 		SA1313,RCS1194,
 		AD0001,IDE0305,
+		IDE0301, CA2016,
+		IDE0290,
 	</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="Riok.Mapperly" Version="4.3.0" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.15.0">
       <PrivateAssets>all</PrivateAssets>
@@ -32,7 +39,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TodoListApp.Domain\TodoListApp.Domain.csproj" />
-    <ProjectReference Include="..\TodoListApp.Infrastructure\TodoListApp.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

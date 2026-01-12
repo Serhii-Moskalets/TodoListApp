@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using TodoListApp.Domain.Enums;
+using TodoListApp.Domain.Exceptions;
 
 namespace TodoListApp.Domain.Entities;
 
@@ -13,30 +14,41 @@ public class UserEntity : BaseEntity
     /// Initializes a new instance of the <see cref="UserEntity"/> class.
     /// </summary>
     /// <param name="firstName">The first name of the user.</param>
-    /// <param name="lastName">The last name of the user.</param>
     /// <param name="userName">The username of the user.</param>
     /// <param name="email">The email of the user.</param>
-    /// <param name="passwordHash">The pasword hash of the user.</param>
+    /// <param name="passwordHash">The password hash of the user.</param>
+    /// <param name="lastName">The last name of the user (optional).</param>
+    /// <exception cref="DomainException">
+    /// Thrown when
+    /// <paramref name="firstName"/>, <paramref name="userName"/>,
+    /// <paramref name="email"/>, <paramref name="passwordHash"/>,
+    /// is null, empty, or consists only of white-space characters.
+    /// </exception>
     public UserEntity(string firstName, string userName, string email, string passwordHash, string? lastName = null)
     {
         if (string.IsNullOrWhiteSpace(firstName))
         {
-            throw new ArgumentException("First name cannot be empty.", nameof(firstName));
+            throw new DomainException("First name cannot be empty.");
         }
 
         if (string.IsNullOrWhiteSpace(userName))
         {
-            throw new ArgumentException("User name cannot be empty.", nameof(userName));
+            throw new DomainException("User name cannot be empty.");
         }
 
         if (string.IsNullOrWhiteSpace(email))
         {
-            throw new ArgumentException("Email cannot be empty.", nameof(email));
+            throw new DomainException("Email cannot be empty.");
         }
 
         if (string.IsNullOrWhiteSpace(passwordHash))
         {
-            throw new ArgumentException("Password hash cannot be empty.", nameof(passwordHash));
+            throw new DomainException("Password hash cannot be empty.");
+        }
+
+        if ((lastName?.Trim())?.Length == 0)
+        {
+            lastName = null;
         }
 
         this.FirstName = firstName.Trim();
@@ -52,25 +64,25 @@ public class UserEntity : BaseEntity
     /// Gets the first name of the user.
     /// </summary>
     [Column("First_Name")]
-    required public string FirstName { get; init; }
+    public string FirstName { get; private set; } = null!;
 
     /// <summary>
     /// Gets the last name of the user.
     /// </summary>
     [Column("Last_Name")]
-    public string? LastName { get; init; }
+    public string? LastName { get; private set; }
 
     /// <summary>
     /// Gets he username of the user.
     /// </summary>
     [Column("User_Name")]
-    required public string UserName { get; init; }
+    public string UserName { get; private set; } = null!;
 
     /// <summary>
     /// Gets the email address of the user.
     /// </summary>
     [Column("Email")]
-    required public string Email { get; init; }
+    public string Email { get; private set; } = null!;
 
     /// <summary>
     /// Gets the pending email address for email change operations.
@@ -111,62 +123,129 @@ public class UserEntity : BaseEntity
     /// <summary>
     /// Gets the comments created by the user.
     /// </summary>
-    public virtual ICollection<CommentEntity> Comments { get; private set; } = new HashSet<CommentEntity>();
+    public virtual ICollection<CommentEntity> Comments { get; init; } = new HashSet<CommentEntity>();
 
     /// <summary>
     /// Gets the tags owned by the user.
     /// </summary>
-    public virtual ICollection<TagEntity> Tags { get; private set; } = new HashSet<TagEntity>();
+    public virtual ICollection<TagEntity> Tags { get; init; } = new HashSet<TagEntity>();
 
     /// <summary>
     /// Gets the task lists owned by the user.
     /// </summary>
-    public virtual ICollection<TaskListEntity> TaskLists { get; private set; } = new HashSet<TaskListEntity>();
+    public virtual ICollection<TaskListEntity> TaskLists { get; init; } = new HashSet<TaskListEntity>();
 
     /// <summary>
     /// Gets the tasks owned by the user.
     /// </summary>
-    public virtual ICollection<TaskEntity> OwnedTasks { get; private set; } = new HashSet<TaskEntity>();
+    public virtual ICollection<TaskEntity> OwnedTasks { get; init; } = new HashSet<TaskEntity>();
 
     /// <summary>
     /// Gets the task access records for the user.
     /// </summary>
-    public virtual ICollection<UserTaskAccessEntity> TaskAccesses { get; private set; } = new HashSet<UserTaskAccessEntity>();
+    public virtual ICollection<UserTaskAccessEntity> TaskAccesses { get; init; } = new HashSet<UserTaskAccessEntity>();
 
     /// <summary>
     /// Sets an email verification token for the user.
     /// </summary>
     /// <param name="token">The token value to set.</param>
     /// <param name="expires">The expiration date and time of the token.</param>
-    public void SetEmailVerificationToken(string token, DateTime expires) =>
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="token"/> is null, empty, or consists only of white-space characters.
+    /// </exception>
+    public void SetEmailVerificationToken(string token, DateTime expires)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new DomainException("Token cannot be empty.");
+        }
+
         this.SetToken(token, expires, UserTokenType.EmailVerification);
+    }
 
     /// <summary>
     /// Sets a password reset token for the user.
     /// </summary>
     /// <param name="token">The token value to set.</param>
     /// <param name="expires">The expiration date and time of the token.</param>
-    public void SetPasswordResetToken(string token, DateTime expires) =>
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="token"/> is null, empty, or consists only of white-space characters.
+    /// </exception>
+    public void SetPasswordResetToken(string token, DateTime expires)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new DomainException("Token cannot be empty.");
+        }
+
         this.SetToken(token, expires, UserTokenType.PasswordReset);
+    }
 
     /// <summary>
     /// Sets an email change token for the user.
     /// </summary>
     /// <param name="token">The token value to set.</param>
     /// <param name="expires">The expiration date and time of the token.</param>
-    public void SetEmailChangeToken(string token, DateTime expires) =>
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="token"/> is null, empty, or consists only of white-space characters.
+    /// </exception>
+    public void SetEmailChangeToken(string token, DateTime expires)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new DomainException("Token cannot be empty.");
+        }
+
         this.SetToken(token, expires, UserTokenType.EmailChange);
+    }
 
     /// <summary>
     /// Sets a pending email for email change operations.
     /// </summary>
     /// <param name="newEmail">The new pending email address.</param>
-    public void SetPendingEmail(string newEmail) => this.PendingEmail = newEmail;
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="newEmail"/> is null, empty, or consists only of white-space characters or
+    /// new email queals old current email.
+    /// </exception>
+    public void SetPendingEmail(string newEmail)
+    {
+        if (string.IsNullOrWhiteSpace(newEmail))
+        {
+            throw new DomainException("New email cannot be empty.");
+        }
+
+        if (string.Equals(newEmail?.Trim(), this.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new DomainException("New email cannot be the same as current email.");
+        }
+
+        this.EmailConfirmed = false;
+        this.PendingEmail = newEmail!.Trim();
+    }
+
+    /// <summary>
+    /// Confirms the email change using the pending email and token.
+    /// </summary>
+    public void ConfirmEmailChange()
+    {
+        this.ValidateToken(UserTokenType.EmailChange);
+
+        if (string.IsNullOrWhiteSpace(this.PendingEmail))
+        {
+            throw new DomainException("Pending email is not set.");
+        }
+
+        this.Email = this.PendingEmail;
+        this.EmailConfirmed = true;
+        this.ClearPendingEmail();
+        this.ClearToken();
+    }
 
     /// <summary>
     /// Clears the pending email.
     /// </summary>
-    public void ClearPendingEmail() => this.PendingEmail = null;
+    public void ClearPendingEmail()
+        => this.PendingEmail = null;
 
     /// <summary>
     /// Clears the current token values.
@@ -183,6 +262,7 @@ public class UserEntity : BaseEntity
     /// </summary>
     public void ConfirmEmail()
     {
+        this.ValidateToken(UserTokenType.EmailVerification);
         this.EmailConfirmed = true;
         this.ClearToken();
     }
@@ -191,9 +271,57 @@ public class UserEntity : BaseEntity
     /// Sets the new password hash.
     /// </summary>
     /// <param name="newHash">The new password hash.</param>
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="newHash"/> is null, empty, or consists only of white-space characters.
+    /// </exception>
     public void SetPasswordHash(string newHash)
     {
+        if (string.IsNullOrWhiteSpace(newHash))
+        {
+            throw new DomainException("Password cannot be empty.");
+        }
+
         this.PasswordHash = newHash;
+    }
+
+    /// <summary>
+    /// Resets the user's password using a password reset token.
+    /// </summary>
+    /// <param name="newHash">The new password hash.</param>
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="newHash"/> is null, empty, or consists only of white-space characters.
+    /// </exception>
+    public void ResetPassword(string newHash)
+    {
+        if (string.IsNullOrWhiteSpace(newHash))
+        {
+            throw new DomainException("Password cannot be empty.");
+        }
+
+        this.ValidateToken(UserTokenType.PasswordReset);
+        this.PasswordHash = newHash;
+        this.ClearToken();
+    }
+
+    /// <summary>
+    /// Updates the first and last name of the user.
+    /// </summary>
+    /// <param name="newFirstName">The new first name.</param>
+    /// <param name="newLastName">The new last name (optional).</param>
+    /// <exception cref="DomainException">
+    /// Thrown when <paramref name="newFirstName"/> is null, empty, or consists only of white-space characters.
+    /// </exception>
+    public void UpdateFirstAndLastName(string newFirstName, string? newLastName = null)
+    {
+        if (string.IsNullOrWhiteSpace(newFirstName))
+        {
+            throw new DomainException("First name cannot be empty.");
+        }
+
+        this.FirstName = newFirstName.Trim();
+        this.LastName = string.IsNullOrWhiteSpace(newLastName?.Trim())
+            ? null
+            : newLastName.Trim();
     }
 
     /// <summary>
@@ -207,5 +335,26 @@ public class UserEntity : BaseEntity
         this.TokenValue = token;
         this.TokenExpires = expires;
         this.TokenType = tokenType;
+    }
+
+    /// <summary>
+    /// Validates the current token against the expected type and expiration.
+    /// </summary>
+    /// <param name="expectedType">The expected <see cref="UserTokenType"/> of the token.</param>
+    /// <exception cref="DomainException">
+    /// Thrown if the token type does not match <paramref name="expectedType"/>
+    /// or if the token has expired.
+    /// </exception>
+    private void ValidateToken(UserTokenType expectedType)
+    {
+        if (this.TokenType != expectedType)
+        {
+            throw new DomainException($"Invalid token type. Expected {expectedType}.");
+        }
+
+        if (this.TokenExpires is null || this.TokenExpires < DateTime.UtcNow)
+        {
+            throw new DomainException("Token has expired.");
+        }
     }
 }

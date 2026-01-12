@@ -1,6 +1,6 @@
 ﻿using TodoListApp.Application.Common.Dtos;
 
-namespace TodoListApp.Application.UserTaskAccess.Dto;
+namespace TodoListApp.Application.UserTaskAccess.Dtos;
 
 /// <summary>
 /// Represents a task along with the list of users who have access to it.
@@ -21,5 +21,5 @@ public class TaskAccessListDto
     /// <summary>
     /// Gets the collection of users who have access to this task.
     /// </summary>
-    public IEnumerable<UserBriefDto> Users { get; init; } = Enumerable.Empty<UserBriefDto>();
+    public IReadOnlyCollection<UserBriefDto> Users { get; init; } = [];
 }

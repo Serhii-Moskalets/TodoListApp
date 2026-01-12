@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using TodoListApp.Infrastructure.Persistence;
+using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 namespace TodoListApp.Infrastructure.Extensions;
 

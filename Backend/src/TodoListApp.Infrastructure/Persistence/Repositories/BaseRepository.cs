@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Domain.Entities;
-using TodoListApp.Domain.Interfaces.Repositories;
+using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 namespace TodoListApp.Infrastructure.Persistence.Repositories;
 
@@ -73,21 +74,19 @@ public abstract class BaseRepository<TEntity> : IRepository<TEntity>
     }
 
     /// <summary>
-    /// Deletes an entity from the repository by its unique identifier.
+    /// Deletes an entity from the repository.
     /// </summary>
-    /// <param name="id">The unique identifier of the entity to delete.</param>
-    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <param name="entity">The entity to delete.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A task representing the asynchronous delete operation.</returns>
-    /// <remarks>
-    /// Changes are not automatically saved. Call SaveChangesAsync in service if needed.
-    /// </remarks>
-    public virtual async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public virtual async Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
     {
-        var entity = await this.GetByIdAsync(id, false, cancellationToken);
-        if (entity != null)
+        if (entity is null)
         {
-            this.DbSet.Remove(entity);
+            return;
         }
+
+        this.DbSet.Remove(entity);
     }
 
     /// <summary>

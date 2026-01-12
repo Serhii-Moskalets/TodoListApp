@@ -1,0 +1,58 @@
+﻿using FluentValidation;
+using TinyResult;
+using TinyResult.Enums;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+using TodoListApp.Application.Abstractions.Messaging;
+
+namespace TodoListApp.Application.Tasks.Commands.ChangeTaskStatus;
+
+/// <summary>
+/// Handles the <see cref="ChangeTaskStatusCommand"/> by changing the status of a task
+/// that belongs to a specific user.
+/// </summary>
+public class ChangeTaskStatusCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<ChangeTaskStatusCommand> validator)
+    : HandlerBase(unitOfWork), ICommandHandler<ChangeTaskStatusCommand, bool>
+{
+    private readonly IValidator<ChangeTaskStatusCommand> _validator = validator;
+
+    /// <summary>
+    /// Processes the command to change the status of an existing task.
+    /// </summary>
+    /// <param name="command">
+    /// The command containing the task identifier, user identifier,
+    /// and the new status to be applied.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to monitor for cancellation requests.
+    /// </param>
+    /// <returns>
+    /// A <see cref="Result{T}"/> indicating the result of the operation.
+    /// </returns>
+    public async Task<Result<bool>> HandleAsync(ChangeTaskStatusCommand command, CancellationToken cancellationToken)
+    {
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
+        {
+            return await Result<bool>.FailureAsync(validation.Error!.Code, validation.Error.Message);
+        }
+
+        var task = await this.UnitOfWork.Tasks
+            .GetTaskByIdForUserAsync(command.TaskId, command.UserId, asNoTracking: false, cancellationToken);
+
+        if (task is null)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
+        }
+
+        if (task.Status == command.Status)
+        {
+            return await Result<bool>.SuccessAsync(true);
+        }
+
+        task.ChangeStatus(command.Status);
+        await this.UnitOfWork.SaveChangesAsync(cancellationToken);
+        return await Result<bool>.SuccessAsync(true);
+    }
+}

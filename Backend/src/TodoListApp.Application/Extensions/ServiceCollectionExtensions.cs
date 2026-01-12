@@ -1,35 +1,37 @@
 ﻿using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Comment.Commands.CreateComment;
 using TodoListApp.Application.Comment.Commands.DeleteComment;
 using TodoListApp.Application.Comment.Commands.UpdateComment;
 using TodoListApp.Application.Comment.Queries.GetComments;
 using TodoListApp.Application.Common.Dtos;
+using TodoListApp.Application.Common.Services;
 using TodoListApp.Application.Tag.Commands.CreateTag;
 using TodoListApp.Application.Tag.Commands.DeleteTag;
 using TodoListApp.Application.Tag.Queries.GetAllTags;
-using TodoListApp.Application.Task.Commands.AddTagToTask;
-using TodoListApp.Application.Task.Commands.ChangeTaskStatus;
-using TodoListApp.Application.Task.Commands.CreateTask;
-using TodoListApp.Application.Task.Commands.DeleteOverdueTasks;
-using TodoListApp.Application.Task.Commands.DeleteTask;
-using TodoListApp.Application.Task.Commands.RemoveTagFromTask;
-using TodoListApp.Application.Task.Commands.UpdateTask;
-using TodoListApp.Application.Task.Queries.GetTaskById;
-using TodoListApp.Application.Task.Queries.GetTaskByTitle;
-using TodoListApp.Application.Task.Queries.GetTasks;
 using TodoListApp.Application.TaskList.Commands.CreateTaskList;
 using TodoListApp.Application.TaskList.Commands.DeleteTaskList;
 using TodoListApp.Application.TaskList.Commands.UpdateTaskList;
 using TodoListApp.Application.TaskList.Dtos;
 using TodoListApp.Application.TaskList.Queries.GetAllTaskList;
+using TodoListApp.Application.Tasks.Commands.AddTagToTask;
+using TodoListApp.Application.Tasks.Commands.ChangeTaskStatus;
+using TodoListApp.Application.Tasks.Commands.CreateTask;
+using TodoListApp.Application.Tasks.Commands.DeleteOverdueTasks;
+using TodoListApp.Application.Tasks.Commands.DeleteTask;
+using TodoListApp.Application.Tasks.Commands.RemoveTagFromTask;
+using TodoListApp.Application.Tasks.Commands.UpdateTask;
+using TodoListApp.Application.Tasks.Queries.GetTaskById;
+using TodoListApp.Application.Tasks.Queries.GetTaskByTitle;
+using TodoListApp.Application.Tasks.Queries.GetTasks;
 using TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
-using TodoListApp.Application.UserTaskAccess.Commands.DeleteAllTaskAccessesByTaskId;
-using TodoListApp.Application.UserTaskAccess.Commands.DeleteAllTaskAccessesByUserId;
-using TodoListApp.Application.UserTaskAccess.Commands.DeleteByTaskAccessByUserEmail;
 using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessById;
-using TodoListApp.Application.UserTaskAccess.Dto;
+using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessByUserEmail;
+using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessesByTask;
+using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessesByUser;
+using TodoListApp.Application.UserTaskAccess.Dtos;
 using TodoListApp.Application.UserTaskAccess.Queries.GetSharedTaskById;
 using TodoListApp.Application.UserTaskAccess.Queries.GetSharedTasksByUserId;
 using TodoListApp.Application.UserTaskAccess.Queries.GetTaskWithSharedUsers;
@@ -50,6 +52,11 @@ public static class ServiceCollectionExtensions
     {
         AddApplicationValidators(services);
         AddApplicationHandlers(services);
+
+        // --- Application Services ---
+        services.AddScoped<ITaskAccessService, TaskAccessService>();
+        services.AddScoped<ITaskListNameUniquenessService, TaskListNameUniquenessService>();
+        services.AddScoped<IUserTaskAccessService, UserTaskAccessService>();
     }
 
     /// <summary>
@@ -61,27 +68,41 @@ public static class ServiceCollectionExtensions
         // --- Tag Validators ---
         services.AddScoped<IValidator<CreateTagCommand>, CreateTagCommandValidator>();
         services.AddScoped<IValidator<DeleteTagCommand>, DeleteTagCommandValidator>();
+        services.AddScoped<IValidator<GetAllTagsQuery>, GetAllTagsQueryValidator>();
 
         // --- Comment Validators ---
         services.AddScoped<IValidator<CreateCommentCommand>, CreateCommentCommandValidator>();
         services.AddScoped<IValidator<DeleteCommentCommand>, DeleteCommentCommandValidator>();
         services.AddScoped<IValidator<UpdateCommentCommand>, UpdateCommentCommandValidator>();
+        services.AddScoped<IValidator<GetCommentsQuery>, GetCommentsQueryValidator>();
 
         // --- Task Validators ---
+        services.AddScoped<IValidator<AddTagToTaskCommand>, AddTagToTaskCommandValidator>();
+        services.AddScoped<IValidator<ChangeTaskStatusCommand>, ChangeTaskStatusCommandValidator>();
         services.AddScoped<IValidator<CreateTaskCommand>, CreateTaskCommandValidator>();
         services.AddScoped<IValidator<DeleteOverdueTasksCommand>, DeleteOverdueTasksCommandValidator>();
         services.AddScoped<IValidator<DeleteTaskCommand>, DeleteTaskCommandValidator>();
+        services.AddScoped<IValidator<RemoveTagFromTaskCommand>, RemoveTagFromTaskCommandValidator>();
         services.AddScoped<IValidator<UpdateTaskCommand>, UpdateTaskCommandValidator>();
+        services.AddScoped<IValidator<GetTaskByIdQuery>, GetTaskByIdQueryValidator>();
+        services.AddScoped<IValidator<GetTaskByTitleQuery>, GetTaskByTitleQueryValidator>();
+        services.AddScoped<IValidator<GetTasksQuery>, GetTasksQueryValidator>();
 
         // --- TaskList Validators ---
         services.AddScoped<IValidator<CreateTaskListCommand>, CreateTaskListCommandValidator>();
         services.AddScoped<IValidator<DeleteTaskListCommand>, DeleteTaskListCommandValidator>();
         services.AddScoped<IValidator<UpdateTaskListCommand>, UpdateTaskListCommandValidator>();
+        services.AddScoped<IValidator<GetAllTaskListQuery>, GetAllTaskListQueryValidator>();
 
         // --- UserTaskAccess Validators ---
         services.AddScoped<IValidator<CreateUserTaskAccessCommand>, CreateUserTaskAccessCommandValidator>();
-        services.AddScoped<IValidator<DeleteTaskAccessByUserEmailCommand>, DeleteTaskAccessByUserEmailCommandValidator>();
         services.AddScoped<IValidator<DeleteTaskAccessByIdCommand>, DeleteTaskAccessByIdCommandValidator>();
+        services.AddScoped<IValidator<DeleteTaskAccessByUserEmailCommand>, DeleteTaskAccessByUserEmailCommandValidator>();
+        services.AddScoped<IValidator<DeleteTaskAccessesByTaskCommand>, DeleteTaskAccessesByTaskCommandValidator>();
+        services.AddScoped<IValidator<DeleteTaskAccessesByUserCommand>, DeleteTaskAccessesByUserCommandValidator>();
+        services.AddScoped<IValidator<GetSharedTaskByIdQuery>, GetSharedTaskByIdQueryValidator>();
+        services.AddScoped<IValidator<GetSharedTasksByUserIdQuery>, GetSharedTasksByUserIdQueryValidator>();
+        services.AddScoped<IValidator<GetTaskWithSharedUsersQuery>, GetTaskWithSharedUsersQueryValidator>();
     }
 
     /// <summary>
@@ -91,39 +112,40 @@ public static class ServiceCollectionExtensions
     private static void AddApplicationHandlers(this IServiceCollection services)
     {
         // --- Tag Handlers ---
-        services.AddScoped<ICommandHandler<CreateTagCommand>, CreateTagCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteTagCommand>, DeleteTagCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateTagCommand, Guid>, CreateTagCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTagCommand, bool>, DeleteTagCommandHandler>();
         services.AddScoped<IQueryHandler<GetAllTagsQuery, IEnumerable<TagDto>>, GetAllTagsQueryHandler>();
 
         // --- Comment Handlers ---
-        services.AddScoped<ICommandHandler<CreateCommentCommand>, CreateCommentCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteCommentCommand>, DeleteCommentCommandHandler>();
-        services.AddScoped<ICommandHandler<UpdateCommentCommand>, UpdateCommentCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateCommentCommand, Guid>, CreateCommentCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteCommentCommand, bool>, DeleteCommentCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateCommentCommand, bool>, UpdateCommentCommandHandler>();
         services.AddScoped<IQueryHandler<GetCommentsQuery, IEnumerable<CommentDto>>, GetCommentsQueryHandler>();
 
         // --- Task Handlers ---
-        services.AddScoped<ICommandHandler<AddTagToTaskCommand>, AddTagToTaskCommandHandler>();
-        services.AddScoped<ICommandHandler<ChangeTaskStatusCommand>, ChangeTaskStatusCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteOverdueTasksCommand>, DeleteOverdueTasksCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteTaskCommand>, DeleteTaskCommandHandler>();
-        services.AddScoped<ICommandHandler<RemoveTagFromTaskCommand>, RemoveTagFromTaskCommandHandler>();
-        services.AddScoped<ICommandHandler<UpdateTaskCommand>, UpdateTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<AddTagToTaskCommand, bool>, AddTagToTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<ChangeTaskStatusCommand, bool>, ChangeTaskStatusCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateTaskCommand, Guid>, CreateTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteOverdueTasksCommand, bool>, DeleteOverdueTasksCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskCommand, bool>, DeleteTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<RemoveTagFromTaskCommand, bool>, RemoveTagFromTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateTaskCommand, bool>, UpdateTaskCommandHandler>();
         services.AddScoped<IQueryHandler<GetTaskByIdQuery, TaskDto>, GetTaskByIdQueryHandler>();
         services.AddScoped<IQueryHandler<GetTaskByTitleQuery, IEnumerable<TaskDto>>, GetTaskByTitleQueryHandler>();
         services.AddScoped<IQueryHandler<GetTasksQuery, IEnumerable<TaskDto>>, GetTasksQueryHandler>();
 
         // --- TaskList Handlers ---
-        services.AddScoped<ICommandHandler<CreateTaskListCommand>, CreateTaskListCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteTaskListCommand>, DeleteTaskListCommandHandler>();
-        services.AddScoped<ICommandHandler<UpdateTaskListCommand>, UpdateTaskListCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateTaskListCommand, Guid>, CreateTaskListCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskListCommand, bool>, DeleteTaskListCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateTaskListCommand, bool>, UpdateTaskListCommandHandler>();
         services.AddScoped<IQueryHandler<GetAllTaskListQuery, IEnumerable<TaskListDto>>, GetAllTaskListQueryHandler>();
 
         // --- UserTaskAccess Handlers ---
-        services.AddScoped<ICommandHandler<CreateUserTaskAccessCommand>, CreateUserTaskAccessCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteAllTaskAccessesByTaskIdCommand>, DeleteAllTaskAccessesByTaskIdCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteAllTaskAccessesByUserIdCommand>, DeleteAllTaskAccessesByUserIdCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteTaskAccessByUserEmailCommand>, DeleteTaskAccessByUserEmailCommandHandler>();
-        services.AddScoped<ICommandHandler<DeleteTaskAccessByIdCommand>, DeleteTaskAccessByIdCommandHandler>();
+        services.AddScoped<ICommandHandler<CreateUserTaskAccessCommand, bool>, CreateUserTaskAccessCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskAccessesByTaskCommand, bool>, DeleteTaskAccessesByTaskCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskAccessesByUserCommand, bool>, DeleteTaskAccessesByUserCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskAccessByUserEmailCommand, bool>, DeleteTaskAccessByUserEmailCommandHandler>();
+        services.AddScoped<ICommandHandler<DeleteTaskAccessByIdCommand, bool>, DeleteTaskAccessByIdCommandHandler>();
         services.AddScoped<IQueryHandler<GetSharedTaskByIdQuery, TaskDto>, GetSharedTaskByIdQueryHandler>();
         services.AddScoped<IQueryHandler<GetTaskWithSharedUsersQuery, TaskAccessListDto>, GetTaskWithSharedUsersQueryHandler>();
         services.AddScoped<IQueryHandler<GetSharedTasksByUserIdQuery, IEnumerable<TaskDto>>, GetSharedTasksByUserIdQueryHandler>();

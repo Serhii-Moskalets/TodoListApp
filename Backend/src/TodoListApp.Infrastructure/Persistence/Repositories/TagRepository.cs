@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Domain.Entities;
-using TodoListApp.Domain.Interfaces.Repositories;
+using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 namespace TodoListApp.Infrastructure.Persistence.Repositories;
 
@@ -39,7 +40,11 @@ public class TagRepository(TodoListAppDbContext context)
     /// <param name="pageSize">The number of tags per page.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A tuple containing the paged tags and the total count of tags.</returns>
-    public async Task<(IReadOnlyCollection<TagEntity> Items, int TotalCount)> GetPagedTagsByUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<(IReadOnlyCollection<TagEntity> Items, int TotalCount)> GetPagedTagsByUserIdAsync(
+        Guid userId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(page);
 
@@ -56,6 +61,30 @@ public class TagRepository(TodoListAppDbContext context)
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);
+    }
+
+    /// <summary>
+    /// Retrieves a tag entity by its identifier for a specific user.
+    /// </summary>
+    /// <param name="tagId">The unique identifier of the tag.</param>
+    /// <param name="userId">The unique identifier of the user who owns the task list.</param>
+    /// <param name="asNoTracking">
+    /// If <c>true</c>, the query will not track changes in the retrieved entity,
+    /// which can improve performance for read-only operations.
+    /// </param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation.</param>
+    /// <returns>
+    /// The tag entity with the specified ID for the given user, or <c>null</c> if not found.
+    /// </returns>
+    public async Task<TagEntity?> GetTagByIdForUserAsync(Guid tagId, Guid userId, bool asNoTracking = true, CancellationToken cancellationToken = default)
+    {
+        IQueryable<TagEntity> query = this.DbSet;
+        if (asNoTracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        return await query.FirstOrDefaultAsync(x => x.Id == tagId && x.UserId == userId, cancellationToken);
     }
 
     /// <summary>

@@ -1,8 +1,10 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
+using TinyResult.Enums;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Application.UserTaskAccess.Dto;
+using TodoListApp.Application.UserTaskAccess.Dtos;
 using TodoListApp.Application.UserTaskAccess.Mappers;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.UserTaskAccess.Queries.GetTaskWithSharedUsers;
 
@@ -10,9 +12,13 @@ namespace TodoListApp.Application.UserTaskAccess.Queries.GetTaskWithSharedUsers;
 /// Handles the <see cref="GetTaskWithSharedUsersQuery"/> and returns a list of users
 /// who have shared access to a specific task.
 /// </summary>
-public class GetTaskWithSharedUsersQueryHandler(IUnitOfWork unitOfWork)
+public class GetTaskWithSharedUsersQueryHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<GetTaskWithSharedUsersQuery> validator)
     : HandlerBase(unitOfWork), IQueryHandler<GetTaskWithSharedUsersQuery, TaskAccessListDto>
 {
+    private readonly IValidator<GetTaskWithSharedUsersQuery> _validator = validator;
+
     /// <summary>
     /// Handles the query to retrieve users with shared access to a task.
     /// </summary>
@@ -24,17 +30,27 @@ public class GetTaskWithSharedUsersQueryHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<TaskAccessListDto>> Handle(GetTaskWithSharedUsersQuery query, CancellationToken cancellationToken)
     {
-        if (!await this.UnitOfWork.Tasks.IsTaskOwnerAsync(query.TaskId, query.UserId, cancellationToken))
+        var validation = await ValidateAsync(this._validator, query);
+        if (!validation.IsSuccess)
         {
-            return await Result<TaskAccessListDto>.FailureAsync(
-                TinyResult.Enums.ErrorCode.InvalidOperation,
-                "Only task owner can retrieve shared access.");
+            return await Result<TaskAccessListDto>.FailureAsync(validation.Error!.Code, validation.Error.Message);
+        }
+
+        var task = await this.UnitOfWork.Tasks
+            .GetTaskByIdForUserAsync(query.TaskId, query.UserId, asNoTracking: true, cancellationToken);
+        if (task is null)
+        {
+            return await Result<TaskAccessListDto>.FailureAsync(ErrorCode.NotFound, "Task not found or you do not have permission.");
         }
 
         var utaEntityList = await this.UnitOfWork.UserTaskAccesses
-            .GetSharedTasksByTaskIdAsync(query.TaskId, cancellationToken);
+            .GetUserTaskAccessByTaskIdAsync(query.TaskId, cancellationToken);
 
-        return await Result<TaskAccessListDto>.SuccessAsync(
-            TaskAccessForOwnerMapper.MapToTaskAccess(utaEntityList));
+        return await Result<TaskAccessListDto>.SuccessAsync(new TaskAccessListDto
+        {
+            Id = task.Id,
+            Title = task.Title,
+            Users = TaskAccessForOwnerMapper.Map(utaEntityList),
+        });
     }
 }

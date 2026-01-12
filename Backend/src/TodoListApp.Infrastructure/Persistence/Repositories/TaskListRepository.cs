@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Domain.Entities;
-using TodoListApp.Domain.Interfaces.Repositories;
+using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 namespace TodoListApp.Infrastructure.Persistence.Repositories;
 
@@ -22,9 +23,9 @@ public class TaskListRepository(TodoListAppDbContext context)
     /// <c>true</c> if a task list with the specified title exists for the user;
     /// otherwise, <c>false</c>.
     /// </returns>
-    /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="title"/> is null, empty, or consists only of whitespace.
-    /// </exception>
+    /// /// <remarks>
+    /// Uses `EF.Functions.Like` for real databases, and case-insensitive comparison for InMemory provider.
+    /// </remarks>
     public async Task<bool> ExistsByTitleAsync(string title, Guid userId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(title))
@@ -32,8 +33,14 @@ public class TaskListRepository(TodoListAppDbContext context)
             throw new ArgumentException("Title of the task list cannot be empty.", nameof(title));
         }
 
+        if (this.Context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
+        {
+            return await this.DbSet.AsNoTracking()
+            .AnyAsync(x => x.Title.ToLowerInvariant() == title.ToLowerInvariant() && x.OwnerId == userId, cancellationToken);
+        }
+
         return await this.DbSet.AsNoTracking()
-            .AnyAsync(x => EF.Functions.ILike(x.Title, title) && x.OwnerId == userId, cancellationToken);
+            .AnyAsync(x => EF.Functions.Like(x.Title, title) && x.OwnerId == userId, cancellationToken);
     }
 
     /// <summary>
@@ -44,8 +51,13 @@ public class TaskListRepository(TodoListAppDbContext context)
     /// <returns>
     /// A read-only collection of <see cref="TaskListEntity"/> instances owned by the user.
     /// </returns>
-    public async Task<IReadOnlyCollection<TaskListEntity>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-        => await this.DbSet.AsNoTracking().OrderBy(x => x.Title).Where(x => x.OwnerId == userId).ToListAsync(cancellationToken);
+    public async Task<IReadOnlyCollection<TaskListEntity>> GetByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+        => await this.DbSet.AsNoTracking()
+        .OrderBy(x => x.Title)
+        .Where(x => x.OwnerId == userId)
+        .ToListAsync(cancellationToken);
 
     /// <summary>
     /// Retrieves a paged list of task lists owned by the specified user.
@@ -84,30 +96,27 @@ public class TaskListRepository(TodoListAppDbContext context)
     }
 
     /// <summary>
-    /// Retrieves a task list by its unique identifier for a specific user.
+    /// Retrieves a task list entity by its identifier for a specific user.
+    /// Includes the Tag and Comments (with User) related entities.
     /// </summary>
     /// <param name="taskListId">The unique identifier of the task list.</param>
     /// <param name="userId">The unique identifier of the user who owns the task list.</param>
-    /// <param name="cancellationToken">
-    /// A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
+    /// <param name="asNoTracking">
+    /// If <c>true</c>, the query will not track changes in the retrieved entity,
+    /// which can improve performance for read-only operations.
     /// </param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation.</param>
     /// <returns>
-    /// A <see cref="Task{TResult}"/> containing the <see cref="TaskListEntity"/> if found; otherwise, <c>null</c>.
+    /// The task list entity with the specified ID for the given user, or <c>null</c> if not found.
     /// </returns>
-    public async Task<TaskListEntity?> GetByIdForUserAsync(Guid taskListId, Guid userId, CancellationToken cancellationToken = default)
-        => await this.DbSet
-        .AsNoTracking()
-        .FirstOrDefaultAsync(x => x.Id == taskListId && x.OwnerId == userId, cancellationToken);
+    public async Task<TaskListEntity?> GetTaskListByIdForUserAsync(Guid taskListId, Guid userId, bool asNoTracking = true, CancellationToken cancellationToken = default)
+    {
+        IQueryable<TaskListEntity> query = this.DbSet;
+        if (asNoTracking)
+        {
+            query = query.AsNoTracking();
+        }
 
-    /// <summary>
-    /// Determines whether the specified user is the owner of the given task list.
-    /// </summary>
-    /// <param name="taskListId">The identifier of the task list.</param>
-    /// <param name="userId">The identifier of the user.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to monitor for cancellation requests.</param>
-    /// <returns>
-    /// <c>true</c> if the user is the owner of the task list; otherwise, <c>false</c>.
-    /// </returns>
-    public async Task<bool> IsTodoListOwnerAsync(Guid taskListId, Guid userId, CancellationToken cancellationToken = default)
-        => await this.DbSet.AsNoTracking().AnyAsync(x => x.Id == taskListId && x.OwnerId == userId, cancellationToken);
+        return await query.FirstOrDefaultAsync(x => x.Id == taskListId && x.OwnerId == userId, cancellationToken);
+    }
 }

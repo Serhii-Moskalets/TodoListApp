@@ -1,7 +1,9 @@
 ﻿using FluentValidation;
 using TinyResult;
+using TinyResult.Enums;
+using TodoListApp.Application.Abstractions.Interfaces.Services;
+using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Domain.Interfaces.UnitOfWork;
 
 namespace TodoListApp.Application.TaskList.Commands.UpdateTaskList;
 
@@ -11,10 +13,12 @@ namespace TodoListApp.Application.TaskList.Commands.UpdateTaskList;
 /// </summary>
 public class UpdateTaskListCommandHandler(
     IUnitOfWork unitOfWork,
+    ITaskListNameUniquenessService taskListNameUniquenessService,
     IValidator<UpdateTaskListCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<UpdateTaskListCommand>
+    : HandlerBase(unitOfWork), ICommandHandler<UpdateTaskListCommand, bool>
 {
     private readonly IValidator<UpdateTaskListCommand> _validator = validator;
+    private readonly ITaskListNameUniquenessService _taskListNameUniquenessService = taskListNameUniquenessService;
 
     /// <summary>
     /// Handles the command to update the title of a task list.
@@ -25,7 +29,7 @@ public class UpdateTaskListCommandHandler(
     /// A <see cref="Result{T}"/> containing <c>true</c> if the task list title was successfully updated;
     /// otherwise, a failure result with an appropriate error code.
     /// </returns>
-    public async Task<Result<bool>> Handle(UpdateTaskListCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> HandleAsync(UpdateTaskListCommand command, CancellationToken cancellationToken)
     {
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)
@@ -33,14 +37,23 @@ public class UpdateTaskListCommandHandler(
             return validation;
         }
 
-        var taskListEntity = await this.UnitOfWork.TaskLists.GetByIdForUserAsync(command.TaskListId, command.UserId, cancellationToken);
+        var taskList = await this.UnitOfWork.TaskLists
+            .GetTaskListByIdForUserAsync(command.TaskListId, command.UserId, asNoTracking: false, cancellationToken);
 
-        if (taskListEntity is null)
+        if (taskList is null)
         {
-            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Task list not found.");
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task list not found.");
         }
 
-        taskListEntity.UpdateTitle(command.NewTitle);
+        if (taskList.Title == command.NewTitle)
+        {
+            return await Result<bool>.SuccessAsync(true);
+        }
+
+        string uniqueTitle = await this._taskListNameUniquenessService
+            .GetUniqueNameAsync(command.UserId, command.NewTitle!, cancellationToken);
+
+        taskList.UpdateTitle(uniqueTitle);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);

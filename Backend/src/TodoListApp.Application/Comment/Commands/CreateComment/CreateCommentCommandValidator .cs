@@ -3,8 +3,7 @@
 namespace TodoListApp.Application.Comment.Commands.CreateComment;
 
 /// <summary>
-/// Validator for <see cref="CreateCommentCommand"/> using FluentValidation.
-/// Ensures that the comment text is not empty and does not exceed the maximum allowed length.
+/// Validator for <see cref="CreateCommentCommand"/>.
 /// </summary>
 public class CreateCommentCommandValidator : AbstractValidator<CreateCommentCommand>
 {
@@ -13,8 +12,14 @@ public class CreateCommentCommandValidator : AbstractValidator<CreateCommentComm
     /// </summary>
     public CreateCommentCommandValidator()
     {
+        this.RuleFor(x => x.UserId)
+            .NotEmpty().WithMessage("User ID is required.");
+
+        this.RuleFor(x => x.TaskId)
+            .NotEmpty().WithMessage("Task ID is required.");
+
         this.RuleFor(c => c.Text)
-            .NotEmpty().WithMessage("Comment text cannot be empty.")
+            .NotEmpty().WithMessage("Comment text cannot be null or empty.")
             .MaximumLength(1000).WithMessage("Comment text cannot exceed 1000 characters.");
     }
 }
