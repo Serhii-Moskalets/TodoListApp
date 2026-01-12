@@ -1,0 +1,29 @@
+name: .NET Core CI
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-dotnet-version: 8.0.x # або 9.0.x
+
+    # Вказуємо шлях до папки Backend для всіх команд
+    - name: Restore dependencies
+      run: dotnet restore Backend/
+
+    - name: Build
+      run: dotnet build Backend/ --no-restore
+
+    - name: Test
+      run: dotnet test Backend/ --no-build --verbosity normal
