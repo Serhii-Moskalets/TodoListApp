@@ -117,6 +117,38 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     }
 
     /// <summary>
+    /// Checks whether a user task access record exists for the given user.
+    /// </summary>
+    /// <param name="userId">The user identifier.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+    /// <returns><c>true</c> if the access record exists; otherwise, <c>false</c>.</returns>
+    public async Task<bool> ExistsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        if (userId == Guid.Empty)
+        {
+            return false;
+        }
+
+        return await this._dbSet.AnyAsync(x => x.UserId == userId, cancellationToken);
+    }
+
+    /// <summary>
+    /// Checks whether a user task access record exists for the given task.
+    /// </summary>
+    /// <param name="taskId">The task identifier.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+    /// <returns><c>true</c> if the access record exists; otherwise, <c>false</c>.</returns>
+    public async Task<bool> ExistsByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default)
+    {
+        if (taskId == Guid.Empty)
+        {
+            return false;
+        }
+
+        return await this._dbSet.AnyAsync(x => x.TaskId == taskId, cancellationToken);
+    }
+
+    /// <summary>
     /// Retrieves a specific user-task access entry by task ID and user ID.
     /// </summary>
     /// <param name="taskId">The ID of the task.</param>
