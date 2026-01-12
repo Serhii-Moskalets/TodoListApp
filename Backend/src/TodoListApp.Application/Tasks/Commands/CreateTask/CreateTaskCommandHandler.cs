@@ -38,7 +38,7 @@ public class CreateTaskCommandHandler(
 
         if (taskList is null)
         {
-            return await Result<Guid>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Task not found.");
+            return await Result<Guid>.FailureAsync(TinyResult.Enums.ErrorCode.NotFound, "Task list not found.");
         }
 
         var task = new TaskEntity(
