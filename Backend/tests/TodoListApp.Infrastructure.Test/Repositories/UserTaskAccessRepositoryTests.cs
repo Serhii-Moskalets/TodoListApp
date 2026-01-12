@@ -281,4 +281,72 @@ public class UserTaskAccessRepositoryTests
         Assert.False(await repo.ExistsAsync(Guid.NewGuid(), user_2.Id));
         Assert.False(await repo.ExistsAsync(task.Id, Guid.NewGuid()));
     }
+
+    /// <summary>
+    /// Verifies that <see cref="UserTaskAccessRepository.ExistsByUserIdAsync"/>
+    /// returns <c>true</c> when the specified user has access to at least one task.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExistsByUserIdAsync_ShouldReturnTrue_WhenUserHasAccess()
+    {
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new UserTaskAccessRepository(context);
+
+        var user = new UserEntity("John", "john", "john@example.com", "hash");
+        await context.Users.AddAsync(user);
+
+        var taskList = new TaskListEntity(user.Id, "List");
+        await context.TaskLists.AddAsync(taskList);
+
+        var task = new TaskEntity(user.Id, taskList.Id, "Task1");
+        await context.Tasks.AddAsync(task);
+
+        var access = new UserTaskAccessEntity(task.Id, user.Id);
+        await repo.AddAsync(access);
+        await context.SaveChangesAsync();
+
+        Assert.True(await repo.ExistsByUserIdAsync(user.Id));
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="UserTaskAccessRepository.ExistsByUserIdAsync"/>
+    /// returns <c>false</c> when the specified user has no task access entries.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExistsByUserIdAsync_ShouldReturnFalse_WhenUserHasNoAccess()
+    {
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new UserTaskAccessRepository(context);
+
+        Assert.False(await repo.ExistsByUserIdAsync(Guid.NewGuid()));
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="UserTaskAccessRepository.ExistsByTaskIdAsync"/>
+    /// correctly identifies whether any access entries exist for a given task.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task ExistsByTaskIdAsync_ShouldReturnCorrectValues()
+    {
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new UserTaskAccessRepository(context);
+
+        var user = new UserEntity("John", "john", "john@example.com", "hash");
+        await context.Users.AddAsync(user);
+
+        var taskList = new TaskListEntity(user.Id, "List");
+        await context.TaskLists.AddAsync(taskList);
+
+        var task = new TaskEntity(user.Id, taskList.Id, "Task1");
+        await context.Tasks.AddAsync(task);
+
+        await repo.AddAsync(new UserTaskAccessEntity(task.Id, user.Id));
+        await context.SaveChangesAsync();
+
+        Assert.True(await repo.ExistsByTaskIdAsync(task.Id));
+        Assert.False(await repo.ExistsByTaskIdAsync(Guid.NewGuid()));
+    }
 }
