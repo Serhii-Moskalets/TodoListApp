@@ -3,8 +3,6 @@ using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessByUserEmail;
-using TodoListApp.Domain.Entities;
 
 namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessByUserEmail;
 
@@ -33,17 +31,21 @@ public class DeleteTaskAccessByUserEmailCommandHandler(
         var validation = await ValidateAsync(this._validator, command);
         if (!validation.IsSuccess)
         {
-            return validation;
+            return await Result<bool>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
-        var email = command.Email!;
+        var email = command.Email!.Trim().ToLowerInvariant();
+
+        var hasAccess = await this.UnitOfWork.Tasks.IsTaskOwnerAsync(command.TaskId, command.OwnerId, cancellationToken);
+        if (!hasAccess)
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.ValidationError, "User doesn't have access to this task.");
+        }
 
         var sharedUser = await this.UnitOfWork.Users.GetByEmailAsync(email, cancellationToken);
-
-        var accessValidation = await this.ValidationAsync(command.TaskId, command.OwnerId, sharedUser, cancellationToken);
-        if (!accessValidation.IsSuccess)
+        if (sharedUser is null)
         {
-            return accessValidation;
+            return await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "Opperation error.");
         }
 
         var deleted = await this.UnitOfWork.UserTaskAccesses.DeleteByIdAsync(command.TaskId, sharedUser!.Id, cancellationToken);
@@ -56,48 +58,4 @@ public class DeleteTaskAccessByUserEmailCommandHandler(
 
         return await Result<bool>.SuccessAsync(true);
     }
-
-    private async Task<Result<bool>> ValidationAsync(
-        Guid taskId,
-        Guid ownerId,
-        UserEntity? sharedUser,
-        CancellationToken cancellationToken)
-    {
-        if (sharedUser is null)
-        {
-            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "User not found.");
-        }
-
-        if (!await this.IsOwner(taskId, ownerId, cancellationToken))
-        {
-            return await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "Only task owner can delete access.");
-        }
-
-        if (!await this.UserHasAccess(taskId, sharedUser.Id, cancellationToken))
-        {
-            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task access is not found.");
-        }
-
-        return await Result<bool>.SuccessAsync(true);
-    }
-
-    /// <summary>
-    /// Checks whether the specified user already has access to the task.
-    /// </summary>
-    /// <param name="taskId">The task ID.</param>
-    /// <param name="userId">The user ID.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
-    /// <returns><c>true</c> if the user does not have access; otherwise, <c>false</c>.</returns>
-    private async Task<bool> UserHasAccess(Guid taskId, Guid userId, CancellationToken cancellationToken)
-        => await this.UnitOfWork.UserTaskAccesses.ExistsAsync(taskId, userId, cancellationToken);
-
-    /// <summary>
-    /// Checks whether the specified user is the owner of the task.
-    /// </summary>
-    /// <param name="taskId">The task ID.</param>
-    /// <param name="userId">The user ID.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
-    /// <returns><c>true</c> if the user is not the owner; otherwise, <c>false</c>.</returns>
-    private async Task<bool> IsOwner(Guid taskId, Guid userId, CancellationToken cancellationToken)
-        => await this.UnitOfWork.Tasks.IsTaskOwnerAsync(taskId, userId, cancellationToken);
 }

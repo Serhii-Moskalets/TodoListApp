@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 
@@ -7,9 +8,13 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessesByUs
 /// <summary>
 /// Handles the <see cref="DeleteTaskAccessesByUserCommand"/> to remove all user-task access entries for a specific user.
 /// </summary>
-public class DeleteTaskAccessesByUserCommandHandler(IUnitOfWork unitOfWork)
+public class DeleteTaskAccessesByUserCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<DeleteTaskAccessesByUserCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskAccessesByUserCommand, bool>
 {
+    private readonly IValidator<DeleteTaskAccessesByUserCommand> _validator = validator;
+
     /// <summary>
     /// Processes the command to delete all user-task access entries for a given user.
     /// </summary>
@@ -22,6 +27,18 @@ public class DeleteTaskAccessesByUserCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> HandleAsync(DeleteTaskAccessesByUserCommand command, CancellationToken cancellationToken)
     {
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
+        {
+            return await Result<bool>.FailureAsync(validation.Error!.Code, validation.Error.Message);
+        }
+
+        var exists = await this.UnitOfWork.UserTaskAccesses.ExistsByUserIdAsync(command.UserId, cancellationToken);
+        if (!exists)
+        {
+            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.InvalidOperation, "There are no tasks shared with you.");
+        }
+
         await this.UnitOfWork.UserTaskAccesses.DeleteAllByUserIdAsync(command.UserId, cancellationToken);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 

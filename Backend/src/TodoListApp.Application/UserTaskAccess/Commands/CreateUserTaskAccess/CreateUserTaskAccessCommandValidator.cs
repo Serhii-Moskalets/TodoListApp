@@ -1,5 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using FluentValidation;
+﻿using FluentValidation;
 
 namespace TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
 
@@ -14,10 +13,14 @@ public class CreateUserTaskAccessCommandValidator : AbstractValidator<CreateUser
     /// </summary>
     public CreateUserTaskAccessCommandValidator()
     {
+        this.RuleFor(x => x.TaskId)
+            .NotEmpty().WithMessage("TaskId is required.");
+        this.RuleFor(x => x.OwnerId)
+            .NotEmpty().WithMessage("OwnerId is required.");
         this.RuleFor(x => x.Email)
             .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Email cannot be null or empty.")
-            .Must(email => Regex.IsMatch(email!, @"^[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}$"))
+            .EmailAddress(FluentValidation.Validators.EmailValidationMode.AspNetCoreCompatible)
                 .WithMessage("Email address is incorrect.");
     }
 }

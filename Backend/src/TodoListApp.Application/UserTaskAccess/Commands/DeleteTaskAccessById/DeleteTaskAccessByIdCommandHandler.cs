@@ -1,4 +1,6 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
+using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 
@@ -7,9 +9,15 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessById;
 /// <summary>
 /// Handles the <see cref="DeleteTaskAccessByIdCommand"/> to remove a user-task access entry.
 /// </summary>
-public class DeleteTaskAccessByIdCommandHandler(IUnitOfWork unitOfWork)
+public class DeleteTaskAccessByIdCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<DeleteTaskAccessByIdCommand> validator,
+    IUserTaskAccessService userTaskAccessService)
     : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskAccessByIdCommand, bool>
 {
+    private readonly IValidator<DeleteTaskAccessByIdCommand> _validator = validator;
+    private readonly IUserTaskAccessService _userTaskAccessService = userTaskAccessService;
+
     /// <summary>
     /// Processes the command to delete a user-task access entry.
     /// </summary>
@@ -23,7 +31,15 @@ public class DeleteTaskAccessByIdCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> HandleAsync(DeleteTaskAccessByIdCommand command, CancellationToken cancellationToken)
     {
-        if (!await this.HasAccess(command.TaskId, command.UserId, cancellationToken))
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
+        {
+            return await Result<bool>.FailureAsync(validation.Error!.Code, validation.Error.Message);
+        }
+
+        var hasAccess = !await this._userTaskAccessService.HasAccessAsync(command.TaskId, command.UserId, cancellationToken);
+
+        if (!hasAccess)
         {
             return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.ValidationError, "User hasn't accesss with this task.");
         }
@@ -33,14 +49,4 @@ public class DeleteTaskAccessByIdCommandHandler(IUnitOfWork unitOfWork)
 
         return await Result<bool>.SuccessAsync(true);
     }
-
-    /// <summary>
-    /// Checks whether the specified user already has access to the task.
-    /// </summary>
-    /// <param name="taskId">The task ID.</param>
-    /// <param name="userId">The user ID.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe.</param>
-    /// <returns><c>true</c> if the user already has access; otherwise, <c>false</c>.</returns>
-    private async Task<bool> HasAccess(Guid taskId, Guid userId, CancellationToken cancellationToken = default)
-       => await this.UnitOfWork.UserTaskAccesses.ExistsAsync(taskId, userId, cancellationToken);
 }

@@ -1,17 +1,21 @@
-﻿using TinyResult;
+﻿using FluentValidation;
+using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
-using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessesByTask;
 
 namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessesByTask;
 
 /// <summary>
 /// Handles the <see cref="DeleteTaskAccessesByTaskCommand"/> to remove all user-task access entries for a specific task.
 /// </summary>
-public class DeleteTaskAccessesByTaskCommandHandler(IUnitOfWork unitOfWork)
+public class DeleteTaskAccessesByTaskCommandHandler(
+    IUnitOfWork unitOfWork,
+    IValidator<DeleteTaskAccessesByTaskCommand> validator)
     : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskAccessesByTaskCommand, bool>
 {
+    private readonly IValidator<DeleteTaskAccessesByTaskCommand> _validator = validator;
+
     /// <summary>
     /// Processes the command to delete all user-task access entries for a given task.
     /// </summary>
@@ -25,16 +29,22 @@ public class DeleteTaskAccessesByTaskCommandHandler(IUnitOfWork unitOfWork)
     /// </returns>
     public async Task<Result<bool>> HandleAsync(DeleteTaskAccessesByTaskCommand command, CancellationToken cancellationToken)
     {
-        var taskEntity = await this.UnitOfWork.Tasks.GetByIdAsync(command.TaskId, cancellationToken: cancellationToken);
-
-        if (taskEntity is null)
+        var validation = await ValidateAsync(this._validator, command);
+        if (!validation.IsSuccess)
         {
-            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "Task not found.");
+            return await Result<bool>.FailureAsync(validation.Error!.Code, validation.Error.Message);
         }
 
-        if (taskEntity.OwnerId != command.UserId)
+        var task = await this.UnitOfWork.Tasks.GetTaskByIdForUserAsync(command.TaskId, command.UserId, cancellationToken: cancellationToken);
+        if (task is null)
         {
-            return await Result<bool>.FailureAsync(ErrorCode.ValidationError, "Only the task owner can delete accesses.");
+            return await Result<bool>.FailureAsync(ErrorCode.NotFound, "You do not have permission to delete accesses for this task.");
+        }
+
+        var exist = await this.UnitOfWork.UserTaskAccesses.ExistsByTaskIdAsync(command.TaskId, cancellationToken);
+        if (!exist)
+        {
+            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.InvalidOperation, "There are no shared accesses for this task.");
         }
 
         await this.UnitOfWork.UserTaskAccesses.DeleteAllByTaskIdAsync(command.TaskId, cancellationToken);

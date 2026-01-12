@@ -1,13 +1,9 @@
-﻿using System.Text.RegularExpressions;
-using FluentValidation;
-using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessByUserEmail;
+﻿using FluentValidation;
 
 namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessByUserEmail;
 
 /// <summary>
-/// Validates the <see cref="DeleteTaskAccessByUserEmailCommand"/> to ensure that
-/// a user-task access entry can be deleted only if it exists
-/// and the requesting user is the owner of the task.
+/// Validator for <see cref="DeleteTaskAccessByUserEmailCommand"/>.
 /// </summary>
 public partial class DeleteTaskAccessByUserEmailCommandValidator
     : AbstractValidator<DeleteTaskAccessByUserEmailCommand>
@@ -17,13 +13,14 @@ public partial class DeleteTaskAccessByUserEmailCommandValidator
     /// </summary>
     public DeleteTaskAccessByUserEmailCommandValidator()
     {
+        this.RuleFor(x => x.TaskId)
+             .NotEmpty().WithMessage("TaskId is required.");
+        this.RuleFor(x => x.OwnerId)
+            .NotEmpty().WithMessage("OwnerId is required.");
         this.RuleFor(x => x.Email)
             .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Email cannot be null or empty.")
-            .Must(email => EmailRegex().IsMatch(email!))
-            .WithMessage("Email address is incorrect.");
+            .EmailAddress(FluentValidation.Validators.EmailValidationMode.AspNetCoreCompatible)
+                .WithMessage("Email address is incorrect.");
     }
-
-    [GeneratedRegex(@"^[^@\s]+@[^@\s]+\.[a-zA-Z]{2,}$")]
-    private static partial Regex EmailRegex();
 }
