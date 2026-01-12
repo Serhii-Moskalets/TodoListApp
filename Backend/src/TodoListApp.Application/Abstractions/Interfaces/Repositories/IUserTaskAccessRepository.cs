@@ -55,6 +55,22 @@ public interface IUserTaskAccessRepository
     Task<bool> ExistsAsync(Guid taskId, Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Checks whether a user task access record exists for the given user.
+    /// </summary>
+    /// <param name="userId">The user identifier.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+    /// <returns><c>true</c> if the access record exists; otherwise, <c>false</c>.</returns>
+    Task<bool> ExistsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks whether a user task access record exists for the given task.
+    /// </summary>
+    /// <param name="taskId">The task identifier.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+    /// <returns><c>true</c> if the access record exists; otherwise, <c>false</c>.</returns>
+    Task<bool> ExistsByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes a user task access record by task ID and user ID.
     /// </summary>
     /// <param name="taskId">The task identifier.</param>
