@@ -12,6 +12,7 @@
 		SA1313,RCS1194,
 		AD0001,IDE0305,
 		IDE0301, CA2016,
+		IDE0290,
 	</NoWarn>
   </PropertyGroup>
 
