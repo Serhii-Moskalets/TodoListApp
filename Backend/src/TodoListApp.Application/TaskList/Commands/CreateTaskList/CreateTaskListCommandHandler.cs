@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Services;
@@ -15,35 +15,27 @@ namespace TodoListApp.Application.TaskList.Commands.CreateTaskList;
 /// </summary>
 public class CreateTaskListCommandHandler(
     IUnitOfWork unitOfWork,
-    ITaskListNameUniquenessService taskListNameUniquenessService,
-    IValidator<CreateTaskListCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<CreateTaskListCommand, Guid>
+    IUniqueNameService uniqueNameService)
+    : HandlerBase(unitOfWork), IRequestHandler<CreateTaskListCommand, Result<Guid>>
 {
-    private readonly IValidator<CreateTaskListCommand> _validator = validator;
-    private readonly ITaskListNameUniquenessService _taskListNameUniquenessService = taskListNameUniquenessService;
-
     /// <summary>
     /// Processes the command to create a new task list.
     /// </summary>
     /// <param name="command">The command containing the user ID and title for the new task list.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A <see cref="Result{T}"/> indicating whether the operation was successful.</returns>
-    public async Task<Result<Guid>> HandleAsync(CreateTaskListCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(CreateTaskListCommand command, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(this._validator, command);
-        if (!validation.IsSuccess)
-        {
-            return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
-        }
-
         var user = await this.UnitOfWork.Users.GetByIdAsync(command.UserId, asNoTracking: true, cancellationToken);
         if (user is null)
         {
             return await Result<Guid>.FailureAsync(ErrorCode.NotFound, "User not found.");
         }
 
-        string uniqueTitle = await this._taskListNameUniquenessService
-            .GetUniqueNameAsync(command.UserId, command.Title!, cancellationToken);
+        string uniqueTitle = await uniqueNameService.GetUniqueNameAsync(
+            command.Title!,
+            (name, ct) => this.UnitOfWork.TaskLists.ExistsByTitleAsync(name, command.UserId, ct),
+            cancellationToken);
 
         var taskList = new TaskListEntity(user.Id, uniqueTitle);
 

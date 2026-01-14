@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Services;
@@ -13,13 +13,9 @@ namespace TodoListApp.Application.TaskList.Commands.UpdateTaskList;
 /// </summary>
 public class UpdateTaskListCommandHandler(
     IUnitOfWork unitOfWork,
-    ITaskListNameUniquenessService taskListNameUniquenessService,
-    IValidator<UpdateTaskListCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<UpdateTaskListCommand, bool>
+    IUniqueNameService uniqueNameService)
+    : HandlerBase(unitOfWork), IRequestHandler<UpdateTaskListCommand, Result<bool>>
 {
-    private readonly IValidator<UpdateTaskListCommand> _validator = validator;
-    private readonly ITaskListNameUniquenessService _taskListNameUniquenessService = taskListNameUniquenessService;
-
     /// <summary>
     /// Handles the command to update the title of a task list.
     /// </summary>
@@ -29,14 +25,8 @@ public class UpdateTaskListCommandHandler(
     /// A <see cref="Result{T}"/> containing <c>true</c> if the task list title was successfully updated;
     /// otherwise, a failure result with an appropriate error code.
     /// </returns>
-    public async Task<Result<bool>> HandleAsync(UpdateTaskListCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(UpdateTaskListCommand command, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(this._validator, command);
-        if (!validation.IsSuccess)
-        {
-            return validation;
-        }
-
         var taskList = await this.UnitOfWork.TaskLists
             .GetTaskListByIdForUserAsync(command.TaskListId, command.UserId, asNoTracking: false, cancellationToken);
 
@@ -50,8 +40,10 @@ public class UpdateTaskListCommandHandler(
             return await Result<bool>.SuccessAsync(true);
         }
 
-        string uniqueTitle = await this._taskListNameUniquenessService
-            .GetUniqueNameAsync(command.UserId, command.NewTitle!, cancellationToken);
+        string uniqueTitle = await uniqueNameService.GetUniqueNameAsync(
+            command.NewTitle!,
+            (name, ct) => this.UnitOfWork.TaskLists.ExistsByTitleAsync(name, command.UserId, ct),
+            cancellationToken);
 
         taskList.UpdateTitle(uniqueTitle);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
