@@ -29,7 +29,7 @@ public static class ServiceCollectionExtensions
 
         // --- Custom Application Services ---
         services.AddScoped<ITaskAccessService, TaskAccessService>();
-        services.AddScoped<ITaskListNameUniquenessService, TaskListNameUniquenessService>();
+        services.AddScoped<IUniqueNameService, UniqueNameService>();
         services.AddScoped<IUserTaskAccessService, UserTaskAccessService>();
     }
 }
