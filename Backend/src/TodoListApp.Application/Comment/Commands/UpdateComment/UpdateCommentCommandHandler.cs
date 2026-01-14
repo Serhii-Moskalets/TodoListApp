@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
@@ -9,27 +9,17 @@ namespace TodoListApp.Application.Comment.Commands.UpdateComment;
 /// <summary>
 /// Handles updating the text of an existing comment.
 /// </summary>
-public class UpdateCommentCommandHandler(
-    IUnitOfWork unitOfWork,
-    IValidator<UpdateCommentCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<UpdateCommentCommand, bool>
+public class UpdateCommentCommandHandler(IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), IRequestHandler<UpdateCommentCommand, Result<bool>>
 {
-    private readonly IValidator<UpdateCommentCommand> _validator = validator;
-
     /// <summary>
     /// Updates the comment if the user is the owner and validation passes.
     /// </summary>
     /// <param name="command">The comment ID, user ID, and new text.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Success if updated; otherwise, a failure result.</returns>
-    public async Task<Result<bool>> HandleAsync(UpdateCommentCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(UpdateCommentCommand command, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(this._validator, command);
-        if (!validation.IsSuccess)
-        {
-            return validation;
-        }
-
         var comment = await this.UnitOfWork.Comments.GetByIdAsync(command.CommentId, false, cancellationToken);
         if (comment is null)
         {

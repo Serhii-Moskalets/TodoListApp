@@ -1,4 +1,5 @@
-﻿using TinyResult;
+﻿using MediatR;
+using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
@@ -17,7 +18,7 @@ namespace TodoListApp.Application.Comment.Queries.GetComments;
 public class GetCommentsQueryHandler(
     IUnitOfWork unitOfWork,
     ITaskAccessService taskAccessService)
-    : HandlerBase(unitOfWork), IQueryHandler<GetCommentsQuery, IEnumerable<CommentDto>>
+    : HandlerBase(unitOfWork), IRequestHandler<GetCommentsQuery, Result<IEnumerable<CommentDto>>>
 {
     private readonly ITaskAccessService _taskAccessService = taskAccessService;
 
