@@ -1,5 +1,4 @@
-﻿using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using TinyResult;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Domain.Entities;
@@ -32,71 +31,6 @@ public class TaskRepository(TodoListAppDbContext context)
         => await this.DbSet
             .Where(x => x.OwnerId == userId && x.TaskListId == taskListId && x.DueDate < now)
             .CountAsync(cancellationToken);
-
-    /// <summary>
-    /// Retrieves tasks for a user within a specific task list, optionally filtered by statuses, due dates, and sorting.
-    /// Includes Tag and Comments related entities.
-    /// </summary>
-    /// <param name="userId">The identifier of the user.</param>
-    /// <param name="taskListId">The To-Do list identifier.</param>
-    /// <param name="now">The current date and time used to determine overdue tasks.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A read-only collection of overdue <see cref="TaskEntity"/> instances.</returns>
-    public async Task<IReadOnlyCollection<TaskEntity>> GetOverdueTasksAsync(
-        Guid userId,
-        Guid taskListId,
-        DateTime now,
-        CancellationToken cancellationToken = default)
-        => await this.DbSet
-            .AsNoTracking()
-            .Where(x => x.OwnerId == userId && x.TaskListId == taskListId && x.DueDate < now)
-            .OrderBy(x => x.CreatedDate)
-            .Include(x => x.Tag)
-            .Include(x => x.Comments)
-                .ThenInclude(c => c.User)
-            .ToListAsync(cancellationToken);
-
-    /// <summary>
-    /// Retrieves a paginated list of tasks for a user within a specific task list, optionally filtered by a predicate.
-    /// Includes Tag and Comments related entities.
-    /// </summary>
-    /// <param name="userId">The identifier of the user.</param>
-    /// <param name="taskListId">The To-Do list identifier.</param>
-    /// <param name="page">The page number (1-based).</param>
-    /// <param name="pageSize">The number of items per page.</param>
-    /// <param name="filter">An optional filter expression.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>
-    /// A tuple containing a read-only collection of <see cref="TaskEntity"/> items and the total count of matching tasks.
-    /// </returns>
-    public async Task<(IReadOnlyCollection<TaskEntity> Items, int TotalCount)> GetPaginatedAsync(
-        Guid userId,
-        Guid taskListId,
-        int page,
-        int pageSize,
-        Expression<Func<TaskEntity, bool>>? filter = null,
-        CancellationToken cancellationToken = default)
-    {
-        var query = this.DbSet.AsNoTracking()
-            .Where(x => x.OwnerId == userId && x.TaskListId == taskListId);
-
-        if (filter != null)
-        {
-            query = query.Where(filter);
-        }
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
-            .OrderBy(x => x.CreatedDate)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Include(x => x.Tag)
-            .Include(x => x.Comments)
-                .ThenInclude(c => c.User)
-            .ToListAsync(cancellationToken);
-
-        return (items, totalCount);
-    }
 
     /// <summary>
     /// Retrieves a task entity by its identifier for a specific user.
@@ -132,21 +66,24 @@ public class TaskRepository(TodoListAppDbContext context)
     }
 
     /// <summary>
-    /// Retrieves tasks for a user within a specific task list, optionally filtered by statuses, due dates, and sorting.
-    /// Includes Tag and Comments related entities.
+    /// Retrieves tasks for a specific user and To-Do list with optional filtering and sorting.
     /// </summary>
-    /// <param name="userId">The identifier of the user.</param>
-    /// <param name="todoListId">The identifier of the task list.</param>
+    /// <param name="userId">The user identifier.</param>
+    /// <param name="todoListId">The To-Do list identifier.</param>
+    /// <param name="page">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
     /// <param name="statuses">Optional collection of task statuses to filter by.</param>
-    /// <param name="dueBefore">Optional due date upper limit.</param>
-    /// <param name="dueAfter">Optional due date lower limit.</param>
-    /// <param name="sortBy">Optional property name to sort by.</param>
-    /// <param name="ascending">Whether to sort in ascending order. Defaults to <c>true</c>.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A read-only collection of <see cref="TaskEntity"/> instances matching the specified criteria.</returns>
-    public async Task<IReadOnlyCollection<TaskEntity>> GetTasksAsync(
+    /// <param name="dueBefore">Optional upper bound for the task due date.</param>
+    /// <param name="dueAfter">Optional lower bound for the task due date.</param>
+    /// <param name="sortBy">Optional field name to sort by.</param>
+    /// <param name="ascending">Indicates whether sorting should be ascending.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A read-only collection of tasks.</returns>
+    public async Task<(IReadOnlyCollection<TaskEntity> items, int TotalCount)> GetTasksAsync(
         Guid userId,
         Guid todoListId,
+        int page = 1,
+        int pageSize = 10,
         IReadOnlyCollection<StatusTask>? statuses = null,
         DateTime? dueBefore = null,
         DateTime? dueAfter = null,
@@ -154,7 +91,8 @@ public class TaskRepository(TodoListAppDbContext context)
         bool ascending = true,
         CancellationToken cancellationToken = default)
     {
-        var tasksQuery = this.DbSet.AsNoTracking().Where(x => x.OwnerId == userId && x.TaskListId == todoListId);
+        var tasksQuery = this.DbSet.AsNoTracking()
+            .Where(x => x.OwnerId == userId && x.TaskListId == todoListId);
 
         if (statuses is { Count: > 0 })
         {
@@ -170,6 +108,8 @@ public class TaskRepository(TodoListAppDbContext context)
         {
             tasksQuery = tasksQuery.Where(x => x.DueDate <= dueBefore);
         }
+
+        var totalCount = await tasksQuery.CountAsync(cancellationToken);
 
         tasksQuery = sortBy switch
         {
@@ -189,14 +129,16 @@ public class TaskRepository(TodoListAppDbContext context)
                 ? tasksQuery.OrderBy(t => t.Status)
                 : tasksQuery.OrderByDescending(t => t.Status),
 
-            _ => tasksQuery,
+            _ => tasksQuery.OrderByDescending(t => t.CreatedDate),
         };
 
-        return await tasksQuery
-            .Include(x => x.Tag)
-            .Include(x => x.Comments)
-                .ThenInclude(c => c.User)
-            .ToListAsync(cancellationToken);
+        var items = await tasksQuery
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Include(x => x.Tag)
+                .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
 
     /// <summary>
@@ -205,16 +147,31 @@ public class TaskRepository(TodoListAppDbContext context)
     /// </summary>
     /// <param name="userId">The identifier of the user.</param>
     /// <param name="searchText">The text to search in task titles.</param>
+    /// <param name="page">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A read-only collection of <see cref="TaskEntity"/> instances whose titles match the search text.</returns>
-    public async Task<IReadOnlyCollection<TaskEntity>> SearchByTitleAsync(Guid userId, string searchText, CancellationToken cancellationToken = default)
-        => await this.DbSet
-            .Where(x => x.OwnerId == userId && EF.Functions.Like(x.Title, $"%{searchText}%"))
-            .OrderBy(x => x.CreatedDate)
+    public async Task<(IReadOnlyCollection<TaskEntity> Items, int TotalCount)> SearchByTitleAsync(
+        Guid userId,
+        string searchText,
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var query = this.DbSet.AsNoTracking()
+        .Where(x => x.OwnerId == userId && EF.Functions.Like(x.Title, $"%{searchText}%"));
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(x => x.CreatedDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Include(x => x.Tag)
-            .Include(x => x.Comments)
-                .ThenInclude(c => c.User)
             .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
 
     /// <summary>
     /// Checks if a specific user is the owner of a task.
