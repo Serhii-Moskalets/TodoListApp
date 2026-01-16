@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
@@ -11,12 +11,9 @@ namespace TodoListApp.Application.Tasks.Commands.ChangeTaskStatus;
 /// that belongs to a specific user.
 /// </summary>
 public class ChangeTaskStatusCommandHandler(
-    IUnitOfWork unitOfWork,
-    IValidator<ChangeTaskStatusCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<ChangeTaskStatusCommand, bool>
+    IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), IRequestHandler<ChangeTaskStatusCommand, Result<bool>>
 {
-    private readonly IValidator<ChangeTaskStatusCommand> _validator = validator;
-
     /// <summary>
     /// Processes the command to change the status of an existing task.
     /// </summary>
@@ -30,14 +27,8 @@ public class ChangeTaskStatusCommandHandler(
     /// <returns>
     /// A <see cref="Result{T}"/> indicating the result of the operation.
     /// </returns>
-    public async Task<Result<bool>> HandleAsync(ChangeTaskStatusCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(ChangeTaskStatusCommand command, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(this._validator, command);
-        if (!validation.IsSuccess)
-        {
-            return await Result<bool>.FailureAsync(validation.Error!.Code, validation.Error.Message);
-        }
-
         var task = await this.UnitOfWork.Tasks
             .GetTaskByIdForUserAsync(command.TaskId, command.UserId, asNoTracking: false, cancellationToken);
 

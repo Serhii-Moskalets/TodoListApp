@@ -1,12 +1,10 @@
-﻿using FluentValidation;
-using Moq;
+﻿using Moq;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Tasks.Commands.ChangeTaskStatus;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Enums;
-using FVResult = FluentValidation.Results.ValidationResult;
 
 namespace TodoListApp.Application.Tests.Tasks.Commands;
 
@@ -16,6 +14,22 @@ namespace TodoListApp.Application.Tests.Tasks.Commands;
 /// </summary>
 public class ChangeTaskStatusCommandHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<ITaskRepository> _taskRepoMock;
+    private readonly ChangeTaskStatusCommandHandler _handler;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ChangeTaskStatusCommandHandlerTests"/> class.
+    /// </summary>
+    public ChangeTaskStatusCommandHandlerTests()
+    {
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._taskRepoMock = new Mock<ITaskRepository>();
+
+        this._uowMock.Setup(u => u.Tasks).Returns(this._taskRepoMock.Object);
+        this._handler = new ChangeTaskStatusCommandHandler(this._uowMock.Object);
+    }
+
     /// <summary>
     /// Ensures that the handler returns failure if the task does not exist.
     /// </summary>
@@ -23,31 +37,54 @@ public class ChangeTaskStatusCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnFailure_WhenTaskNotFound()
     {
-        var taskId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var command = new ChangeTaskStatusCommand(taskId, userId, StatusTask.InProgress);
+        // Arrange
+        var command = new ChangeTaskStatusCommand(Guid.NewGuid(), Guid.NewGuid(), StatusTask.InProgress);
 
-        var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetByIdAsync(taskId, false, It.IsAny<CancellationToken>()))
+        this._taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
+                It.IsAny<bool>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskEntity?)null);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
-        var validatorMock = new Mock<IValidator<ChangeTaskStatusCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<ChangeTaskStatusCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FVResult());
-
-        var handler = new ChangeTaskStatusCommandHandler(uowMock.Object, validatorMock.Object);
-
-        var ct = CancellationToken.None;
-        var result = await handler.HandleAsync(command, ct);
-
+        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCode.NotFound, result.Error?.Code);
         Assert.Equal("Task not found.", result.Error?.Message);
-        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Verifies that the handler returns a success result without invoking a database save operation
+    /// when the requested status is identical to the current status of the task.
+    /// </summary>
+    /// <remarks>
+    /// This test ensures the handler is idempotent and optimizes performance by avoiding
+    /// unnecessary transactional overhead (I/O) when no state change is actually required.
+    /// </remarks>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Handle_ShouldReturnSuccess_WhenStatusIsAlreadyTheSame()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var task = new TaskEntity(userId, Guid.NewGuid(), "Task");
+
+        var command = new ChangeTaskStatusCommand(task.Id, userId, task.Status);
+
+        this._taskRepoMock
+            .Setup(r => r.GetTaskByIdForUserAsync(task.Id, userId, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(task);
+
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
@@ -57,31 +94,28 @@ public class ChangeTaskStatusCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldChangeStatusSuccessfully_WhenTaskExists()
     {
-        var taskId = Guid.NewGuid();
+        // Arrange
         var userId = Guid.NewGuid();
-        var command = new ChangeTaskStatusCommand(taskId, userId, StatusTask.InProgress);
 
         var taskEntity = new TaskEntity(userId, Guid.NewGuid(), "Task");
-        var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(taskId, userId, false, It.IsAny<CancellationToken>()))
+
+        this._taskRepoMock.Setup(r => r.GetTaskByIdForUserAsync(
+            It.IsAny<Guid>(),
+            It.IsAny<Guid>(),
+            It.IsAny<bool>(),
+            It.IsAny<CancellationToken>()))
             .ReturnsAsync(taskEntity);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        this._uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var validatorMock = new Mock<IValidator<ChangeTaskStatusCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<ChangeTaskStatusCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FVResult());
+        var command = new ChangeTaskStatusCommand(Guid.NewGuid(), userId, StatusTask.InProgress);
 
-        var handler = new ChangeTaskStatusCommandHandler(uowMock.Object, validatorMock.Object);
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
-        var ct = CancellationToken.None;
-        var result = await handler.HandleAsync(command, ct);
-
+        // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(StatusTask.InProgress, taskEntity.Status);
-        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }
