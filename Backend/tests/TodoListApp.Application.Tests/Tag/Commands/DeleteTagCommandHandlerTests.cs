@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
+﻿using MediatR;
 using Moq;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
@@ -15,30 +14,21 @@ namespace TodoListApp.Application.Tests.Tag.Commands;
 /// </summary>
 public class DeleteTagCommandHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<ITagRepository> _tagRepoMock;
+    private readonly DeleteTagCommandHandler _handler;
+
     /// <summary>
-    /// Returns a failure result when the command validation fails.
+    /// Initializes a new instance of the <see cref="DeleteTagCommandHandlerTests"/> class.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
+    public DeleteTagCommandHandlerTests()
     {
-        // Arrange
-        var validatorMock = new Mock<IValidator<DeleteTagCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTagCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult([new ValidationFailure("TagId", "Invalid Id")]));
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._tagRepoMock = new Mock<ITagRepository>();
 
-        var uowMock = new Mock<IUnitOfWork>();
+        this._uowMock.Setup(u => u.Tags).Returns(this._tagRepoMock.Object);
 
-        var handler = new DeleteTagCommandHandler(uowMock.Object, validatorMock.Object);
-        var command = new DeleteTagCommand(Guid.NewGuid(), Guid.NewGuid());
-
-        // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-        Assert.Equal("Invalid Id", result.Error.Message);
+        this._handler = new DeleteTagCommandHandler(this._uowMock.Object);
     }
 
     /// <summary>
@@ -49,22 +39,13 @@ public class DeleteTagCommandHandlerTests
     public async Task Handle_ShouldReturnFailure_WhenTagNotFound()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<DeleteTagCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTagCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult());
-
-        var tagRepoMock = new Mock<ITagRepository>();
-        tagRepoMock.Setup(r => r.GetTagByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
+        this._tagRepoMock.Setup(r => r.GetTagByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
                    .ReturnsAsync((TagEntity?)null);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Tags).Returns(tagRepoMock.Object);
-
-        var handler = new DeleteTagCommandHandler(uowMock.Object, validatorMock.Object);
         var command = new DeleteTagCommand(Guid.NewGuid(), Guid.NewGuid());
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.False(result.IsSuccess);
@@ -80,32 +61,24 @@ public class DeleteTagCommandHandlerTests
     public async Task Handle_ShouldDeleteTag_WhenValidationPassesAndTagExists()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<DeleteTagCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTagCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult());
-
         var userId = Guid.NewGuid();
         var tagEntity = new TagEntity("TagName", userId);
 
-        var tagRepoMock = new Mock<ITagRepository>();
-        tagRepoMock.Setup(r => r.GetTagByIdForUserAsync(tagEntity.Id, userId, false, It.IsAny<CancellationToken>()))
+        this._tagRepoMock.Setup(r => r.GetTagByIdForUserAsync(tagEntity.Id, userId, false, It.IsAny<CancellationToken>()))
                    .ReturnsAsync(tagEntity);
-        tagRepoMock.Setup(r => r.DeleteAsync(tagEntity, It.IsAny<CancellationToken>()))
+        this._tagRepoMock.Setup(r => r.DeleteAsync(tagEntity, It.IsAny<CancellationToken>()))
                    .Returns(Task.CompletedTask);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Tags).Returns(tagRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        this._uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var handler = new DeleteTagCommandHandler(uowMock.Object, validatorMock.Object);
         var command = new DeleteTagCommand(tagEntity.Id, userId);
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
-        tagRepoMock.Verify(r => r.DeleteAsync(tagEntity, It.IsAny<CancellationToken>()), Times.Once);
-        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        this._tagRepoMock.Verify(r => r.DeleteAsync(tagEntity, It.IsAny<CancellationToken>()), Times.Once);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -1,14 +1,13 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
+﻿using MediatR;
 using Moq;
 using TinyResult;
+using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
+using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
-using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Tag.Commands.CreateTag;
 using TodoListApp.Application.Tasks.Commands.AddTagToTask;
 using TodoListApp.Domain.Entities;
-using FVResult = FluentValidation.Results.ValidationResult;
 
 namespace TodoListApp.Application.Tests.Tag.Commands;
 
@@ -19,33 +18,28 @@ namespace TodoListApp.Application.Tests.Tag.Commands;
 /// </summary>
 public class CreateTagCommandHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<ITagRepository> _tagRepoMock;
+    private readonly Mock<IUniqueNameService> _uniqueNameServiceMock;
+    private readonly Mock<ISender> _mediatorMock;
+    private readonly CreateTagCommandHandler _handler;
+
     /// <summary>
-    /// Ensures that the handler returns a failure result when command validation fails.
+    /// Initializes a new instance of the <see cref="CreateTagCommandHandlerTests"/> class.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
+    public CreateTagCommandHandlerTests()
     {
-        var validatorMock = new Mock<IValidator<CreateTagCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTagCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new FVResult([new ValidationFailure("Name", "Required")]));
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._tagRepoMock = new Mock<ITagRepository>();
+        this._uniqueNameServiceMock = new Mock<IUniqueNameService>();
+        this._mediatorMock = new Mock<ISender>();
 
-        var uowMock = new Mock<IUnitOfWork>();
+        this._uowMock.Setup(u => u.Tags).Returns(this._tagRepoMock.Object);
 
-        var addTagToTaskHandlerMock = new Mock<ICommandHandler<AddTagToTaskCommand, bool>>();
-
-        var handler = new CreateTagCommandHandler(
-            uowMock.Object,
-            validatorMock.Object,
-            addTagToTaskHandlerMock.Object);
-
-        var command = new CreateTagCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
-
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-        Assert.Equal("Required", result.Error.Message);
+        this._handler = new CreateTagCommandHandler(
+            this._uowMock.Object,
+            this._uniqueNameServiceMock.Object,
+            this._mediatorMock.Object);
     }
 
     /// <summary>
@@ -55,75 +49,59 @@ public class CreateTagCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldAddTag_WhenNameIsUnique()
     {
-        var validatorMock = new Mock<IValidator<CreateTagCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTagCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new FVResult());
+        // Arrange
+        var userId = Guid.NewGuid();
+        var taskId = Guid.NewGuid();
+        var command = new CreateTagCommand(userId, taskId, "Tag");
 
-        var tagRepoMock = new Mock<ITagRepository>();
-        tagRepoMock.Setup(r => r.ExistsByNameAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                   .ReturnsAsync(false);
+        this._uniqueNameServiceMock
+            .Setup(s => s.GetUniqueNameAsync(It.IsAny<string>(), It.IsAny<Func<string, CancellationToken, Task<bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("Tag");
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Tags).Returns(tagRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        var addTagToTaskHandlerMock = new Mock<ICommandHandler<AddTagToTaskCommand, bool>>();
-        addTagToTaskHandlerMock
-            .Setup(h => h.HandleAsync(It.IsAny<AddTagToTaskCommand>(), It.IsAny<CancellationToken>()))
+        this._mediatorMock
+            .Setup(m => m.Send(It.IsAny<AddTagToTaskCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(await Result<bool>.SuccessAsync(true));
 
-        var handler = new CreateTagCommandHandler(
-            uowMock.Object,
-            validatorMock.Object,
-            addTagToTaskHandlerMock.Object);
+        this._uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var userId = Guid.NewGuid();
-        var task = new TaskEntity(Guid.NewGuid(), Guid.NewGuid(), "Task");
-        var command = new CreateTagCommand(userId, task.Id, "Tag");
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
+        // Assert
         Assert.True(result.IsSuccess);
-        tagRepoMock.Verify(r => r.AddAsync(It.Is<TagEntity>(t => t.UserId == userId && t.Name == "Tag"), It.IsAny<CancellationToken>()), Times.Once);
-        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        this._tagRepoMock.Verify(r => r.AddAsync(It.Is<TagEntity>(t => t.Name == "Tag"), It.IsAny<CancellationToken>()), Times.Once);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
-    /// Ensures that a numeric suffix is appended to the tag name when a tag with the same name already exists for the user.
+    /// Tests that the handler returns a failure result and deletes the orphaned tag
+    /// if the subsequent call to <see cref="AddTagToTaskCommand"/> fails.
     /// </summary>
+    /// <remarks>
+    /// This ensures atomicity: if the tag cannot be linked to the task, the tag creation is rolled back.
+    /// </remarks>
     /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Handle_ShouldAppendSuffix_WhenNameExists()
+    public async Task Handle_ShouldReturnFailure_WhenAddingTagToTaskFails()
     {
-        var validatorMock = new Mock<IValidator<CreateTagCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateTagCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new FVResult());
-
-        var tagRepoMock = new Mock<ITagRepository>();
-        tagRepoMock.SetupSequence(r => r.ExistsByNameAsync(It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                   .ReturnsAsync(true)
-                   .ReturnsAsync(false);
-
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Tags).Returns(tagRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        var addTagToTaskHandlerMock = new Mock<ICommandHandler<AddTagToTaskCommand, bool>>();
-        addTagToTaskHandlerMock
-            .Setup(h => h.HandleAsync(It.IsAny<AddTagToTaskCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(await Result<bool>.SuccessAsync(true));
-
-        var handler = new CreateTagCommandHandler(
-            uowMock.Object,
-            validatorMock.Object,
-            addTagToTaskHandlerMock.Object);
-
+        // Arrange
         var userId = Guid.NewGuid();
         var command = new CreateTagCommand(userId, Guid.NewGuid(), "Tag");
 
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        this._uniqueNameServiceMock
+            .Setup(s => s.GetUniqueNameAsync(It.IsAny<string>(), It.IsAny<Func<string, CancellationToken, Task<bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("Tag");
 
-        Assert.True(result.IsSuccess);
-        tagRepoMock.Verify(r => r.AddAsync(It.Is<TagEntity>(t => t.Name == "Tag (1)" && t.UserId == userId), It.IsAny<CancellationToken>()), Times.Once);
+        this._mediatorMock
+            .Setup(m => m.Send(It.IsAny<AddTagToTaskCommand>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "Task error"));
+
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        this._tagRepoMock.Verify(r => r.DeleteAsync(It.IsAny<TagEntity>(), It.IsAny<CancellationToken>()), Times.Once);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

@@ -1,6 +1,4 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using Moq;
+﻿using Moq;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Tag.Queries.GetAllTags;
@@ -14,30 +12,21 @@ namespace TodoListApp.Application.Tests.Tag.Queries;
 /// </summary>
 public class GetAllTagsQueryHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<ITagRepository> _tagRepoMock;
+    private readonly GetAllTagsQueryHandler _handler;
+
     /// <summary>
-    /// Returns failure if validation fails.
+    /// Initializes a new instance of the <see cref="GetAllTagsQueryHandlerTests"/> class.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
+    public GetAllTagsQueryHandlerTests()
     {
-        // Arrange
-        var validatorMock = new Mock<IValidator<GetAllTagsQuery>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<GetAllTagsQuery>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult([new ValidationFailure("UserId", "Required")]));
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._tagRepoMock = new Mock<ITagRepository>();
 
-        var uowMock = new Mock<IUnitOfWork>();
-        var handler = new GetAllTagsQueryHandler(uowMock.Object, validatorMock.Object);
+        this._uowMock.Setup(u => u.Tags).Returns(this._tagRepoMock.Object);
 
-        var query = new GetAllTagsQuery(Guid.NewGuid());
-
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-        Assert.Equal("Required", result.Error.Message);
+        this._handler = new GetAllTagsQueryHandler(this._uowMock.Object);
     }
 
     /// <summary>
@@ -45,33 +34,23 @@ public class GetAllTagsQueryHandlerTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldReturnTags_WhenValidationPasses()
+    public async Task Handle_ShouldReturnTags_WhenTagsExist()
     {
         // Arrange
         var userId = Guid.NewGuid();
-
-        var validatorMock = new Mock<IValidator<GetAllTagsQuery>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<GetAllTagsQuery>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult());
-
         var tagEntities = new List<TagEntity>
         {
             new("Tag1", userId),
             new("Tag2", userId),
         };
 
-        var tagRepoMock = new Mock<ITagRepository>();
-        tagRepoMock.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+        this._tagRepoMock.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
                    .ReturnsAsync(tagEntities);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Tags).Returns(tagRepoMock.Object);
-
-        var handler = new GetAllTagsQueryHandler(uowMock.Object, validatorMock.Object);
         var query = new GetAllTagsQuery(userId);
 
         // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await this._handler.Handle(query, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -92,22 +71,13 @@ public class GetAllTagsQueryHandlerTests
         // Arrange
         var userId = Guid.NewGuid();
 
-        var validatorMock = new Mock<IValidator<GetAllTagsQuery>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<GetAllTagsQuery>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult());
-
-        var tagRepoMock = new Mock<ITagRepository>();
-        tagRepoMock.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+        this._tagRepoMock.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
                    .ReturnsAsync([]);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Tags).Returns(tagRepoMock.Object);
-
-        var handler = new GetAllTagsQueryHandler(uowMock.Object, validatorMock.Object);
         var query = new GetAllTagsQuery(userId);
 
         // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await this._handler.Handle(query, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
