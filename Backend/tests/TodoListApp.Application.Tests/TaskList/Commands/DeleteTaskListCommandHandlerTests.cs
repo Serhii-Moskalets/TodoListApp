@@ -1,6 +1,4 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using Moq;
+﻿using Moq;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.TaskList.Commands.DeleteTaskList;
@@ -14,30 +12,20 @@ namespace TodoListApp.Application.Tests.TaskList.Commands;
 /// </summary>
 public class DeleteTaskListCommandHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<ITaskListRepository> _taskListRepoMock;
+    private readonly DeleteTaskListCommandHandler _handler;
+
     /// <summary>
-    /// Returns failure if validation fails.
+    /// Initializes a new instance of the <see cref="DeleteTaskListCommandHandlerTests"/> class.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
+    public DeleteTaskListCommandHandlerTests()
     {
-        // Arrange
-        var validatorMock = new Mock<IValidator<DeleteTaskListCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskListCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult(new[] { new ValidationFailure("TaskListId", "Invalid ID") }));
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._taskListRepoMock = new Mock<ITaskListRepository>();
 
-        var uowMock = new Mock<IUnitOfWork>();
-        var handler = new DeleteTaskListCommandHandler(uowMock.Object, validatorMock.Object);
-
-        var command = new DeleteTaskListCommand(Guid.NewGuid(), Guid.NewGuid());
-
-        // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-        Assert.Equal("Invalid ID", result.Error.Message);
+        this._uowMock.Setup(tl => tl.TaskLists).Returns(this._taskListRepoMock.Object);
+        this._handler = new DeleteTaskListCommandHandler(this._uowMock.Object);
     }
 
     /// <summary>
@@ -48,23 +36,13 @@ public class DeleteTaskListCommandHandlerTests
     public async Task Handle_ShouldReturnNotFound_WhenTaskListDoesNotExist()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<DeleteTaskListCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskListCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult());
-
-        var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock.Setup(r => r.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
+        this._taskListRepoMock.Setup(r => r.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
                         .ReturnsAsync((TaskListEntity?)null);
-
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
-
-        var handler = new DeleteTaskListCommandHandler(uowMock.Object, validatorMock.Object);
 
         var command = new DeleteTaskListCommand(Guid.NewGuid(), Guid.NewGuid());
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.False(result.IsSuccess);
@@ -79,31 +57,22 @@ public class DeleteTaskListCommandHandlerTests
     public async Task Handle_ShouldDeleteTaskList_WhenValidationPasses()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<DeleteTaskListCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskListCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult());
+        var taskList = new TaskListEntity(Guid.NewGuid(), "Test TaskList");
 
-        var taskList = new Domain.Entities.TaskListEntity(Guid.NewGuid(), "Test TaskList");
-
-        var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock.Setup(r => r.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
+        this._taskListRepoMock.Setup(r => r.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
                         .ReturnsAsync(taskList);
-        taskListRepoMock.Setup(r => r.DeleteAsync(taskList, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        this._taskListRepoMock.Setup(r => r.DeleteAsync(taskList, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        var handler = new DeleteTaskListCommandHandler(uowMock.Object, validatorMock.Object);
+        this._uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var command = new DeleteTaskListCommand(taskList.Id, Guid.NewGuid());
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
-        taskListRepoMock.Verify(r => r.DeleteAsync(taskList, It.IsAny<CancellationToken>()), Times.Once);
-        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        this._taskListRepoMock.Verify(r => r.DeleteAsync(taskList, It.IsAny<CancellationToken>()), Times.Once);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }
