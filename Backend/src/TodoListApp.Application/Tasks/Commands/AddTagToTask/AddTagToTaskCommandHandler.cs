@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
@@ -10,12 +10,9 @@ namespace TodoListApp.Application.Tasks.Commands.AddTagToTask;
 /// Handles the <see cref="AddTagToTaskCommand"/> by associating a tag with a specific task for a user.
 /// </summary>
 public class AddTagToTaskCommandHandler(
-    IUnitOfWork unitOfWork,
-    IValidator<AddTagToTaskCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<AddTagToTaskCommand, bool>
+    IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), IRequestHandler<AddTagToTaskCommand, Result<bool>>
 {
-    private readonly IValidator<AddTagToTaskCommand> _validator = validator;
-
     /// <summary>
     /// Handles the <see cref="AddTagToTaskCommand"/>.
     /// </summary>
@@ -25,14 +22,8 @@ public class AddTagToTaskCommandHandler(
     /// A <see cref="Result{T}"/> indicating success if the tag was added,
     /// or failure if the task was not found.
     /// </returns>
-    public async Task<Result<bool>> HandleAsync(AddTagToTaskCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(AddTagToTaskCommand command, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(this._validator, command);
-        if (!validation.IsSuccess)
-        {
-            return await Result<bool>.FailureAsync(validation.Error!.Code, validation.Error.Message);
-        }
-
         var task = await this.UnitOfWork.Tasks
             .GetTaskByIdForUserAsync(command.TaskId, command.UserId, asNoTracking: false, cancellationToken);
 
