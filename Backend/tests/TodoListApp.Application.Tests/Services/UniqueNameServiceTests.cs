@@ -1,32 +1,37 @@
 ﻿using Moq;
+using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Common.Services;
 
 namespace TodoListApp.Application.Tests.Services;
 
 /// <summary>
-/// Unit tests for <see cref="TaskListNameUniquenessService"/>.
+/// Unit tests for <see cref="UniqueNameService"/>.
 /// Validates that unique task list names are generated correctly for a user.
 /// </summary>
-public class TaskListNameUniquenessServiceTests
+public class UniqueNameServiceTests
 {
     private const string Title = "Task List";
-
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
-    private readonly TaskListNameUniquenessService _service;
+    private readonly Mock<ITaskListRepository> _taskListRepoMock;
+    private readonly UniqueNameService _service;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TaskListNameUniquenessServiceTests"/> class.
+    /// Initializes a new instance of the <see cref="UniqueNameServiceTests"/> class.
     /// Sets up mocks and the service under test.
     /// </summary>
-    public TaskListNameUniquenessServiceTests()
+    public UniqueNameServiceTests()
     {
         this._unitOfWorkMock = new Mock<IUnitOfWork>();
-        this._service = new TaskListNameUniquenessService(this._unitOfWorkMock.Object);
+        this._taskListRepoMock = new Mock<ITaskListRepository>();
+
+        this._unitOfWorkMock.Setup(u => u.TaskLists).Returns(this._taskListRepoMock.Object);
+
+        this._service = new UniqueNameService();
     }
 
     /// <summary>
-    /// Verifies that <see cref="TaskListNameUniquenessService.GetUniqueNameAsync"/>
+    /// Verifies that <see cref="UniqueNameService.GetUniqueNameAsync"/>
     /// returns the original title if no existing task list with the same title exists.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
@@ -36,18 +41,21 @@ public class TaskListNameUniquenessServiceTests
         // Arrange
         var userId = Guid.NewGuid();
 
-        this._unitOfWorkMock.Setup(x => x.TaskLists.ExistsByTitleAsync(Title, userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+        this._taskListRepoMock.Setup(r => r.ExistsByTitleAsync(Title, userId, It.IsAny<CancellationToken>()))
+                         .ReturnsAsync(false);
 
         // Act
-        var result = await this._service.GetUniqueNameAsync(userId, Title, CancellationToken.None);
+        var result = await this._service.GetUniqueNameAsync(
+            Title,
+            (name, ct) => this._unitOfWorkMock.Object.TaskLists.ExistsByTitleAsync(name, userId, ct),
+            CancellationToken.None);
 
         // Assert
         Assert.Equal(Title, result);
     }
 
     /// <summary>
-    /// Verifies that <see cref="TaskListNameUniquenessService.GetUniqueNameAsync"/>
+    /// Verifies that <see cref="UniqueNameService.GetUniqueNameAsync"/>
     /// appends a numeric suffix to the title if the original title already exists.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
@@ -63,7 +71,10 @@ public class TaskListNameUniquenessServiceTests
                 .ReturnsAsync(false); // "Task List (2)" does not exists
 
         // Act
-        var result = await this._service.GetUniqueNameAsync(userId, Title, CancellationToken.None);
+        var result = await this._service.GetUniqueNameAsync(
+            Title,
+            (name, ct) => this._unitOfWorkMock.Object.TaskLists.ExistsByTitleAsync(name, userId, ct),
+            CancellationToken.None);
 
         // Assert
         Assert.Equal("Task List (2)", result);
