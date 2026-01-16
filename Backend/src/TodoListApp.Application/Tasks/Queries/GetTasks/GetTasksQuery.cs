@@ -10,9 +10,11 @@ namespace TodoListApp.Application.Tasks.Queries.GetTasks;
 public sealed record GetTasksQuery(
     Guid UserId,
     Guid TaskListId,
+    int Page = 1,
+    int PageSize = 10,
     IReadOnlyCollection<StatusTask>? TaskStatuses = null,
     DateTime? DueBefore = null,
     DateTime? DueAfter = null,
     TaskSortBy? TaskSortBy = null,
     bool Ascending = true)
-    : IQuery<IEnumerable<TaskDto>>;
+    : IQuery<PagedResultDto<TaskDto>>;
