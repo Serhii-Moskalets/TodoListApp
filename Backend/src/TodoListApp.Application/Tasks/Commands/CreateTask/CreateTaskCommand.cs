@@ -7,4 +7,4 @@ namespace TodoListApp.Application.Tasks.Commands.CreateTask;
 /// Command to create a new task using a DTO.
 /// </summary>
 public record CreateTaskCommand(CreateTaskDto Dto, Guid UserId)
-    : ICommand;
+    : ICommand<Guid>;
