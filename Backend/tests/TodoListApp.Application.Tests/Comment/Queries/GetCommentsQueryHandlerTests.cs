@@ -14,6 +14,25 @@ namespace TodoListApp.Application.Tests.Comment.Queries;
 /// </summary>
 public class GetCommentsQueryHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<ITaskAccessService> _taskAccessMock;
+    private readonly Mock<ICommentRepository> _commentsRepoMock;
+    private readonly GetCommentsQueryHandler _handler;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetCommentsQueryHandlerTests"/> class.
+    /// </summary>
+    public GetCommentsQueryHandlerTests()
+    {
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._taskAccessMock = new Mock<ITaskAccessService>();
+        this._commentsRepoMock = new Mock<ICommentRepository>();
+
+        this._uowMock.Setup(u => u.Comments).Returns(this._commentsRepoMock.Object);
+
+        this._handler = new GetCommentsQueryHandler(this._uowMock.Object, this._taskAccessMock.Object);
+    }
+
     /// <summary>
     /// Returns failure if the user does not have access to the task.
     /// </summary>
@@ -25,19 +44,14 @@ public class GetCommentsQueryHandlerTests
         var taskId = Guid.NewGuid();
         var userId = Guid.NewGuid();
 
-        var taskAccessMock = new Mock<ITaskAccessService>();
-        taskAccessMock
+        this._taskAccessMock
             .Setup(s => s.HasAccessAsync(taskId, userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
-
-        var uowMock = new Mock<IUnitOfWork>();
-
-        var handler = new GetCommentsQueryHandler(uowMock.Object, taskAccessMock.Object);
 
         var query = new GetCommentsQuery(taskId, userId);
 
         // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await this._handler.Handle(query, CancellationToken.None);
 
         // Assert
         Assert.False(result.IsSuccess);
@@ -64,25 +78,18 @@ public class GetCommentsQueryHandlerTests
             new(taskId, user2.Id, "Comment 2", user2),
         };
 
-        var taskAccessMock = new Mock<ITaskAccessService>();
-        taskAccessMock
+        this._taskAccessMock
             .Setup(s => s.HasAccessAsync(taskId, user1.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var commentsRepoMock = new Mock<ICommentRepository>();
-        commentsRepoMock
+        this._commentsRepoMock
             .Setup(r => r.GetByTaskIdAsync(taskId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(comments);
-
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Comments).Returns(commentsRepoMock.Object);
-
-        var handler = new GetCommentsQueryHandler(uowMock.Object, taskAccessMock.Object);
 
         var query = new GetCommentsQuery(taskId, user1.Id);
 
         // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await this._handler.Handle(query, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
