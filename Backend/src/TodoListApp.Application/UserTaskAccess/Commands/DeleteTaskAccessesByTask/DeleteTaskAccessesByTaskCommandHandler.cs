@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
@@ -9,13 +9,9 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessesByTa
 /// <summary>
 /// Handles the <see cref="DeleteTaskAccessesByTaskCommand"/> to remove all user-task access entries for a specific task.
 /// </summary>
-public class DeleteTaskAccessesByTaskCommandHandler(
-    IUnitOfWork unitOfWork,
-    IValidator<DeleteTaskAccessesByTaskCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<DeleteTaskAccessesByTaskCommand, bool>
+public class DeleteTaskAccessesByTaskCommandHandler(IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), IRequestHandler<DeleteTaskAccessesByTaskCommand, Result<bool>>
 {
-    private readonly IValidator<DeleteTaskAccessesByTaskCommand> _validator = validator;
-
     /// <summary>
     /// Processes the command to delete all user-task access entries for a given task.
     /// </summary>
@@ -27,14 +23,8 @@ public class DeleteTaskAccessesByTaskCommandHandler(
     /// A <see cref="Result{T}"/> indicating success if all accesses were deleted,
     /// or failure if the task was not found or the user is not the task owner.
     /// </returns>
-    public async Task<Result<bool>> HandleAsync(DeleteTaskAccessesByTaskCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(DeleteTaskAccessesByTaskCommand command, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(this._validator, command);
-        if (!validation.IsSuccess)
-        {
-            return await Result<bool>.FailureAsync(validation.Error!.Code, validation.Error.Message);
-        }
-
         var task = await this.UnitOfWork.Tasks.GetTaskByIdForUserAsync(command.TaskId, command.UserId, cancellationToken: cancellationToken);
         if (task is null)
         {
