@@ -4,7 +4,9 @@ using Moq;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+using TodoListApp.Application.Tasks.Commands.RemoveTagFromTask;
 using TodoListApp.Application.Tasks.Queries.GetTaskById;
+using TodoListApp.Application.Tests.Tasks.Commands;
 using TodoListApp.Domain.Entities;
 
 namespace TodoListApp.Application.Tests.Tasks.Queries;
@@ -15,32 +17,20 @@ namespace TodoListApp.Application.Tests.Tasks.Queries;
 /// </summary>
 public class GetTaskByIdQueryHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<ITaskRepository> _taskRepoMock;
+    private readonly GetTaskByIdQueryHandler _handler;
+
     /// <summary>
-    /// Ensures the handler returns failure when validation fails.
+    /// Initializes a new instance of the <see cref="GetTaskByIdQueryHandlerTests"/> class.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
+    public GetTaskByIdQueryHandlerTests()
     {
-        // Arrange
-        var validatorMock = new Mock<IValidator<GetTaskByIdQuery>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<GetTaskByIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult([new ValidationFailure("TaskId", "Task ID is required")]));
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._taskRepoMock = new Mock<ITaskRepository>();
 
-        var uowMock = new Mock<IUnitOfWork>();
-
-        var handler = new GetTaskByIdQueryHandler(uowMock.Object, validatorMock.Object);
-
-        var query = new GetTaskByIdQuery(Guid.Empty, Guid.NewGuid());
-
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-        Assert.Equal("Task ID is required", result.Error.Message);
+        this._uowMock.Setup(u => u.Tasks).Returns(this._taskRepoMock.Object);
+        this._handler = new GetTaskByIdQueryHandler(this._uowMock.Object);
     }
 
     /// <summary>
@@ -51,25 +41,14 @@ public class GetTaskByIdQueryHandlerTests
     public async Task Handle_ShouldReturnNotFound_WhenTaskDoesNotExist()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<GetTaskByIdQuery>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<GetTaskByIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
-
-        var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock
+        this._taskRepoMock
             .Setup(r => r.GetTaskByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskEntity?)null);
-
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
-
-        var handler = new GetTaskByIdQueryHandler(uowMock.Object, validatorMock.Object);
 
         var query = new GetTaskByIdQuery(Guid.NewGuid(), Guid.NewGuid());
 
         // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await this._handler.Handle(query, CancellationToken.None);
 
         // Assertz
         Assert.False(result.IsSuccess);
@@ -85,33 +64,21 @@ public class GetTaskByIdQueryHandlerTests
     public async Task Handle_ShouldReturnTaskDto_WhenTaskExists()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<GetTaskByIdQuery>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<GetTaskByIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
-
         var userId = Guid.NewGuid();
-
         var task = new TaskEntity(userId, Guid.NewGuid(), "Test Task", DateTime.UtcNow.AddDays(1));
 
-        var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock
+        this._taskRepoMock
             .Setup(r => r.GetTaskByIdForUserAsync(
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
-                true,
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(task);
-
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
-
-        var handler = new GetTaskByIdQueryHandler(uowMock.Object, validatorMock.Object);
 
         var query = new GetTaskByIdQuery(task.Id, userId);
 
         // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await this._handler.Handle(query, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);

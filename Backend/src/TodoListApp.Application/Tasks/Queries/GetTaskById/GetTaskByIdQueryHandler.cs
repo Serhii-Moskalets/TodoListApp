@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
@@ -12,12 +12,9 @@ namespace TodoListApp.Application.Tasks.Queries.GetTaskById;
 /// Handles the <see cref="GetTaskByIdQuery"/> to retrieve a specific task for a given user.
 /// </summary>
 public class GetTaskByIdQueryHandler(
-    IUnitOfWork unitOfWork,
-    IValidator<GetTaskByIdQuery> validator)
-    : HandlerBase(unitOfWork), IQueryHandler<GetTaskByIdQuery, TaskDto>
+    IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), IRequestHandler<GetTaskByIdQuery, Result<TaskDto>>
 {
-    private readonly IValidator<GetTaskByIdQuery> _validator = validator;
-
     /// <summary>
     /// Handles the retrieval of a task and maps it to a <see cref="TaskDto"/>.
     /// </summary>
@@ -30,13 +27,8 @@ public class GetTaskByIdQueryHandler(
     /// </returns>
     public async Task<Result<TaskDto>> Handle(GetTaskByIdQuery query, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(this._validator, query);
-        if (!validation.IsSuccess)
-        {
-            return await Result<TaskDto>.FailureAsync(validation.Error!.Code, validation.Error.Message);
-        }
-
-        var taskEntity = await this.UnitOfWork.Tasks.GetTaskByIdForUserAsync(query.TaskId, query.UserId, cancellationToken: cancellationToken);
+        var taskEntity = await this.UnitOfWork.Tasks
+            .GetTaskByIdForUserAsync(query.TaskId, query.UserId, cancellationToken: cancellationToken);
 
         if (taskEntity is null)
         {
