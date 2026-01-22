@@ -1,14 +1,14 @@
 ﻿using FluentValidation.TestHelper;
-using TodoListApp.Application.UserTaskAccess.Queries.GetTaskWithSharedUsers;
+using TodoListApp.Application.UserTaskAccess.Queries.GetUsersWithTaskAccess;
 
 namespace TodoListApp.Application.Tests.UserTaskAccess.Queries;
 
 /// <summary>
-/// Tests for <see cref="GetTaskWithSharedUsersQueryValidator"/>.
+/// Tests for <see cref="GetUsersWithTaskAccessQueryHandlerTests"/>.
 /// </summary>
-public class GetTaskWithSharedUsersQueryValidatorTests
+public class GetUsersWithTaskAccessQueryValidatorTests
 {
-    private readonly GetTaskWithSharedUsersQueryValidator _validator = new();
+    private readonly GetUsersWithTaskAccessQueryValidator _validator = new();
 
     /// <summary>
     /// Ensures validation fails when the task identifier is empty.
@@ -16,7 +16,7 @@ public class GetTaskWithSharedUsersQueryValidatorTests
     [Fact]
     public void Should_Have_Error_When_TaskId_Is_Empty()
     {
-        var query = new GetTaskWithSharedUsersQuery(Guid.Empty, Guid.NewGuid());
+        var query = new GetUsersWithTaskAccessQuery(Guid.Empty, Guid.NewGuid());
         var result = this._validator.TestValidate(query);
         result.ShouldHaveValidationErrorFor(x => x.TaskId)
               .WithErrorMessage("TaskId is required.");
@@ -28,7 +28,7 @@ public class GetTaskWithSharedUsersQueryValidatorTests
     [Fact]
     public void Should_Have_Error_When_UserId_Is_Empty()
     {
-        var query = new GetTaskWithSharedUsersQuery(Guid.NewGuid(), Guid.Empty);
+        var query = new GetUsersWithTaskAccessQuery(Guid.NewGuid(), Guid.Empty);
         var result = this._validator.TestValidate(query);
         result.ShouldHaveValidationErrorFor(x => x.UserId)
               .WithErrorMessage("UserId is required.");
@@ -40,7 +40,7 @@ public class GetTaskWithSharedUsersQueryValidatorTests
     [Fact]
     public void Should_Not_Have_Error_When_All_Fields_Are_Valid()
     {
-        var query = new GetTaskWithSharedUsersQuery(Guid.NewGuid(), Guid.NewGuid());
+        var query = new GetUsersWithTaskAccessQuery(Guid.NewGuid(), Guid.NewGuid());
         var result = this._validator.TestValidate(query);
         result.ShouldNotHaveAnyValidationErrors();
     }
