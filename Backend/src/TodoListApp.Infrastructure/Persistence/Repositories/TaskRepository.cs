@@ -3,6 +3,7 @@ using TinyResult;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Enums;
+using TodoListApp.Infrastructure.Extensions;
 using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 namespace TodoListApp.Infrastructure.Persistence.Repositories;
@@ -133,9 +134,8 @@ public class TaskRepository(TodoListAppDbContext context)
         };
 
         var items = await tasksQuery
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
                 .Include(x => x.Tag)
+                .ApplyPagination(page, pageSize)
                 .ToListAsync(cancellationToken);
 
         return (items, totalCount);
@@ -165,9 +165,8 @@ public class TaskRepository(TodoListAppDbContext context)
 
         var items = await query
             .OrderByDescending(x => x.CreatedDate)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
             .Include(x => x.Tag)
+            .ApplyPagination(page, pageSize)
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);

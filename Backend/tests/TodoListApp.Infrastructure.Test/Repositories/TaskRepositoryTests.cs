@@ -1,4 +1,5 @@
 ﻿using TodoListApp.Domain.Entities;
+using TodoListApp.Domain.Enums;
 using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 using TodoListApp.Infrastructure.Persistence.Repositories;
 using TodoListApp.Infrastructure.Test.Helpers;
@@ -153,6 +154,32 @@ public class TaskRepositoryTests
 
         Assert.Equal(2, total1);
         Assert.Equal(2, items2.Count);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="TaskRepository.GetTasksAsync"/> correctly sorts tasks
+    /// by their title in ascending order.
+    /// </summary>
+    /// <remarks>
+    /// This test ensures that when <see cref="TaskSortBy.Title"/> is provided with the ascending flag,
+    /// "A-Task" appears before "B-Task" in the resulting collection.
+    /// </remarks>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task GetTasksAsync_ShouldSortByTitle_Ascending()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var listId = Guid.NewGuid();
+        await this._repo.AddAsync(new TaskEntity(userId, listId, "B-Task"));
+        await this._repo.AddAsync(new TaskEntity(userId, listId, "A-Task"));
+        await this._context.SaveChangesAsync();
+
+        // Act
+        var (items, _) = await this._repo.GetTasksAsync(userId, listId, sortBy: TaskSortBy.Title, ascending: true);
+
+        // Assert
+        Assert.Equal("A-Task", items.First().Title);
     }
 
     /// <summary>
