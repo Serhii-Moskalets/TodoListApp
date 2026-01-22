@@ -4,7 +4,7 @@ using TodoListApp.Application.Abstractions.Behaviors;
 using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Common.Services;
 
-namespace TodoListApp.Application.Extensions;
+namespace TodoListApp.Application.Common.Extensions;
 
 /// <summary>
 /// Provides extension methods for registering application layer services in the dependency injection container.
