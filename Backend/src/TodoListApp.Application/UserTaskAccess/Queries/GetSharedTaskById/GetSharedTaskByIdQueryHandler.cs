@@ -1,23 +1,18 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using TinyResult;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Common.Dtos;
 using TodoListApp.Application.UserTaskAccess.Mappers;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace TodoListApp.Application.UserTaskAccess.Queries.GetSharedTaskById;
 
 /// <summary>
 /// Handles retrieval of a task shared with a specific user.
 /// </summary>
-public class GetSharedTaskByIdQueryHandler(
-    IUnitOfWork unitOfWork,
-    IValidator<GetSharedTaskByIdQuery> validator)
-    : HandlerBase(unitOfWork), IQueryHandler<GetSharedTaskByIdQuery, TaskDto>
+public class GetSharedTaskByIdQueryHandler(IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), IRequestHandler<GetSharedTaskByIdQuery, Result<TaskDto>>
 {
-    private readonly IValidator<GetSharedTaskByIdQuery> _validator = validator;
-
     /// <summary>
     /// Handles the <see cref="GetSharedTaskByIdQuery"/> request.
     /// </summary>
@@ -33,12 +28,6 @@ public class GetSharedTaskByIdQueryHandler(
     /// </returns>
     public async Task<Result<TaskDto>> Handle(GetSharedTaskByIdQuery query, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(this._validator, query);
-        if (!validation.IsSuccess)
-        {
-            return await Result<TaskDto>.FailureAsync(validation.Error!.Code, validation.Error.Message);
-        }
-
         var access = await this.UnitOfWork.UserTaskAccesses
             .GetByTaskAndUserIdAsync(query.TaskId, query.UserId, cancellationToken);
 
