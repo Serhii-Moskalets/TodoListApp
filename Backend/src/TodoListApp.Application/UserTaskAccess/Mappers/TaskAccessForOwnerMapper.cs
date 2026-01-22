@@ -17,8 +17,13 @@ public static partial class TaskAccessForOwnerMapper
     /// <param name="entity">The user-task access entity to map.</param>
     /// <returns>A <see cref="UserBriefDto"/> representing the user's access information.</returns>
     [MapProperty(nameof(UserTaskAccessEntity.User.Id), nameof(UserBriefDto.Id))]
+    [MapProperty(nameof(UserTaskAccessEntity.User.FirstName), nameof(UserBriefDto.FirstName))]
+    [MapProperty(nameof(UserTaskAccessEntity.User.LastName), nameof(UserBriefDto.LastName))]
     [MapProperty(nameof(UserTaskAccessEntity.User.UserName), nameof(UserBriefDto.UserName))]
     [MapProperty(nameof(UserTaskAccessEntity.User.Email), nameof(UserBriefDto.Email))]
+    [MapperIgnoreSource(nameof(UserTaskAccessEntity.Task))]
+    [MapperIgnoreSource(nameof(UserTaskAccessEntity.TaskId))]
+    [MapperIgnoreSource(nameof(UserTaskAccessEntity.UserId))]
     public static partial UserBriefDto Map(UserTaskAccessEntity entity);
 
     /// <summary>

@@ -19,13 +19,6 @@ public static partial class TaskAccessForUserMapper
     public static partial UserBriefDto Map(UserEntity user);
 
     /// <summary>
-    /// Maps a <see cref="CommentEntity"/> to a <see cref="CommentDto"/>.
-    /// </summary>
-    /// <param name="comment">The comment entity.</param>
-    /// <returns>A <see cref="CommentDto"/>.</returns>
-    public static partial CommentDto Map(CommentEntity comment);
-
-    /// <summary>
     /// Maps a <see cref="TagEntity"/> to a <see cref="TagDto"/>.
     /// </summary>
     /// <param name="tag">The tag entity.</param>
@@ -54,6 +47,6 @@ public static partial class TaskAccessForUserMapper
     /// </summary>
     /// <param name="utaList">The collection of user-task access entities.</param>
     /// <returns>A list of <see cref="TaskDto"/> objects.</returns>
-    public static IList<TaskDto> Map(IReadOnlyCollection<UserTaskAccessEntity> utaList)
+    public static IReadOnlyCollection<TaskDto> Map(IReadOnlyCollection<UserTaskAccessEntity> utaList)
         => utaList.Select(Map).ToList();
 }
