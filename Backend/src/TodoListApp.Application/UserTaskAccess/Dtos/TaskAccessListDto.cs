@@ -21,5 +21,5 @@ public class TaskAccessListDto
     /// <summary>
     /// Gets the collection of users who have access to this task.
     /// </summary>
-    public IReadOnlyCollection<UserBriefDto> Users { get; init; } = [];
+    public PagedResultDto<UserBriefDto> Users { get; init; } = null!;
 }

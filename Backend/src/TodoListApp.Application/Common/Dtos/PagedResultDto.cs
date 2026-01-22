@@ -9,7 +9,7 @@ public class PagedResultDto<T>
     /// <summary>
     /// Gets the items for the current page.
     /// </summary>
-    public IEnumerable<T> Items { get; init; } = [];
+    public IReadOnlyCollection<T> Items { get; init; } = [];
 
     /// <summary>
     /// Gets the total number of items matching the filter.
@@ -19,10 +19,10 @@ public class PagedResultDto<T>
     /// <summary>
     /// Gets the current page number.
     /// </summary>
-    public int? Page { get; init; }
+    public int Page { get; init; }
 
     /// <summary>
     /// Gets the number of items per page.
     /// </summary>
-    public int? PageSize { get; init; }
+    public int PageSize { get; init; }
 }
