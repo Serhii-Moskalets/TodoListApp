@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Domain.Entities;
+using TodoListApp.Infrastructure.Extensions;
 using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 namespace TodoListApp.Infrastructure.Persistence.Repositories;
@@ -27,37 +28,24 @@ public class TagRepository(TodoListAppDbContext context)
     /// Retrieves all tags associated with a specific user.
     /// </summary>
     /// <param name="userId">The ID of the user.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>A read-only collection of tags for the specified user.</returns>
-    public async Task<IReadOnlyCollection<TagEntity>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
-        => await this.DbSet.AsNoTracking().Where(x => x.UserId == userId).OrderBy(t => t.Name).ToListAsync(cancellationToken);
-
-    /// <summary>
-    /// Retrieves a paged list of tags for a specific user.
-    /// </summary>
-    /// <param name="userId">The ID of the user.</param>
     /// <param name="page">The page number (1-based).</param>
     /// <param name="pageSize">The number of tags per page.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>A tuple containing the paged tags and the total count of tags.</returns>
-    public async Task<(IReadOnlyCollection<TagEntity> Items, int TotalCount)> GetPagedTagsByUserIdAsync(
+    /// <returns>A read-only collection of tags for the specified user.</returns>
+    public async Task<(IReadOnlyCollection<TagEntity> Items, int TotalCount)> GetTagsAsync(
         Guid userId,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(page);
+        var tagsQuery = this.DbSet.AsNoTracking()
+            .Where(x => x.UserId == userId);
 
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
+        var totalCount = await tagsQuery.CountAsync(cancellationToken);
 
-        var query = this.DbSet.AsNoTracking().Where(x => x.UserId == userId);
-
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var items = await query
-            .OrderBy(t => t.Name)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+        var items = await tagsQuery
+            .OrderBy(x => x.Name)
+            .ApplyPagination(page, pageSize)
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);

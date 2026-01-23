@@ -17,10 +17,12 @@ public class TagRepositoryTests
     [Fact]
     public async Task ExistsByNameAsync_ReturnsFalse_WhenTagDoesNotExist()
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TagRepository(context);
         var userId = Guid.NewGuid();
 
+        // Act & Assert
         Assert.False(await repo.ExistsByNameAsync("NonExistingTag", userId));
     }
 
@@ -32,6 +34,7 @@ public class TagRepositoryTests
     [Fact]
     public async Task ExistsByNameAsync_ReturnsTrue_WhenTagExists()
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TagRepository(context);
         var userId = Guid.NewGuid();
@@ -40,76 +43,86 @@ public class TagRepositoryTests
         await repo.AddAsync(tag);
         await context.SaveChangesAsync();
 
+        // Act & Assert
         Assert.True(await repo.ExistsByNameAsync("Tag", userId));
     }
 
     /// <summary>
-    /// Tests that retrieving tags for a user returns an empty list when no tags exist.
+    /// Tests that retrieving tags for a user returns an empty collection
+    /// and zero count when no tags exist.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public async Task GetByUserIdAsync_ReturnsEmptyList_WhenNoTags()
+    public async Task GetTagsAsync_ReturnsEmptyResult_WhenNoTagsExist()
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TagRepository(context);
         var userId = Guid.NewGuid();
 
-        var result = await repo.GetByUserIdAsync(userId);
-        Assert.NotNull(result);
-        Assert.Empty(result);
+        // Act
+        var (items, totalCount) = await repo.GetTagsAsync(userId, page: 1, pageSize: 10);
+
+        // Assert
+        Assert.Empty(items);
+        Assert.Equal(0, totalCount);
     }
 
     /// <summary>
-    /// Checks that <see cref="TagRepository.GetByUserIdAsync"/>
-    /// retrieves all tag lists for a given user.
+    /// Checks that <see cref="TagRepository.GetTagsAsync"/> retrieves
+    /// a paginated list of tags and the correct total count for a user.
     /// </summary>
     /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    public async Task GetByUserId_ReturnTagList_WhenTagsExists()
+    public async Task GetTagsAsync_ReturnsPaginatedTagsAndTotalCount()
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TagRepository(context);
-
         var userId = Guid.NewGuid();
 
-        for (int i = 1; i <= 5; i++)
+        for (int i = 1; i <= 15; i++)
         {
-            await repo.AddAsync(new TagEntity($"Tag_{i}", userId));
+            await repo.AddAsync(new TagEntity($"Tag_{i:D2}", userId));
         }
 
         await context.SaveChangesAsync();
 
-        var saved = await repo.GetByUserIdAsync(userId);
-        Assert.Equal(5, saved.Count);
+        var (items, totalCount) = await repo.GetTagsAsync(userId, page: 1, pageSize: 10);
+
+        // Assert
+        Assert.Equal(10, items.Count);
+        Assert.Equal(15, totalCount);
+        Assert.Equal("Tag_01", items.First().Name);
+        Assert.Equal("Tag_10", items.Last().Name);
     }
 
     /// <summary>
-    /// Tests that <see cref="TagRepository.GetPagedTagsByUserIdAsync"/>
-    /// returns the correct page of tags and total count.
+    /// Verifies that <see cref="TagRepository.GetTagByIdForUserAsync"/> returns the tag
+    /// only if it belongs to the specified user.
     /// </summary>
-    /// <returns>A task representing the asynchronous test execution.</returns>
+    /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
-    public async Task GetPagedTagsByUserIdAsync_ReturnsCorrectPageAndCount()
+    public async Task GetTagByIdForUserAsync_ReturnsTag_OnlyForCorrectOwner()
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TagRepository(context);
-        var userId = Guid.NewGuid();
+        var ownerId = Guid.NewGuid();
+        var strangerId = Guid.NewGuid();
+        var tag = new TagEntity("OwnerTag", ownerId);
 
-        for (int i = 1; i <= 5; i++)
-        {
-            await repo.AddAsync(new TagEntity($"Tag_{i}", userId));
-        }
-
+        await repo.AddAsync(tag);
         await context.SaveChangesAsync();
 
-        var (items, total) = await repo.GetPagedTagsByUserIdAsync(
-            userId,
-            page: 2,
-            pageSize: 2);
+        // Act
+        var foundTag = await repo.GetTagByIdForUserAsync(tag.Id, ownerId);
+        var notFoundTag = await repo.GetTagByIdForUserAsync(tag.Id, strangerId);
 
-        Assert.Equal(5, total);
-        Assert.Equal(2, items.Count);
-        Assert.Equal("Tag_3", items.First().Name);
+        // Assert
+        Assert.NotNull(foundTag);
+        Assert.Equal("OwnerTag", foundTag.Name);
+        Assert.Null(notFoundTag);
     }
 
     /// <summary>
@@ -120,14 +133,17 @@ public class TagRepositoryTests
     [Fact]
     public async Task IsTagOwnerAsync_ReturnsCorrectValue()
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TagRepository(context);
         var userId_1 = Guid.NewGuid();
         var userId_2 = Guid.NewGuid();
         var tag = new TagEntity("Tag", userId_1);
+
         await repo.AddAsync(tag);
         await context.SaveChangesAsync();
 
+        // Act & Assert
         Assert.True(await repo.IsTagOwnerAsync(tag.Id, userId_1));
         Assert.False(await repo.IsTagOwnerAsync(tag.Id, userId_2));
     }
