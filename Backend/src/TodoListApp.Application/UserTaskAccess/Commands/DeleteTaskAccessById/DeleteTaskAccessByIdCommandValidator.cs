@@ -14,7 +14,11 @@ public class DeleteTaskAccessByIdCommandValidator : AbstractValidator<DeleteTask
     {
         this.RuleFor(x => x.TaskId)
             .NotEmpty().WithMessage("TaskId is required.");
+
         this.RuleFor(x => x.UserId)
             .NotEmpty().WithMessage("UserId is required.");
+
+        this.RuleFor(x => x.OwnerId)
+            .NotEmpty().WithMessage("OwnerId is required.");
     }
 }
