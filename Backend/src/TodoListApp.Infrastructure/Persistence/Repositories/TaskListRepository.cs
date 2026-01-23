@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Domain.Entities;
+using TodoListApp.Infrastructure.Extensions;
 using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 namespace TodoListApp.Infrastructure.Persistence.Repositories;
@@ -47,49 +48,26 @@ public class TaskListRepository(TodoListAppDbContext context)
     /// Retrieves all task lists owned by the specified user.
     /// </summary>
     /// <param name="userId">The identifier of the user who owns the task lists.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to monitor for cancellation requests.</param>
-    /// <returns>
-    /// A read-only collection of <see cref="TaskListEntity"/> instances owned by the user.
-    /// </returns>
-    public async Task<IReadOnlyCollection<TaskListEntity>> GetByUserIdAsync(
-        Guid userId,
-        CancellationToken cancellationToken = default)
-        => await this.DbSet.AsNoTracking()
-        .OrderBy(x => x.Title)
-        .Where(x => x.OwnerId == userId)
-        .ToListAsync(cancellationToken);
-
-    /// <summary>
-    /// Retrieves a paged list of task lists owned by the specified user.
-    /// </summary>
-    /// <param name="userId">The identifier of the user who owns the task lists.</param>
     /// <param name="page">The page number (1-based).</param>
     /// <param name="pageSize">The number of items per page.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to monitor for cancellation requests.</param>
     /// <returns>
-    /// A tuple containing the paged collection of task lists and the total number of items.
+    /// A read-only collection of task list instances owned by the user.
     /// </returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="page"/> or <paramref name="pageSize"/> is less than or equal to zero.
-    /// </exception>
-    public async Task<(IReadOnlyCollection<TaskListEntity> Items, int TotalCount)> GetPagedByUserIdAsync(
+    public async Task<(IReadOnlyCollection<TaskListEntity> Items, int TotalCount)> GetTaskListsAsync(
         Guid userId,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(page);
+        var taskListsQuery = this.DbSet.AsNoTracking()
+            .Where(x => x.OwnerId == userId);
 
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pageSize);
+        var totalCount = await taskListsQuery.CountAsync(cancellationToken);
 
-        var query = this.DbSet.AsNoTracking().Where(tl => tl.OwnerId == userId);
-
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var items = await query
-            .OrderBy(tl => tl.Title)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+        var items = await taskListsQuery
+            .OrderBy(x => x.Title)
+            .ApplyPagination(page, pageSize)
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);
