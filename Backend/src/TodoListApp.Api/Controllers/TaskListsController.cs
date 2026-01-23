@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using TodoListApp.Api.DTOs.TaskList;
-using TodoListApp.Application.Abstractions.Messaging;
+using TodoListApp.Api.Requests.TaskList;
 using TodoListApp.Application.TaskList.Commands.CreateTaskList;
 using TodoListApp.Application.TaskList.Commands.DeleteTaskList;
 using TodoListApp.Application.TaskList.Commands.UpdateTaskList;
 using TodoListApp.Application.TaskList.Dtos;
-using TodoListApp.Application.TaskList.Queries.GetAllTaskList;
+using TodoListApp.Application.TaskList.Queries.GetTaskLists;
 
 namespace TodoListApp.Api.Controllers;
 
@@ -16,43 +14,19 @@ namespace TodoListApp.Api.Controllers;
 /// Provides API endpoints to manage task lists for the current user.
 /// Supports creating, updating, deleting, and retrieving task lists.
 /// </summary>
-[ApiController]
-[Route("api/[controller]")]
 public class TaskListsController : BaseController
 {
-    private readonly IQueryHandler<GetAllTaskListQuery, IEnumerable<TaskListDto>> _getAllTaskListsHandler;
-    private readonly ICommandHandler<CreateTaskListCommand, Guid> _createTaskListHandler;
-    private readonly ICommandHandler<DeleteTaskListCommand, bool> _deleteTaskListHandler;
-    private readonly ICommandHandler<UpdateTaskListCommand, bool> _updateTaskListHandler;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TaskListsController"/> class.
-    /// </summary>
-    /// <param name="createTaskListHandler">Handler for creating task lists.</param>
-    /// <param name="getAllTaskListsHandler">Handler for retrieving all task lists.</param>
-    /// <param name="deleteTaskListHandler">Handler for deleting task lists.</param>
-    /// <param name="updateTaskListHandler">Handler for updating task lists.</param>
-    public TaskListsController(
-        ICommandHandler<CreateTaskListCommand, Guid> createTaskListHandler,
-        IQueryHandler<GetAllTaskListQuery, IEnumerable<TaskListDto>> getAllTaskListsHandler,
-        ICommandHandler<DeleteTaskListCommand, bool> deleteTaskListHandler,
-        ICommandHandler<UpdateTaskListCommand, bool> updateTaskListHandler)
-    {
-        this._createTaskListHandler = createTaskListHandler;
-        this._getAllTaskListsHandler = getAllTaskListsHandler;
-        this._deleteTaskListHandler = deleteTaskListHandler;
-        this._updateTaskListHandler = updateTaskListHandler;
-    }
-
     /// <summary>
     /// Retrieves all task lists for the current user.
     /// </summary>
+    /// <param name="page">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
     /// <returns>An <see cref="IActionResult"/> containing a list of <see cref="TaskListDto"/> or an error.</returns>
     [HttpGet]
-    public async Task<IActionResult> GetAllTaskLists()
+    public async Task<IActionResult> GetTaskLists([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var query = new GetAllTaskListQuery(CurrentUserId);
-        var result = await this._getAllTaskListsHandler.Handle(query, this.HttpContext.RequestAborted);
+        var query = new GetTaskListsQuery(CurrentUserId, page, pageSize);
+        var result = await this.Mediator.Send(query, this.HttpContext.RequestAborted);
         return this.HandleResult(result);
     }
 
@@ -69,7 +43,7 @@ public class TaskListsController : BaseController
     public async Task<IActionResult> CreateTaskList([FromBody] TaskListTitleRequest request)
     {
         var command = new CreateTaskListCommand(CurrentUserId, request.Title);
-        var result = await this._createTaskListHandler.HandleAsync(command, this.HttpContext.RequestAborted);
+        var result = await this.Mediator.Send(command, this.HttpContext.RequestAborted);
         return this.HandleResult(result);
     }
 
@@ -85,7 +59,7 @@ public class TaskListsController : BaseController
     public async Task<IActionResult> DeleteTaskList([FromRoute] Guid taskListId)
     {
         var command = new DeleteTaskListCommand(taskListId, CurrentUserId);
-        var result = await this._deleteTaskListHandler.HandleAsync(command, this.HttpContext.RequestAborted);
+        var result = await this.Mediator.Send(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 
@@ -102,7 +76,7 @@ public class TaskListsController : BaseController
     public async Task<IActionResult> UpdateTaskList([FromRoute] Guid taskListId, [FromBody] TaskListTitleRequest request)
     {
         var command = new UpdateTaskListCommand(taskListId, CurrentUserId, request.Title);
-        var result = await this._updateTaskListHandler.HandleAsync(command, this.HttpContext.RequestAborted);
+        var result = await this.Mediator.Send(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 }
