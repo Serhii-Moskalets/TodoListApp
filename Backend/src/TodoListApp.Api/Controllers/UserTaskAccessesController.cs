@@ -99,7 +99,7 @@ public class UserTaskAccessesController : BaseController
     [HttpDelete("tasks/{taskId:guid}/users/{userId:guid}")]
     public async Task<IActionResult> DeleteTaskAccessById([FromRoute] Guid taskId, [FromRoute] Guid userId)
     {
-        var command = new DeleteTaskAccessByIdCommand(taskId, userId);
+        var command = new DeleteTaskAccessByIdCommand(taskId, userId, CurrentUserId);
         var result = await this.Mediator.Send(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }

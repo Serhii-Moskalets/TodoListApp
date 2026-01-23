@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using TinyResult;
-using TodoListApp.Application.Abstractions.Interfaces.Services;
+using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 
@@ -9,13 +9,9 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessById;
 /// <summary>
 /// Handles the <see cref="DeleteTaskAccessByIdCommand"/> to remove a user-task access entry.
 /// </summary>
-public class DeleteTaskAccessByIdCommandHandler(
-    IUnitOfWork unitOfWork,
-    IUserTaskAccessService userTaskAccessService)
+public class DeleteTaskAccessByIdCommandHandler(IUnitOfWork unitOfWork)
     : HandlerBase(unitOfWork), IRequestHandler<DeleteTaskAccessByIdCommand, Result<bool>>
 {
-    private readonly IUserTaskAccessService _userTaskAccessService = userTaskAccessService;
-
     /// <summary>
     /// Processes the command to delete a user-task access entry.
     /// </summary>
@@ -29,11 +25,14 @@ public class DeleteTaskAccessByIdCommandHandler(
     /// </returns>
     public async Task<Result<bool>> Handle(DeleteTaskAccessByIdCommand command, CancellationToken cancellationToken)
     {
-        var hasAccess = await this._userTaskAccessService.HasAccessAsync(command.TaskId, command.UserId, cancellationToken);
-
-        if (!hasAccess)
+        if (command.OwnerId == command.UserId)
         {
-            return await Result<bool>.FailureAsync(TinyResult.Enums.ErrorCode.ValidationError, "User hasn't accesss with this task.");
+            return await Result<bool>.FailureAsync(ErrorCode.ValidationError, "Cannot remove access for the owner of the task.");
+        }
+
+        if (!await this.UnitOfWork.Tasks.IsTaskOwnerAsync(command.TaskId, command.OwnerId, cancellationToken))
+        {
+            return await Result<bool>.FailureAsync(ErrorCode.InvalidOperation, "You do not have permission to manage access for this task.");
         }
 
         await this.UnitOfWork.UserTaskAccesses.DeleteByIdAsync(command.TaskId, command.UserId, cancellationToken);

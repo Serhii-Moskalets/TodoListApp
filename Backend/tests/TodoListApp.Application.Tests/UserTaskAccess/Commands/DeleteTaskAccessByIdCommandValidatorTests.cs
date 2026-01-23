@@ -42,7 +42,7 @@ public class DeleteTaskAccessByIdCommandValidatorTests
     {
         var command = new DeleteTaskAccessByIdCommand(Guid.NewGuid(), Guid.NewGuid(), Guid.Empty);
         var result = this._validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(x => x.UserId)
+        result.ShouldHaveValidationErrorFor(x => x.OwnerId)
               .WithErrorMessage("OwnerId is required.");
     }
 

@@ -14,7 +14,7 @@ namespace TodoListApp.Application.Tests.UserTaskAccess.Commands;
 public class DeleteTaskAccessByIdCommandHandlerTests
 {
     private readonly Mock<IUnitOfWork> _uowMock;
-    private readonly Mock<IUserTaskAccessService> _serviceMock;
+    private readonly Mock<ITaskRepository> _taskRepoMock;
     private readonly Mock<IUserTaskAccessRepository> _accessRepoMock;
     private readonly DeleteTaskAccessByIdCommandHandler _handler;
 
@@ -24,11 +24,13 @@ public class DeleteTaskAccessByIdCommandHandlerTests
     public DeleteTaskAccessByIdCommandHandlerTests()
     {
         this._uowMock = new Mock<IUnitOfWork>();
-        this._serviceMock = new Mock<IUserTaskAccessService>();
+        this._taskRepoMock = new Mock<ITaskRepository>();
         this._accessRepoMock = new Mock<IUserTaskAccessRepository>();
 
+        this._uowMock.Setup(u => u.Tasks).Returns(this._taskRepoMock.Object);
         this._uowMock.Setup(u => u.UserTaskAccesses).Returns(this._accessRepoMock.Object);
-        this._handler = new DeleteTaskAccessByIdCommandHandler(this._uowMock.Object, this._serviceMock.Object);
+
+        this._handler = new DeleteTaskAccessByIdCommandHandler(this._uowMock.Object);
     }
 
     /// <summary>
@@ -46,9 +48,10 @@ public class DeleteTaskAccessByIdCommandHandlerTests
         // Arrange
         var taskId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        var command = new DeleteTaskAccessByIdCommand(taskId, userId);
+        var ownerId = Guid.NewGuid();
+        var command = new DeleteTaskAccessByIdCommand(taskId, userId, ownerId);
 
-        this._serviceMock.Setup(s => s.HasAccessAsync(taskId, userId, It.IsAny<CancellationToken>()))
+        this._taskRepoMock.Setup(r => r.IsTaskOwnerAsync(taskId, ownerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
@@ -56,8 +59,8 @@ public class DeleteTaskAccessByIdCommandHandlerTests
 
         // Assert
         Assert.False(result.IsSuccess);
-        Assert.Equal(ErrorCode.ValidationError, result.Error!.Code);
-        Assert.Equal("User hasn't accesss with this task.", result.Error.Message);
+        Assert.Equal(ErrorCode.InvalidOperation, result.Error!.Code);
+        Assert.Equal("You do not have permission to manage access for this task.", result.Error.Message);
 
         this._accessRepoMock.Verify(r => r.DeleteByIdAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -74,9 +77,10 @@ public class DeleteTaskAccessByIdCommandHandlerTests
         // Arrange
         var taskId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        var command = new DeleteTaskAccessByIdCommand(taskId, userId);
+        var ownerId = Guid.NewGuid();
+        var command = new DeleteTaskAccessByIdCommand(taskId, userId, ownerId);
 
-        this._serviceMock.Setup(s => s.HasAccessAsync(taskId, userId, It.IsAny<CancellationToken>()))
+        this._taskRepoMock.Setup(r => r.IsTaskOwnerAsync(taskId, ownerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         this._uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
