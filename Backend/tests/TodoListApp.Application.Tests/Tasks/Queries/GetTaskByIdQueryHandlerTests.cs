@@ -1,12 +1,8 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using Moq;
+﻿using Moq;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
-using TodoListApp.Application.Tasks.Commands.RemoveTagFromTask;
 using TodoListApp.Application.Tasks.Queries.GetTaskById;
-using TodoListApp.Application.Tests.Tasks.Commands;
 using TodoListApp.Domain.Entities;
 
 namespace TodoListApp.Application.Tests.Tasks.Queries;
@@ -50,7 +46,7 @@ public class GetTaskByIdQueryHandlerTests
         // Act
         var result = await this._handler.Handle(query, CancellationToken.None);
 
-        // Assertz
+        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCode.NotFound, result.Error!.Code);
         Assert.Equal("Task not found.", result.Error.Message);
@@ -69,13 +65,13 @@ public class GetTaskByIdQueryHandlerTests
 
         this._taskRepoMock
             .Setup(r => r.GetTaskByIdForUserAsync(
-                It.IsAny<Guid>(),
-                It.IsAny<Guid>(),
+                task.Id,
+                userId,
                 It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(task);
 
-        var query = new GetTaskByIdQuery(task.Id, userId);
+        var query = new GetTaskByIdQuery(userId, task.Id);
 
         // Act
         var result = await this._handler.Handle(query, CancellationToken.None);
@@ -83,9 +79,9 @@ public class GetTaskByIdQueryHandlerTests
         // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
+        Assert.Equal(task.Title, result.Value!.Title);
         Assert.Equal(task.Id, result.Value!.Id);
-        Assert.Equal(task.Title, result.Value.Title);
-        Assert.Equal(task.Description, result.Value.Description);
-        Assert.Equal(task.DueDate, result.Value.DueDate);
+
+        this._taskRepoMock.Verify(r => r.GetTaskByIdForUserAsync(task.Id, userId, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
