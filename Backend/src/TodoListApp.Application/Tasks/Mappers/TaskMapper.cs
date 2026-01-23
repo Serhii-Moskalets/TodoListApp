@@ -44,5 +44,19 @@ public static partial class TaskMapper
     /// </summary>
     /// <param name="entities">The collection of task entities to map.</param>
     /// <returns>A list of mapped <see cref="TaskDto"/> objects.</returns>
-    public static partial IList<TaskDto> Map(IReadOnlyCollection<TaskEntity> entities);
+    public static partial IReadOnlyCollection<TaskDto> Map(IReadOnlyCollection<TaskEntity> entities);
+
+    /// <summary>
+    /// Maps a <see cref="TaskEntity"/> to a summary <see cref="TaskBriefDto"/>.
+    /// </summary>
+    /// <param name="entity">The task entity to map.</param>
+    /// <returns>The mapped <see cref="TaskBriefDto"/>.</returns>
+    public static partial TaskBriefDto MapToBrief(TaskEntity entity);
+
+    /// <summary>
+    /// Maps a collection of <see cref="TaskEntity"/> objects to a list of <see cref="TaskBriefDto"/> objects.
+    /// </summary>
+    /// <param name="entities">The collection of task entities to map.</param>
+    /// <returns>A list of mapped <see cref="TaskBriefDto"/> objects.</returns>
+    public static partial IReadOnlyCollection<TaskBriefDto> MapToBrief(IReadOnlyCollection<TaskEntity> entities);
 }
