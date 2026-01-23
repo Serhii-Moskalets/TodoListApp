@@ -192,6 +192,7 @@ public class GetTasksQueryValidatorTests
 
         var result = this._validator.TestValidate(query);
 
-        result.ShouldHaveValidationErrorFor(x => x.PageSize);
+        result.ShouldHaveValidationErrorFor(x => x.PageSize)
+            .WithErrorMessage("PageSize must be between 1 and 100.");
     }
 }
