@@ -1,32 +1,32 @@
 ﻿using Moq;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
-using TodoListApp.Application.Tag.Queries.GetAllTags;
+using TodoListApp.Application.Tag.Queries.GetTags;
 using TodoListApp.Domain.Entities;
 
 namespace TodoListApp.Application.Tests.Tag.Queries;
 
 /// <summary>
-/// Unit tests for <see cref="GetAllTagsQueryHandler"/>.
+/// Unit tests for <see cref="GetTagsQueryHandler"/>.
 /// Verifies validation and retrieval of tags for a user.
 /// </summary>
-public class GetAllTagsQueryHandlerTests
+public class GetTagsQueryHandlerTests
 {
     private readonly Mock<IUnitOfWork> _uowMock;
     private readonly Mock<ITagRepository> _tagRepoMock;
-    private readonly GetAllTagsQueryHandler _handler;
+    private readonly GetTagsQueryHandler _handler;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GetAllTagsQueryHandlerTests"/> class.
+    /// Initializes a new instance of the <see cref="GetTagsQueryHandlerTests"/> class.
     /// </summary>
-    public GetAllTagsQueryHandlerTests()
+    public GetTagsQueryHandlerTests()
     {
         this._uowMock = new Mock<IUnitOfWork>();
         this._tagRepoMock = new Mock<ITagRepository>();
 
         this._uowMock.Setup(u => u.Tags).Returns(this._tagRepoMock.Object);
 
-        this._handler = new GetAllTagsQueryHandler(this._uowMock.Object);
+        this._handler = new GetTagsQueryHandler(this._uowMock.Object);
     }
 
     /// <summary>
@@ -38,16 +38,19 @@ public class GetAllTagsQueryHandlerTests
     {
         // Arrange
         var userId = Guid.NewGuid();
+        var page = 1;
+        var pageSize = 10;
         var tagEntities = new List<TagEntity>
         {
             new("Tag1", userId),
             new("Tag2", userId),
         };
 
-        this._tagRepoMock.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-                   .ReturnsAsync(tagEntities);
+        this._tagRepoMock
+            .Setup(r => r.GetTagsAsync(userId, page, pageSize, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((tagEntities, tagEntities.Count));
 
-        var query = new GetAllTagsQuery(userId);
+        var query = new GetTagsQuery(userId, page, pageSize);
 
         // Act
         var result = await this._handler.Handle(query, CancellationToken.None);
@@ -55,8 +58,10 @@ public class GetAllTagsQueryHandlerTests
         // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
+        Assert.Equal(tagEntities.Count, result.Value.TotalCount);
+
         Assert.Collection(
-            result.Value,
+            result.Value.Items,
             tag => Assert.Equal("Tag1", tag.Name),
             tag => Assert.Equal("Tag2", tag.Name));
     }
@@ -70,11 +75,14 @@ public class GetAllTagsQueryHandlerTests
     {
         // Arrange
         var userId = Guid.NewGuid();
+        var page = 1;
+        var pageSize = 10;
 
-        this._tagRepoMock.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-                   .ReturnsAsync([]);
+        this._tagRepoMock
+            .Setup(r => r.GetTagsAsync(userId, page, pageSize, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new List<TagEntity>(), 0));
 
-        var query = new GetAllTagsQuery(userId);
+        var query = new GetTagsQuery(userId, page, pageSize);
 
         // Act
         var result = await this._handler.Handle(query, CancellationToken.None);
@@ -82,6 +90,7 @@ public class GetAllTagsQueryHandlerTests
         // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Empty(result.Value);
+        Assert.Empty(result.Value.Items);
+        Assert.Equal(0, result.Value.TotalCount);
     }
 }

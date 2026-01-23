@@ -1,9 +1,10 @@
 ﻿using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Common.Dtos;
 
-namespace TodoListApp.Application.Tag.Queries.GetAllTags;
+namespace TodoListApp.Application.Tag.Queries.GetTags;
 
 /// <summary>
 /// Query to retrieve all tags for a specific user.
 /// </summary>
-public record GetAllTagsQuery(Guid UserId) : IQuery<IEnumerable<TagDto>>;
+public record GetTagsQuery(Guid UserId, int Page = 1, int PageSize = 10)
+    : IQuery<PagedResultDto<TagDto>>;
