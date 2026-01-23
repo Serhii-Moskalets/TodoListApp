@@ -1,5 +1,6 @@
 ﻿using FluentValidation.TestHelper;
 using TodoListApp.Application.Comment.Queries.GetComments;
+using TodoListApp.Application.Tag.Queries.GetTags;
 
 namespace TodoListApp.Application.Tests.Comment.Queries;
 
@@ -37,6 +38,40 @@ public class GetCommentsQueryValidatorTests
 
         result.ShouldHaveValidationErrorFor(q => q.TaskId)
               .WithErrorMessage("Task ID is required.");
+    }
+
+    /// <summary>
+    /// Returns a validation error when Page is less than 1.
+    /// </summary>
+    /// <param name="page">The invalid page number to validate.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Should_Have_Error_When_Page_Is_Invalid(int page)
+    {
+        var query = new GetCommentsQuery(Guid.NewGuid(), Guid.NewGuid(), page, 10);
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldHaveValidationErrorFor(x => x.Page)
+              .WithErrorMessage("Page must be at least 1.");
+    }
+
+    /// <summary>
+    /// Returns a validation error when PageSize is out of range.
+    /// </summary>
+    /// <param name="pageSize">The invalid page size to validate.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(101)]
+    public void Should_Have_Error_When_PageSize_Is_Invalid(int pageSize)
+    {
+        var query = new GetCommentsQuery(Guid.NewGuid(), Guid.NewGuid(), 1, pageSize);
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldHaveValidationErrorFor(x => x.PageSize)
+            .WithErrorMessage("PageSize must be between 1 and 100.");
     }
 
     /// <summary>

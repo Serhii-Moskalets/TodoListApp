@@ -68,34 +68,36 @@ public class GetCommentsQueryHandlerTests
     {
         // Arrange
         var taskId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var page = 1;
+        var pageSize = 10;
 
-        var user1 = new UserEntity("John", "john", "john@example.com", "hash");
-        var user2 = new UserEntity("Alice", "alice", "alice@example.com", "hash");
-
+        var author = new UserEntity("Alice", "alice", "alice@example.com", "hash");
         var comments = new List<CommentEntity>
         {
-            new(taskId, user2.Id, "Comment 1", user2),
-            new(taskId, user2.Id, "Comment 2", user2),
+            new(taskId, author.Id, "Comment 1", author),
+            new(taskId, author.Id, "Comment 2", author),
         };
 
+        // Налаштовуємо доступ
         this._taskAccessMock
-            .Setup(s => s.HasAccessAsync(taskId, user1.Id, It.IsAny<CancellationToken>()))
+            .Setup(s => s.HasAccessAsync(taskId, userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         this._commentsRepoMock
-            .Setup(r => r.GetByTaskIdAsync(taskId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(comments);
+            .Setup(r => r.GetCommentsByTaskIdAsync(taskId, page, pageSize, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((comments, comments.Count));
 
-        var query = new GetCommentsQuery(taskId, user1.Id);
+        var query = new GetCommentsQuery(taskId, userId, page, pageSize);
 
         // Act
         var result = await this._handler.Handle(query, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
-        var dtos = result.Value!.ToList();
-        Assert.Equal(2, dtos.Count);
-        Assert.Equal("Comment 1", dtos[0].Text);
-        Assert.Equal("Comment 2", dtos[1].Text);
+        Assert.NotNull(result.Value);
+        Assert.Equal(2, result.Value.TotalCount);
+        Assert.Equal(2, result.Value.Items.Count);
+        Assert.Equal("Comment 1", result.Value.Items.First().Text);
     }
 }
