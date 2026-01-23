@@ -1,24 +1,24 @@
 ﻿using FluentValidation.TestHelper;
-using TodoListApp.Application.TaskList.Queries.GetAllTaskList;
+using TodoListApp.Application.TaskList.Queries.GetTaskLists;
 
 namespace TodoListApp.Application.Tests.TaskList.Queries;
 
 /// <summary>
-/// Unit tests for <see cref="GetAllTaskListQueryValidator"/>.
+/// Unit tests for <see cref="GetTaskListsQueryValidator"/>.
 /// Ensures that the validator correctly enforces rules for retrieving all task lists.
 /// </summary>
 public class GetAllTaskListQueryValidatorTests
 {
-    private readonly GetAllTaskListQueryValidator _validator = new();
+    private readonly GetTaskListsQueryValidator _validator = new();
 
     /// <summary>
-    /// Validation fails when <see cref="GetAllTaskListQuery.UserId"/> is empty.
+    /// Validation fails when <see cref="GetTaskListsQuery.UserId"/> is empty.
     /// </summary>
     [Fact]
     public void Should_Have_Error_When_UserId_Is_Empty()
     {
         // Arrange
-        var query = new GetAllTaskListQuery(Guid.Empty);
+        var query = new GetTaskListsQuery(Guid.Empty);
 
         // Act & Assert
         var result = this._validator.TestValidate(query);
@@ -27,16 +27,67 @@ public class GetAllTaskListQueryValidatorTests
     }
 
     /// <summary>
-    /// Validation succeeds when <see cref="GetAllTaskListQuery.UserId"/> is provided.
+    /// Validation succeeds when <see cref="GetTaskListsQuery.UserId"/> is provided.
     /// </summary>
     [Fact]
     public void Should_Not_Have_Error_When_UserId_Is_Provided()
     {
         // Arrange
-        var query = new GetAllTaskListQuery(Guid.NewGuid());
+        var query = new GetTaskListsQuery(Guid.NewGuid());
 
         // Act & Assert
         var result = this._validator.TestValidate(query);
         result.ShouldNotHaveValidationErrorFor(q => q.UserId);
+    }
+
+    /// <summary>
+    /// Returns a validation error when Page is less than 1.
+    /// </summary>
+    /// <param name="page">The invalid page number to validate.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Should_Have_Error_When_Page_Is_Invalid(int page)
+    {
+        var query = new GetTaskListsQuery(Guid.NewGuid(), page, 10);
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldHaveValidationErrorFor(x => x.Page)
+              .WithErrorMessage("Page must be at least 1.");
+    }
+
+    /// <summary>
+    /// Returns a validation error when PageSize is out of range.
+    /// </summary>
+    /// <param name="pageSize">The invalid page size to validate.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(101)]
+    public void Should_Have_Error_When_PageSize_Is_Invalid(int pageSize)
+    {
+        var query = new GetTaskListsQuery(Guid.NewGuid(), 1, pageSize);
+
+        var result = this._validator.TestValidate(query);
+
+        result.ShouldHaveValidationErrorFor(x => x.PageSize)
+            .WithErrorMessage("PageSize must be between 1 and 100.");
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="GetTaskListsQueryValidator"/> succeeds when
+    /// valid pagination parameters and User ID are provided.
+    /// </summary>
+    [Fact]
+    public void Should_Not_Have_Error_When_Pagination_Is_Valid()
+    {
+        // Arrange
+        var query = new GetTaskListsQuery(Guid.NewGuid(), Page: 1, PageSize: 50);
+
+        // Act
+        var result = this._validator.TestValidate(query);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
     }
 }
