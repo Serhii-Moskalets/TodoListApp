@@ -10,7 +10,7 @@ namespace TodoListApp.Application.Tests.Tasks.Queries;
 /// <summary>
 /// Unit tests for <see cref="GetTaskByTitleQueryHandler"/>.
 /// Ensures that the handler correctly retrieves tasks by title for a specific user
-/// and maps them to <see cref="TaskDto"/> objects.
+/// and maps them to <see cref="TaskBriefDto"/> objects.
 /// </summary>
 public class GetTaskByTitleQueryHandlerTests
 {
@@ -32,7 +32,7 @@ public class GetTaskByTitleQueryHandlerTests
 
     /// <summary>
     /// Verifies that the handler correctly calls the repository with provided filters
-    /// and returns a paged result containing mapped <see cref="TaskDto"/> objects.
+    /// and returns a paged result containing mapped <see cref="TaskBriefDto"/> objects.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
@@ -62,25 +62,29 @@ public class GetTaskByTitleQueryHandlerTests
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(taskEntities.Count, result.Value!.TotalCount);
-        Assert.Equal(taskEntities.Count, result.Value.Items.Count());
+        Assert.Equal(taskEntities.Count, result.Value.Items.Count);
         Assert.Equal(page, result.Value.Page);
         Assert.Equal("Task 1", result.Value.Items.First().Title);
     }
 
     /// <summary>
     /// Verifies that the handler returns an empty paged result without querying the database
-    /// if the search text provided is empty or whitespace.
+    /// when the search text is null, empty, or consists only of whitespace.
     /// </summary>
+    /// <param name="searchText">The search text to be tested, provided by <see cref="InlineDataAttribute"/>.</param>
     /// <remarks>
-    /// This test ensures the application logic optimizes performance by avoiding unnecessary
-    /// database round-trips for invalid or empty search queries.
+    /// This test ensures that the application performs early validation on the search input
+    /// to prevent unnecessary repository calls and database load for invalid search queries.
     /// </remarks>
     /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnEmptyPagedResult_WhenTextIsEmpty()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Handle_ShouldReturnEmptyPagedResult_WhenTextIsNullOrEmptyOrWhitespace(string? searchText)
     {
         // Arrange
-        var query = new GetTaskByTitleQuery(Guid.NewGuid(), string.Empty, 1, 10);
+        var query = new GetTaskByTitleQuery(Guid.NewGuid(), searchText, 1, 10);
 
         // Act
         var result = await this._handler.Handle(query, CancellationToken.None);

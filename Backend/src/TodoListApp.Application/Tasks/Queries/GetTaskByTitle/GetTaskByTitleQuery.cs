@@ -1,5 +1,4 @@
-﻿using TinyResult;
-using TodoListApp.Application.Abstractions.Messaging;
+﻿using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Common.Dtos;
 
 namespace TodoListApp.Application.Tasks.Queries.GetTaskByTitle;
@@ -8,4 +7,4 @@ namespace TodoListApp.Application.Tasks.Queries.GetTaskByTitle;
 /// Query to retrieve a task by its title (or partial title) for a specific user.
 /// </summary>
 public sealed record GetTaskByTitleQuery(Guid UserId, string? Text, int Page = 1, int PageSize = 10)
-    : IQuery<PagedResultDto<TaskDto>>;
+    : IQuery<PagedResultDto<TaskBriefDto>>;

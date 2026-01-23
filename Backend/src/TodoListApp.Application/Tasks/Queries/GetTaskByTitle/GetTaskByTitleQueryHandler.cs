@@ -3,6 +3,7 @@ using TinyResult;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Common.Dtos;
+using TodoListApp.Application.Common.Extensions;
 using TodoListApp.Application.Tasks.Mappers;
 
 namespace TodoListApp.Application.Tasks.Queries.GetTaskByTitle;
@@ -11,10 +12,10 @@ namespace TodoListApp.Application.Tasks.Queries.GetTaskByTitle;
 /// Handles the <see cref="GetTaskByTitleQuery"/> to search for tasks by title for a specific user.
 /// </summary>
 public class GetTaskByTitleQueryHandler(IUnitOfWork unitOfWork)
-    : HandlerBase(unitOfWork), IRequestHandler<GetTaskByTitleQuery, Result<PagedResultDto<TaskDto>>>
+    : HandlerBase(unitOfWork), IRequestHandler<GetTaskByTitleQuery, Result<PagedResultDto<TaskBriefDto>>>
 {
     /// <summary>
-    /// Handles the retrieval of tasks that match the title search text and maps them to <see cref="TaskDto"/>.
+    /// Handles the retrieval of tasks that match the title search text and maps them to <see cref="TaskBriefDto"/>.
     /// </summary>
     /// <param name="query">The query containing the user ID and title text to search for.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.</param>
@@ -25,25 +26,24 @@ public class GetTaskByTitleQueryHandler(IUnitOfWork unitOfWork)
     /// If the search text is null, empty, or consists only of whitespace,
     /// an empty collection is returned.
     /// </remarks>
-    public async Task<Result<PagedResultDto<TaskDto>>> Handle(GetTaskByTitleQuery query, CancellationToken cancellationToken)
+    public async Task<Result<PagedResultDto<TaskBriefDto>>> Handle(GetTaskByTitleQuery query, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(query.Text))
         {
-            return await Result<PagedResultDto<TaskDto>>.SuccessAsync(new PagedResultDto<TaskDto>());
+            return await Result<PagedResultDto<TaskBriefDto>>.SuccessAsync(new PagedResultDto<TaskBriefDto>
+            {
+                Items = Array.Empty<TaskBriefDto>(),
+                TotalCount = 0,
+                Page = query.Page,
+                PageSize = query.PageSize,
+            });
         }
 
-        var (taskEntities, totalCount) = await this.UnitOfWork.Tasks
+        var (items, totalCount) = await this.UnitOfWork.Tasks
             .SearchByTitleAsync(query.UserId, query.Text, query.Page, query.PageSize, cancellationToken);
-        var taskDtoList = TaskMapper.Map(taskEntities);
 
-        var result = new PagedResultDto<TaskDto>
-        {
-            Items = taskDtoList,
-            TotalCount = totalCount,
-            Page = query.Page,
-            PageSize = query.PageSize,
-        };
+        var result = items.ToPagedResult(totalCount, query.Page, query.PageSize, TaskMapper.MapToBrief);
 
-        return await Result<PagedResultDto<TaskDto>>.SuccessAsync(result);
+        return await Result<PagedResultDto<TaskBriefDto>>.SuccessAsync(result);
     }
 }
