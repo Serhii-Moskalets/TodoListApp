@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using TodoListApp.Domain.Enums;
 
-namespace TodoListApp.Api.DTOs.Task;
+namespace TodoListApp.Api.Requests.Task;
 
 /// <summary>
 /// Represents the parameters for retrieving tasks with optional filtering, sorting, and date ranges.

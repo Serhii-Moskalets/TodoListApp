@@ -1,4 +1,4 @@
-﻿namespace TodoListApp.Api.DTOs.Task;
+﻿namespace TodoListApp.Api.Requests.Task;
 
 /// <summary>
 /// Represents the parameters for retrieving tasks by their title.

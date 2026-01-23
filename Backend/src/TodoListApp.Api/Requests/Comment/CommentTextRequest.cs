@@ -1,4 +1,4 @@
-﻿namespace TodoListApp.Api.DTOs.Comment;
+﻿namespace TodoListApp.Api.Requests.Comment;
 
 /// <summary>
 /// Represents the request data containing the text of a comment.

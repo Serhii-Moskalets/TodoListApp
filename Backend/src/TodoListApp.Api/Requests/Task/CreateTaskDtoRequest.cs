@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TodoListApp.Api.DTOs.Task;
+namespace TodoListApp.Api.Requests.Task;
 
 /// <summary>
 /// Data Transfer Object for creating a new task.

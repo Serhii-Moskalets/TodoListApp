@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TodoListApp.Api.DTOs.Task;
+namespace TodoListApp.Api.Requests.Task;
 
 /// <summary>
 /// Represents the data required to update an existing task.

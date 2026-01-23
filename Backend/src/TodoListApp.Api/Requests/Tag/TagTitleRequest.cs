@@ -1,4 +1,4 @@
-﻿namespace TodoListApp.Api.DTOs.Tag;
+﻿namespace TodoListApp.Api.Requests.Tag;
 
 /// <summary>
 /// Represents a request to create or update a tag's title.

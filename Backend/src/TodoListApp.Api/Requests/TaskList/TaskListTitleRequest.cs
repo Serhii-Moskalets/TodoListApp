@@ -1,4 +1,4 @@
-﻿namespace TodoListApp.Api.DTOs.TaskList;
+﻿namespace TodoListApp.Api.Requests.TaskList;
 
 /// <summary>
 /// Represents a request to create or update a task list title.

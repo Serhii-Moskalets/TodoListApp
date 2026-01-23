@@ -1,4 +1,4 @@
-﻿namespace TodoListApp.Api.DTOs.UserTaskAccess;
+﻿namespace TodoListApp.Api.Requests.UserTaskAccess;
 
 /// <summary>
 /// Represents the request data containing the email of a user
