@@ -75,11 +75,11 @@ public class GetTasksQueryHandlerTests
         Assert.NotNull(result.Value);
         Assert.Equal(2, result.Value!.TotalCount);
         Assert.Equal(query.Page, result.Value.Page);
-        Assert.Equal(2, result.Value.Items.Count());
+        Assert.Equal(2, result.Value.Items.Count);
     }
 
     /// <summary>
-    /// Verifies that all filtering, sorting, and pagination parameters from the <see cref="GetTasksQuery"/> 
+    /// Verifies that all filtering, sorting, and pagination parameters from the <see cref="GetTasksQuery"/>
     /// are correctly mapped and passed to the <see cref="ITaskRepository.GetTasksAsync"/> method.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>

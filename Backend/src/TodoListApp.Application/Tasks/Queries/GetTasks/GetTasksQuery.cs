@@ -17,4 +17,4 @@ public sealed record GetTasksQuery(
     DateTime? DueAfter = null,
     TaskSortBy? TaskSortBy = null,
     bool Ascending = true)
-    : IQuery<PagedResultDto<TaskDto>>;
+    : IQuery<PagedResultDto<TaskBriefDto>>;
