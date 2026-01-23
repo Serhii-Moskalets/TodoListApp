@@ -23,5 +23,5 @@ public static partial class TagMapper
     /// </summary>
     /// <param name="entities">The collection of tag entities to map.</param>
     /// <returns>A list of <see cref="TagDto"/> representing the provided entities.</returns>
-    public static partial IList<TagDto> Map(IReadOnlyCollection<TagEntity> entities);
+    public static partial IReadOnlyCollection<TagDto> Map(IReadOnlyCollection<TagEntity> entities);
 }
