@@ -7,7 +7,7 @@ namespace TodoListApp.Domain.Entities;
 /// <summary>
 /// Represents a task within a task list, including its owner, status, due date, and related comments.
 /// </summary>
-[Table("Tasks")]
+[Table("tasks")]
 public class TaskEntity : BaseEntity
 {
     /// <summary>
@@ -64,49 +64,49 @@ public class TaskEntity : BaseEntity
     /// <summary>
     /// Gets the title of the task.
     /// </summary>
-    [Column("Title")]
+    [Column("title")]
     public string Title { get; private set; } = null!;
 
     /// <summary>
     /// Gets the description of the task.
     /// </summary>
-    [Column("Description")]
+    [Column("description")]
     public string? Description { get; private set; }
 
     /// <summary>
     /// Gets the time when the task was created.
     /// </summary>
-    [Column("Created_Date")]
+    [Column("created_date")]
     public DateTime CreatedDate { get; init; }
 
     /// <summary>
     /// Gets the due date of the task.
     /// </summary>
-    [Column("Due_Date")]
+    [Column("due_date")]
     public DateTime? DueDate { get; private set; }
 
     /// <summary>
     /// Gets the status of the task.
     /// </summary>
-    [Column("Status")]
+    [Column("status")]
     public StatusTask Status { get; private set; }
 
     /// <summary>
     /// Gets the ID of the user who owns the task.
     /// </summary>
-    [Column("Owner_Id")]
+    [Column("owner_id")]
     public Guid OwnerId { get; init; }
 
     /// <summary>
     /// Gets the ID of the task list that this task belongs to.
     /// </summary>
-    [Column("Task_List_Id")]
+    [Column("task_list_id")]
     public Guid TaskListId { get; init; }
 
     /// <summary>
     /// Gets the ID of the tag associated with the task, if any.
     /// </summary>
-    [Column("Tag_Id")]
+    [Column("tag_id")]
     public Guid? TagId { get; private set; }
 
     /// <summary>

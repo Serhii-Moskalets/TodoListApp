@@ -7,7 +7,7 @@ namespace TodoListApp.Domain.Entities;
 /// <summary>
 /// Represents an application user with tasks, task lists, comments, and tags.
 /// </summary>
-[Table("Users")]
+[Table("users")]
 public class UserEntity : BaseEntity
 {
     /// <summary>
@@ -63,61 +63,61 @@ public class UserEntity : BaseEntity
     /// <summary>
     /// Gets the first name of the user.
     /// </summary>
-    [Column("First_Name")]
+    [Column("first_name")]
     public string FirstName { get; private set; } = null!;
 
     /// <summary>
     /// Gets the last name of the user.
     /// </summary>
-    [Column("Last_Name")]
+    [Column("last_name")]
     public string? LastName { get; private set; }
 
     /// <summary>
     /// Gets he username of the user.
     /// </summary>
-    [Column("User_Name")]
+    [Column("user_name")]
     public string UserName { get; private set; } = null!;
 
     /// <summary>
     /// Gets the email address of the user.
     /// </summary>
-    [Column("Email")]
+    [Column("email")]
     public string Email { get; private set; } = null!;
 
     /// <summary>
     /// Gets the pending email address for email change operations.
     /// </summary>
-    [Column("Pending_Email")]
+    [Column("pending_email")]
     public string? PendingEmail { get; private set; }
 
     /// <summary>
     /// Gets the hashed password of the user.
     /// </summary>
-    [Column("Password_Hash")]
+    [Column("password_hash")]
     public string PasswordHash { get; private set; } = null!;
 
     /// <summary>
     /// Gets a value indicating whether the user's email is confirmed.
     /// </summary>
-    [Column("Email_Confirmed")]
+    [Column("email_confirmed")]
     public bool EmailConfirmed { get; private set; }
 
     /// <summary>
     /// Gets the token value for email verification, password reset, or email change.
     /// </summary>
-    [Column("Token_Value")]
+    [Column("token_value")]
     public string? TokenValue { get; private set; }
 
     /// <summary>
     /// Gets the expiration date of the current token.
     /// </summary>
-    [Column("Token_Expires")]
+    [Column("token_expires")]
     public DateTime? TokenExpires { get; private set; }
 
     /// <summary>
     /// Gets the type of the current token.
     /// </summary>
-    [Column("Token_Type")]
+    [Column("token_type")]
     public UserTokenType? TokenType { get; private set; }
 
     /// <summary>

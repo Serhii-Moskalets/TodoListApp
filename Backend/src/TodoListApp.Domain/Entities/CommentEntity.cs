@@ -6,7 +6,7 @@ namespace TodoListApp.Domain.Entities;
 /// <summary>
 /// Represents a user's comment on a task.
 /// </summary>
-[Table("Comments")]
+[Table("comments")]
 public class CommentEntity : BaseEntity
 {
     /// <summary>
@@ -63,25 +63,25 @@ public class CommentEntity : BaseEntity
     /// <summary>
     /// Gets the text content of the comment.
     /// </summary>
-    [Column("Text")]
+    [Column("text")]
     public string Text { get; private set; } = null!;
 
     /// <summary>
     /// Gets the date and time when the comment was created.
     /// </summary>
-    [Column("Created_Date")]
+    [Column("created_date")]
     public DateTime CreatedDate { get; init; }
 
     /// <summary>
     /// Gets the ID of the task that this comment belongs to.
     /// </summary>
-    [Column("Task_Id")]
+    [Column("task_id")]
     public Guid TaskId { get; }
 
     /// <summary>
     /// Gets the ID of the user who created the comment.
     /// </summary>
-    [Column("User_Id")]
+    [Column("user_id")]
     public Guid UserId { get; }
 
     /// <summary>

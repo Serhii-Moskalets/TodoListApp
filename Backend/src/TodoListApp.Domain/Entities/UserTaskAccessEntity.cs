@@ -5,7 +5,7 @@ namespace TodoListApp.Domain.Entities;
 /// <summary>
 /// Represents the access relationship between a user and a task.
 /// </summary>
-[Table("User_Task_Access")]
+[Table("user_task_access")]
 public class UserTaskAccessEntity
 {
     /// <summary>
@@ -24,13 +24,13 @@ public class UserTaskAccessEntity
     /// <summary>
     /// Gets the ID of the task.
     /// </summary>
-    [Column("Task_Id")]
+    [Column("task_id")]
     public Guid TaskId { get; init; }
 
     /// <summary>
     /// Gets the ID of the user.
     /// </summary>
-    [Column("User_Id")]
+    [Column("user_id")]
     public Guid UserId { get; init; }
 
     /// <summary>

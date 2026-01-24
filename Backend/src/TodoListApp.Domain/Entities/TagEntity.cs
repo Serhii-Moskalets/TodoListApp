@@ -6,7 +6,7 @@ namespace TodoListApp.Domain.Entities;
 /// <summary>
 /// Represents a tag that can be associated with tasks and owned by a user.
 /// </summary>
-[Table("Tags")]
+[Table("tags")]
 public class TagEntity : BaseEntity
 {
     /// <summary>
@@ -39,13 +39,13 @@ public class TagEntity : BaseEntity
     /// <summary>
     /// Gets the name of the tag.
     /// </summary>
-    [Column("Name")]
+    [Column("name")]
     public string Name { get; init; } = null!;
 
     /// <summary>
     /// Gets the ID of the user who owns this tag.
     /// </summary>
-    [Column("User_Id")]
+    [Column("user_id")]
     public Guid UserId { get; init; }
 
     /// <summary>

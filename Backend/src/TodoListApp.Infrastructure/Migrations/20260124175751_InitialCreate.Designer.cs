@@ -5,16 +5,14 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using TodoListApp.Infrastructure.Persistence;
 using TodoListApp.Infrastructure.Persistence.DatabaseContext;
-
 
 #nullable disable
 
 namespace TodoListApp.Infrastructure.Migrations
 {
     [DbContext(typeof(TodoListAppDbContext))]
-    [Migration("20251212203421_InitialCreate")]
+    [Migration("20260124175751_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -22,7 +20,7 @@ namespace TodoListApp.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.1")
+                .HasAnnotation("ProductVersion", "10.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -30,27 +28,25 @@ namespace TodoListApp.Infrastructure.Migrations
             modelBuilder.Entity("TodoListApp.Domain.Entities.CommentEntity", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("Comment_Id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("Created_Date");
+                        .HasColumnName("created_date");
 
                     b.Property<Guid>("TaskId")
                         .HasColumnType("uuid")
-                        .HasColumnName("Task_Id");
+                        .HasColumnName("task_id");
 
                     b.Property<string>("Text")
                         .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)")
-                        .HasColumnName("Text");
+                        .HasColumnName("text");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")
-                        .HasColumnName("User_Id");
+                        .HasColumnName("user_id");
 
                     b.HasKey("Id");
 
@@ -58,105 +54,69 @@ namespace TodoListApp.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Comments");
-                });
-
-            modelBuilder.Entity("TodoListApp.Domain.Entities.LogEntity", b =>
-                {
-                    b.Property<int>("LogId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LogId"));
-
-                    b.Property<string>("Context")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Exception")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Level")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("LogId");
-
-                    b.ToTable("Logs");
+                    b.ToTable("comments");
                 });
 
             modelBuilder.Entity("TodoListApp.Domain.Entities.TagEntity", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("Tag_Id");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("Name");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")
-                        .HasColumnName("User_Id");
+                        .HasColumnName("user_id");
 
                     b.HasKey("Id");
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Tags");
+                    b.ToTable("tags");
                 });
 
             modelBuilder.Entity("TodoListApp.Domain.Entities.TaskEntity", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("Task_Id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("Created_Date");
+                        .HasColumnName("created_date");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("Description");
+                        .HasColumnType("text")
+                        .HasColumnName("description");
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("Due_Date");
+                        .HasColumnName("due_date");
 
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid")
-                        .HasColumnName("Owner_Id");
+                        .HasColumnName("owner_id");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer")
-                        .HasColumnName("Status");
+                        .HasColumnName("status");
 
                     b.Property<Guid?>("TagId")
                         .HasColumnType("uuid")
-                        .HasColumnName("Tag_Id");
+                        .HasColumnName("tag_id");
 
                     b.Property<Guid>("TaskListId")
                         .HasColumnType("uuid")
-                        .HasColumnName("Task_List_Id");
+                        .HasColumnName("task_list_id");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
-                        .HasColumnName("Title");
+                        .HasColumnName("title");
 
                     b.HasKey("Id");
 
@@ -166,92 +126,89 @@ namespace TodoListApp.Infrastructure.Migrations
 
                     b.HasIndex("TaskListId");
 
-                    b.ToTable("Tasks");
+                    b.ToTable("tasks");
                 });
 
             modelBuilder.Entity("TodoListApp.Domain.Entities.TaskListEntity", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("Task_List_Id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("Created_Date");
+                        .HasColumnName("created_date");
 
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uuid")
-                        .HasColumnName("Owner_Id");
+                        .HasColumnName("owner_id");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
-                        .HasColumnName("Title");
+                        .HasColumnName("title");
 
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("Task_Lists");
+                    b.ToTable("task_lists");
                 });
 
             modelBuilder.Entity("TodoListApp.Domain.Entities.UserEntity", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("User_Id");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("Email");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("email");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean")
-                        .HasColumnName("Email_Confirmed");
+                        .HasColumnName("email_confirmed");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
-                        .HasColumnName("First_Name");
+                        .HasColumnName("first_name");
 
                     b.Property<string>("LastName")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
-                        .HasColumnName("Last_Name");
+                        .HasColumnName("last_name");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("Password_Hash");
+                        .HasColumnType("text")
+                        .HasColumnName("password_hash");
 
                     b.Property<string>("PendingEmail")
-                        .HasColumnType("text")
-                        .HasColumnName("Pending_Email");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("pending_email");
 
                     b.Property<DateTime?>("TokenExpires")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("Token_Expires");
+                        .HasColumnName("token_expires");
 
                     b.Property<string>("TokenType")
-                        .HasColumnType("text")
-                        .HasColumnName("Token_Type");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("token_type");
 
                     b.Property<string>("TokenValue")
                         .HasColumnType("text")
-                        .HasColumnName("Token_Value");
+                        .HasColumnName("token_value");
 
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
-                        .HasColumnName("User_Name");
+                        .HasColumnName("user_name");
 
                     b.HasKey("Id");
 
@@ -261,24 +218,24 @@ namespace TodoListApp.Infrastructure.Migrations
                     b.HasIndex("UserName")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("users");
                 });
 
             modelBuilder.Entity("TodoListApp.Domain.Entities.UserTaskAccessEntity", b =>
                 {
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")
-                        .HasColumnName("User_Id");
+                        .HasColumnName("user_id");
 
                     b.Property<Guid>("TaskId")
                         .HasColumnType("uuid")
-                        .HasColumnName("Task_Id");
+                        .HasColumnName("task_id");
 
                     b.HasKey("UserId", "TaskId");
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("User_Task_Access");
+                    b.ToTable("user_task_access");
                 });
 
             modelBuilder.Entity("TodoListApp.Domain.Entities.CommentEntity", b =>
