@@ -1,6 +1,4 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using Moq;
+﻿using Moq;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.Services;
@@ -16,30 +14,23 @@ namespace TodoListApp.Application.Tests.Comment.Commands;
 /// </summary>
 public class CreateCommentCommandHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<ITaskAccessService> _taskAccessMock;
+    private readonly Mock<ICommentRepository> _commentsRepoMock;
+    private readonly CreateCommentCommandHandler _handler;
+
     /// <summary>
-    /// Returns failure if validation fails.
+    /// Initializes a new instance of the <see cref="CreateCommentCommandHandlerTests"/> class.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task HandleAsync_ShouldReturnFailure_WhenValidationFails()
+    public CreateCommentCommandHandlerTests()
     {
-        // Arrange
-        var validatorMock = new Mock<IValidator<CreateCommentCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<CreateCommentCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult([new ValidationFailure("Text", "Required")]));
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._taskAccessMock = new Mock<ITaskAccessService>();
+        this._commentsRepoMock = new Mock<ICommentRepository>();
 
-        var uowMock = new Mock<IUnitOfWork>();
-        var taskAccessMock = new Mock<ITaskAccessService>();
+        this._uowMock.Setup(u => u.Comments).Returns(this._commentsRepoMock.Object);
 
-        var handler = new CreateCommentCommandHandler(uowMock.Object, taskAccessMock.Object, validatorMock.Object);
-        var command = new CreateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
-
-        // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("Required", result.Error!.Message);
+        this._handler = new CreateCommentCommandHandler(this._uowMock.Object, this._taskAccessMock.Object);
     }
 
     /// <summary>
@@ -50,23 +41,14 @@ public class CreateCommentCommandHandlerTests
     public async Task HandleAsync_ShouldReturnFailure_WhenUserHasNoAccess()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<CreateCommentCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<CreateCommentCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
-
-        var uowMock = new Mock<IUnitOfWork>();
-        var taskAccessMock = new Mock<ITaskAccessService>();
-        taskAccessMock
-            .Setup(s => s.HasAccessAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        var handler = new CreateCommentCommandHandler(uowMock.Object, taskAccessMock.Object, validatorMock.Object);
+        this._taskAccessMock
+             .Setup(s => s.HasAccessAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(false);
 
         var command = new CreateCommentCommand(Guid.NewGuid(), Guid.NewGuid(), "Text");
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.False(result.IsSuccess);
@@ -82,48 +64,29 @@ public class CreateCommentCommandHandlerTests
     public async Task HandleAsync_ShouldAddComment_WhenValidationPasses()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<CreateCommentCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<CreateCommentCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
-
-        var commentsRepoMock = new Mock<ICommentRepository>();
-        commentsRepoMock
-            .Setup(r => r.AddAsync(It.IsAny<CommentEntity>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Comments).Returns(commentsRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        var taskAccessMock = new Mock<ITaskAccessService>();
-        taskAccessMock
-            .Setup(s => s.HasAccessAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-
-        var handler = new CreateCommentCommandHandler(uowMock.Object, taskAccessMock.Object, validatorMock.Object);
-
         var taskId = Guid.NewGuid();
         var userId = Guid.NewGuid();
-        var command = new CreateCommentCommand(taskId, userId, "Valid comment");
+        var text = "Valid comment";
+        var command = new CreateCommentCommand(taskId, userId, text);
+
+        this._taskAccessMock
+            .Setup(s => s.HasAccessAsync(taskId, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        this._uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.NotEqual(Guid.Empty, result.Value);
 
-        commentsRepoMock
-            .Verify(
-            r =>
-            r.AddAsync(
-                It.Is<CommentEntity>(c =>
-                    c.TaskId == taskId &&
-                    c.UserId == userId &&
-                    c.Text == "Valid comment"),
-                It.IsAny<CancellationToken>()), Times.Once);
+        this._commentsRepoMock.Verify(
+            r => r.AddAsync(
+                It.Is<CommentEntity>(c => c.TaskId == taskId && c.UserId == userId && c.Text == text),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
 
-        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

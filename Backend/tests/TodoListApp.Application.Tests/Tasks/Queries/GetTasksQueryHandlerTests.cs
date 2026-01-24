@@ -1,6 +1,4 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using Moq;
+﻿using Moq;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Tasks.Queries.GetTasks;
@@ -16,92 +14,73 @@ namespace TodoListApp.Application.Tests.Tasks.Queries;
 /// </summary>
 public class GetTasksQueryHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<ITaskRepository> _taskRepositoryMock = new();
-    private readonly Mock<IValidator<GetTasksQuery>> _validatorMock = new();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<ITaskRepository> _taskRepositoryMock;
+    private readonly GetTasksQueryHandler _handler;
 
     /// <summary>
-    /// Returns failure result when query validation fails
-    /// and repository is not called.
+    /// Initializes a new instance of the <see cref="GetTasksQueryHandlerTests"/> class.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
+    public GetTasksQueryHandlerTests()
     {
-        // Arrange
-        var query = new GetTasksQuery(Guid.Empty, Guid.NewGuid());
+        this._unitOfWorkMock = new Mock<IUnitOfWork>();
+        this._taskRepositoryMock = new Mock<ITaskRepository>();
 
-        this._validatorMock
-            .Setup(v => v.ValidateAsync(query, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult([new ValidationFailure("UserId", "User Id is required")]));
-
-        var handler = this.CreateHandler();
-
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal(TinyResult.Enums.ErrorCode.ValidationError, result.Error!.Code);
-
-        this._taskRepositoryMock.Verify(
-            r => r.GetTasksAsync(
-                It.IsAny<Guid>(),
-                It.IsAny<Guid>(),
-                It.IsAny<IReadOnlyCollection<StatusTask>?>(),
-                It.IsAny<DateTime?>(),
-                It.IsAny<DateTime?>(),
-                It.IsAny<TaskSortBy?>(),
-                It.IsAny<bool>(),
-                It.IsAny<CancellationToken>()),
-            Times.Never);
+        this._unitOfWorkMock.Setup(u => u.Tasks).Returns(this._taskRepositoryMock.Object);
+        this._handler = new GetTasksQueryHandler(this._unitOfWorkMock.Object);
     }
 
     /// <summary>
-    /// Returns a successful result with tasks when validation passes.
+    /// Verifies that <see cref="GetTasksQueryHandler.Handle"/> returns a successful paged result
+    /// containing the expected total count and mapped items when valid parameters are provided.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
     public async Task Handle_ShouldReturnSuccess_WhenValidationPasses()
     {
         // Arrange
-        var query = new GetTasksQuery(Guid.NewGuid(), Guid.NewGuid());
-
-        this._validatorMock
-            .Setup(v => v.ValidateAsync(query, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
+        var userId = Guid.NewGuid();
+        var taskListId = Guid.NewGuid();
+        var query = new GetTasksQuery(userId, taskListId)
+        {
+            Page = 1,
+            PageSize = 10,
+        };
 
         var entities = new List<TaskEntity>
         {
-            new(Guid.NewGuid(), Guid.NewGuid(), "Task title 1"),
-            new(Guid.NewGuid(), Guid.NewGuid(), "Task title 2"),
+            new(userId, taskListId, "Task 1"),
+            new(userId, taskListId, "Task 2"),
         };
 
         this._taskRepositoryMock
             .Setup(r => r.GetTasksAsync(
                 query.UserId,
                 query.TaskListId,
+                query.Page,
+                query.PageSize,
                 query.TaskStatuses,
                 query.DueBefore,
                 query.DueAfter,
                 query.TaskSortBy,
                 query.Ascending,
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(entities);
-
-        var handler = this.CreateHandler();
+            .ReturnsAsync((entities, 2));
 
         // Act
-        var result = await handler.Handle(query, CancellationToken.None);
+        var result = await this._handler.Handle(query, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Equal(2, result.Value!.Count());
+        Assert.Equal(2, result.Value!.TotalCount);
+        Assert.Equal(query.Page, result.Value.Page);
+        Assert.Equal(2, result.Value.Items.Count);
     }
 
     /// <summary>
-    /// Calls repository with exact query parameters when validation succeeds.
+    /// Verifies that all filtering, sorting, and pagination parameters from the <see cref="GetTasksQuery"/>
+    /// are correctly mapped and passed to the <see cref="ITaskRepository.GetTasksAsync"/> method.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
@@ -111,39 +90,40 @@ public class GetTasksQueryHandlerTests
         var query = new GetTasksQuery(
             UserId: Guid.NewGuid(),
             TaskListId: Guid.NewGuid(),
-            TaskStatuses: [StatusTask.NotStarted, StatusTask.InProgress],
+            TaskStatuses: [StatusTask.NotStarted],
             DueBefore: DateTime.UtcNow.AddDays(1),
             DueAfter: DateTime.UtcNow,
             TaskSortBy: TaskSortBy.Title,
-            Ascending: false);
-
-        this._validatorMock
-            .Setup(v => v.ValidateAsync(query, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
+            Ascending: false)
+        {
+            Page = 2,
+            PageSize = 5,
+        };
 
         this._taskRepositoryMock
             .Setup(r => r.GetTasksAsync(
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
                 It.IsAny<IReadOnlyCollection<StatusTask>?>(),
                 It.IsAny<DateTime?>(),
                 It.IsAny<DateTime?>(),
                 It.IsAny<TaskSortBy>(),
                 It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
-
-        var handler = this.CreateHandler();
+            .ReturnsAsync((new List<TaskEntity>(), 0));
 
         // Act
-        await handler.Handle(query, CancellationToken.None);
+        await this._handler.Handle(query, CancellationToken.None);
 
         // Assert
         this._taskRepositoryMock.Verify(
-            r =>
-            r.GetTasksAsync(
+            r => r.GetTasksAsync(
                 query.UserId,
                 query.TaskListId,
+                query.Page,
+                query.PageSize,
                 query.TaskStatuses,
                 query.DueBefore,
                 query.DueAfter,
@@ -151,16 +131,5 @@ public class GetTasksQueryHandlerTests
                 query.Ascending,
                 It.IsAny<CancellationToken>()),
             Times.Once);
-    }
-
-    private GetTasksQueryHandler CreateHandler()
-    {
-        this._unitOfWorkMock
-            .Setup(x => x.Tasks)
-            .Returns(this._taskRepositoryMock.Object);
-
-        return new GetTasksQueryHandler(
-            this._unitOfWorkMock.Object,
-            this._validatorMock.Object);
     }
 }

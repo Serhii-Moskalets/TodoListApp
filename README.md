@@ -1,5 +1,7 @@
 # TodoListApp
 
+![CI Status](https://github.com/Serhii-Moskalets/TodoListApp/actions/workflows/dotnet-ci.yml/badge.svg)
+
 A full-stack Todo List web application with a **React** frontend and **ASP.NET Core Web API** backend, using **SQL Server** and **Entity Framework Core**.
 
 ## Features

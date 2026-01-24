@@ -29,5 +29,5 @@ public static partial class CommentMapper
     /// </summary>
     /// <param name="entities">The collection of comment entities to map.</param>
     /// <returns>A list of <see cref="CommentDto"/> representing the provided entities.</returns>
-    public static partial IList<CommentDto> Map(IReadOnlyCollection<CommentEntity> entities);
+    public static partial IReadOnlyCollection<CommentDto> Map(IReadOnlyCollection<CommentEntity> entities);
 }

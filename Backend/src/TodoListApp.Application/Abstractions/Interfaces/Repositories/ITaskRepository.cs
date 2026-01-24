@@ -1,5 +1,4 @@
-﻿using System.Linq.Expressions;
-using TodoListApp.Domain.Entities;
+﻿using TodoListApp.Domain.Entities;
 using TodoListApp.Domain.Enums;
 
 namespace TodoListApp.Application.Abstractions.Interfaces.Repositories;
@@ -15,6 +14,8 @@ public interface ITaskRepository : IRepository<TaskEntity>
     /// </summary>
     /// <param name="userId">The user identifier.</param>
     /// <param name="todoListId">The To-Do list identifier.</param>
+    /// <param name="page">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
     /// <param name="statuses">Optional collection of task statuses to filter by.</param>
     /// <param name="dueBefore">Optional upper bound for the task due date.</param>
     /// <param name="dueAfter">Optional lower bound for the task due date.</param>
@@ -22,9 +23,11 @@ public interface ITaskRepository : IRepository<TaskEntity>
     /// <param name="ascending">Indicates whether sorting should be ascending.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A read-only collection of tasks.</returns>
-    Task<IReadOnlyCollection<TaskEntity>> GetTasksAsync(
+    Task<(IReadOnlyCollection<TaskEntity> items, int TotalCount)> GetTasksAsync(
         Guid userId,
         Guid todoListId,
+        int page = 1,
+        int pageSize = 10,
         IReadOnlyCollection<StatusTask>? statuses = null,
         DateTime? dueBefore = null,
         DateTime? dueAfter = null,
@@ -33,29 +36,19 @@ public interface ITaskRepository : IRepository<TaskEntity>
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves all overdue tasks for the specified user.
-    /// </summary>
-    /// <param name="userId">The user identifier.</param>
-    /// <param name="taskListId">The To-Do list identifier.</param>
-    /// <param name="now">The current date and time used to determine overdue tasks.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A read-only collection of overdue tasks.</returns>
-    Task<IReadOnlyCollection<TaskEntity>> GetOverdueTasksAsync(
-        Guid userId,
-        Guid taskListId,
-        DateTime now,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Searches tasks by title for a specific user.
     /// </summary>
     /// <param name="userId">The user identifier.</param>
     /// <param name="searchText">The text to search for in task titles.</param>
+    /// <param name="page">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A read-only collection of matching tasks.</returns>
-    Task<IReadOnlyCollection<TaskEntity>> SearchByTitleAsync(
+    Task<(IReadOnlyCollection<TaskEntity> Items, int TotalCount)> SearchByTitleAsync(
         Guid userId,
         string searchText,
+        int page = 1,
+        int pageSize = 10,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -70,26 +63,6 @@ public interface ITaskRepository : IRepository<TaskEntity>
         Guid userId,
         Guid taskListId,
         DateTime now,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Retrieves paginated tasks with optional filtering.
-    /// </summary>
-    /// <param name="userId">The user identifier.</param>
-    /// <param name="taskListId">The To-Do list identifier.</param>
-    /// <param name="page">The page number (1-based).</param>
-    /// <param name="pageSize">The number of items per page.</param>
-    /// <param name="filter">Optional filter expression.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>
-    /// A tuple containing the paginated items and the total count.
-    /// </returns>
-    Task<(IReadOnlyCollection<TaskEntity> Items, int TotalCount)> GetPaginatedAsync(
-        Guid userId,
-        Guid taskListId,
-        int page,
-        int pageSize,
-        Expression<Func<TaskEntity, bool>>? filter = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

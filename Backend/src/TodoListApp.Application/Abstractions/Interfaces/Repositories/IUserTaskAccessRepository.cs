@@ -30,20 +30,32 @@ public interface IUserTaskAccessRepository
     /// This is typically used by the owner of the task to see which users have access.
     /// </summary>
     /// <param name="taskId">The ID of the task.</param>
+    /// <param name="page">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>
     /// A task that returns a read-only collection of <see cref="UserTaskAccessEntity"/> entries
     /// representing all users who currently have access to the task.
     /// </returns>
-    Task<IReadOnlyCollection<UserTaskAccessEntity>> GetUserTaskAccessByTaskIdAsync(Guid taskId, CancellationToken cancellationToken = default);
+    Task<(IReadOnlyCollection<UserTaskAccessEntity> Items, int TotalCount)> GetUserTaskAccessByTaskIdAsync(
+        Guid taskId,
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves all tasks shared with a specific user.
     /// </summary>
     /// <param name="userId">The identifier of the user.</param>
+    /// <param name="page">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A read-only collection of <see cref="TaskEntity"/> shared with the user.</returns>
-    Task<IReadOnlyCollection<UserTaskAccessEntity>> GetSharedTasksByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<(IReadOnlyCollection<UserTaskAccessEntity> Items, int TotalCount)> GetSharedTasksByUserIdAsync(
+        Guid userId,
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Checks whether a user task access record exists for the given task and user.

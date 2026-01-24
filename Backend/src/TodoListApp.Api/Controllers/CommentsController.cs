@@ -1,58 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using TodoListApp.Api.DTOs.Comment;
-using TodoListApp.Application.Abstractions.Messaging;
+using TodoListApp.Api.Requests.Comment;
 using TodoListApp.Application.Comment.Commands.CreateComment;
 using TodoListApp.Application.Comment.Commands.DeleteComment;
 using TodoListApp.Application.Comment.Commands.UpdateComment;
 using TodoListApp.Application.Comment.Queries.GetComments;
-using TodoListApp.Application.Common.Dtos;
 
 namespace TodoListApp.Api.Controllers;
 
 /// <summary>
 /// Provides HTTP endpoints for managing comments related to tasks.
 /// </summary>
-[ApiController]
 [Route("api/tasks/{taskId:guid}/comments")]
 public class CommentsController : BaseController
 {
-    private readonly ICommandHandler<CreateCommentCommand, Guid> _createCommentHandler;
-    private readonly ICommandHandler<DeleteCommentCommand, bool> _deleteCommentHandler;
-    private readonly ICommandHandler<UpdateCommentCommand, bool> _updateCommentHandler;
-    private readonly IQueryHandler<GetCommentsQuery, IEnumerable<CommentDto>> _getCommentsHandler;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CommentsController"/> class.
-    /// </summary>
-    /// <param name="createCommandHandler">Handler responsible for creating comments.</param>
-    /// <param name="deleteCommentHandler">Handler responsible for deleting comments.</param>
-    /// <param name="updateCommentHandler">Handler responsible for updating comments.</param>
-    /// <param name="getCommentsHandler">Handler responsible for retrieving comments for a task.</param>
-    public CommentsController(
-        ICommandHandler<CreateCommentCommand, Guid> createCommandHandler,
-        ICommandHandler<DeleteCommentCommand, bool> deleteCommentHandler,
-        ICommandHandler<UpdateCommentCommand, bool> updateCommentHandler,
-        IQueryHandler<GetCommentsQuery, IEnumerable<CommentDto>> getCommentsHandler)
-    {
-        this._createCommentHandler = createCommandHandler;
-        this._deleteCommentHandler = deleteCommentHandler;
-        this._updateCommentHandler = updateCommentHandler;
-        this._getCommentsHandler = getCommentsHandler;
-    }
-
     /// <summary>
     /// Retrieves all comments associated with a specific task.
     /// </summary>
     /// <param name="taskId">The unique identifier of the task.</param>
+    /// <param name="page">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
     /// <returns>A collection of comments related to the specified task.</returns>
     [HttpGet]
-    public async Task<IActionResult> GetComments([FromRoute] Guid taskId)
+    public async Task<IActionResult> GetComments([FromRoute] Guid taskId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var query = new GetCommentsQuery(taskId, CurrentUserId);
-        var result = await this._getCommentsHandler.Handle(query, this.HttpContext.RequestAborted);
+        var query = new GetCommentsQuery(taskId, CurrentUserId, page, pageSize);
+        var result = await this.Mediator.Send(query, this.HttpContext.RequestAborted);
         return this.HandleResult(result);
     }
 
@@ -72,7 +46,7 @@ public class CommentsController : BaseController
         [FromBody] CommentTextRequest request)
     {
         var command = new CreateCommentCommand(taskId, CurrentUserId, request.Text);
-        var result = await this._createCommentHandler.HandleAsync(command, this.HttpContext.RequestAborted);
+        var result = await this.Mediator.Send(command, this.HttpContext.RequestAborted);
         return this.HandleResult(result);
     }
 
@@ -84,11 +58,11 @@ public class CommentsController : BaseController
     /// Returns <see cref="NoContentResult"/> if the comment was successfully deleted;
     /// otherwise, returns <see cref="BadRequestObjectResult"/> with error details.
     /// </returns>
-    [HttpDelete("{commentId:guid}")]
+    [HttpDelete("~/api/comments/{commentId:guid}")]
     public async Task<IActionResult> DeleteComment([FromRoute] Guid commentId)
     {
         var command = new DeleteCommentCommand(commentId, CurrentUserId);
-        var result = await this._deleteCommentHandler.HandleAsync(command, this.HttpContext.RequestAborted);
+        var result = await this.Mediator.Send(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 
@@ -101,13 +75,13 @@ public class CommentsController : BaseController
     /// Returns <see cref="NoContentResult"/> if the comment was successfully updated;
     /// otherwise, returns <see cref="BadRequestObjectResult"/> with error details.
     /// </returns>
-    [HttpPut("{commentId:guid}")]
+    [HttpPut("~/api/comments/{commentId:guid}")]
     public async Task<IActionResult> UpdateComment(
         [FromRoute] Guid commentId,
         [FromBody] CommentTextRequest request)
     {
         var command = new UpdateCommentCommand(commentId, CurrentUserId, request.Text);
-        var result = await this._updateCommentHandler.HandleAsync(command, this.HttpContext.RequestAborted);
+        var result = await this.Mediator.Send(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 }

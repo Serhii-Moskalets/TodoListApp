@@ -1,9 +1,6 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using Moq;
+﻿using Moq;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
-using TodoListApp.Application.UserTaskAccess.Mappers;
 using TodoListApp.Application.UserTaskAccess.Queries.GetSharedTasksByUserId;
 using TodoListApp.Domain.Entities;
 
@@ -15,40 +12,21 @@ namespace TodoListApp.Application.Tests.UserTaskAccess.Queries;
 /// </summary>
 public class GetSharedTasksByUserIdQueryHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<IUserTaskAccessRepository> _userTaskAccessRepoMock = new();
-    private readonly Mock<IValidator<GetSharedTasksByUserIdQuery>> _validatorMock = new();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IUserTaskAccessRepository> _userTaskAccessRepoMock;
+    private readonly GetSharedTasksByUserIdQueryHandler _handler;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetSharedTasksByUserIdQueryHandlerTests"/> class.
-    /// Sets up repository mocks and configures the unit of work to return them.
     /// </summary>
     public GetSharedTasksByUserIdQueryHandlerTests()
     {
+        this._unitOfWorkMock = new Mock<IUnitOfWork>();
+        this._userTaskAccessRepoMock = new Mock<IUserTaskAccessRepository>();
+
         this._unitOfWorkMock.Setup(u => u.UserTaskAccesses).Returns(this._userTaskAccessRepoMock.Object);
-    }
 
-    /// <summary>
-    /// Ensures that the handler returns a failure result when validation fails.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
-    {
-        var userId = Guid.NewGuid();
-        var query = new GetSharedTasksByUserIdQuery(userId);
-
-        this._validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<GetSharedTasksByUserIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult([new ValidationFailure("UserId", "UserId is required.")]));
-
-        var handler = new GetSharedTasksByUserIdQueryHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
-
-        var result = await handler.Handle(query, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-        Assert.Equal("UserId is required.", result.Error.Message);
+        this._handler = new GetSharedTasksByUserIdQueryHandler(this._unitOfWorkMock.Object);
     }
 
     /// <summary>
@@ -56,26 +34,24 @@ public class GetSharedTasksByUserIdQueryHandlerTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Handle_ShouldReturnEmptyList_WhenNoSharedTasksExist()
+    public async Task Handle_ShouldReturnEmptyPagedResult_WhenNoSharedTasksExist()
     {
+        // Arrange
         var userId = Guid.NewGuid();
-        var query = new GetSharedTasksByUserIdQuery(userId);
-
-        this._validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<GetSharedTasksByUserIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
+        var query = new GetSharedTasksByUserIdQuery(userId, 1, 10);
 
         this._userTaskAccessRepoMock
-            .Setup(r => r.GetSharedTasksByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
+            .Setup(r => r.GetSharedTasksByUserIdAsync(userId, query.Page, query.PageSize, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new List<UserTaskAccessEntity>(), 0));
 
-        var handler = new GetSharedTasksByUserIdQueryHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
+        // Act
+        var result = await this._handler.Handle(query, CancellationToken.None);
 
-        var result = await handler.Handle(query, CancellationToken.None);
-
+        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Empty(result.Value);
+        Assert.Empty(result.Value.Items);
+        Assert.Equal(0, result.Value.TotalCount);
     }
 
     /// <summary>
@@ -83,38 +59,30 @@ public class GetSharedTasksByUserIdQueryHandlerTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
-    public async Task Handle_ShouldReturnMappedTaskDtos_WhenSharedTasksExist()
+    public async Task Handle_ShouldReturnMappedPagedResult_WhenSharedTasksExist()
     {
+        // Arrange
         var userId = Guid.NewGuid();
-        var task1 = new UserTaskAccessEntity(Guid.NewGuid(), userId)
-        {
-            Task = new TaskEntity(userId, Guid.NewGuid(), "Task 1"),
-            User = new UserEntity("John1", "john1", "john1@example.com", "hash"),
-        };
-        var task2 = new UserTaskAccessEntity(Guid.NewGuid(), userId)
-        {
-            Task = new TaskEntity(userId, Guid.NewGuid(), "Task 2"),
-            User = new UserEntity("John2", "john2", "john2@example.com", "hash"),
-        };
+        var query = new GetSharedTasksByUserIdQuery(userId, 1, 10);
 
-        var query = new GetSharedTasksByUserIdQuery(userId);
-
-        this._validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<GetSharedTasksByUserIdQuery>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
+        var task1 = new TaskEntity(userId, Guid.NewGuid(), "Task 1");
+        var entities = new List<UserTaskAccessEntity>
+        {
+            new(task1.Id, userId) { Task = task1, User = new UserEntity("Owner", "o", "o@t.com", "h") },
+        };
 
         this._userTaskAccessRepoMock
-            .Setup(r => r.GetSharedTasksByUserIdAsync(userId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([task1, task2]);
+            .Setup(r => r.GetSharedTasksByUserIdAsync(userId, query.Page, query.PageSize, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((entities, 1));
 
-        var handler = new GetSharedTasksByUserIdQueryHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
+        // Act
+        var result = await this._handler.Handle(query, CancellationToken.None);
 
-        var result = await handler.Handle(query, CancellationToken.None);
-
+        // Assert
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-
-        var mappedTasks = TaskAccessForUserMapper.Map([task1, task2]);
-        Assert.Equal(mappedTasks.Select(t => t.Id), result.Value!.Select(t => t.Id));
+        Assert.Single(result.Value!.Items);
+        Assert.Equal(1, result.Value.TotalCount);
+        Assert.Equal(query.Page, result.Value.Page);
+        Assert.Equal(task1.Id, result.Value.Items.First().Id);
     }
 }

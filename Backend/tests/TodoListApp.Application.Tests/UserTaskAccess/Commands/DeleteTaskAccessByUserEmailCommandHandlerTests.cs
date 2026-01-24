@@ -1,7 +1,6 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using Moq;
+﻿using Moq;
 using TinyResult.Enums;
+using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessByUserEmail;
 using TodoListApp.Domain.Entities;
@@ -14,29 +13,21 @@ namespace TodoListApp.Application.Tests.UserTaskAccess.Commands;
 /// </summary>
 public class DeleteTaskAccessByUserEmailCommandHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<IValidator<DeleteTaskAccessByUserEmailCommand>> _validatorMock = new();
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<IUserTaskAccessRepository> _utaRepository;
+    private readonly DeleteTaskAccessByUserEmailCommandHandler _handler;
 
     /// <summary>
-    /// Ensures the handler returns a failure result when validation fails.
+    /// Initializes a new instance of the <see cref="DeleteTaskAccessByUserEmailCommandHandlerTests"/> class.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
+    public DeleteTaskAccessByUserEmailCommandHandlerTests()
     {
-        var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._utaRepository = new Mock<IUserTaskAccessRepository>();
 
-        this._validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskAccessByUserEmailCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult([new ValidationFailure("Email", "Invalid email")]));
+        this._uowMock.Setup(u => u.UserTaskAccesses).Returns(this._utaRepository.Object);
 
-        var handler = new DeleteTaskAccessByUserEmailCommandHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
-
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-        Assert.Equal("Invalid email", result.Error.Message);
+        this._handler = new DeleteTaskAccessByUserEmailCommandHandler(this._uowMock.Object);
     }
 
     /// <summary>
@@ -46,19 +37,16 @@ public class DeleteTaskAccessByUserEmailCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnValidationError_WhenUserDoesNotHaveAccess()
     {
+        // Arrange
         var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), "test@test.com");
 
-        this._validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskAccessByUserEmailCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
-
-        this._unitOfWorkMock.Setup(u => u.Tasks.IsTaskOwnerAsync(command.TaskId, command.OwnerId, It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.Tasks.IsTaskOwnerAsync(command.TaskId, command.OwnerId, It.IsAny<CancellationToken>()))
                        .ReturnsAsync(false);
 
-        var handler = new DeleteTaskAccessByUserEmailCommandHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
+        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCode.ValidationError, result.Error!.Code);
         Assert.Equal("User doesn't have access to this task.", result.Error.Message);
@@ -71,21 +59,19 @@ public class DeleteTaskAccessByUserEmailCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnFailure_WhenUserNotFound()
     {
+        // Arrange
         var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), "test@test.com");
 
-        this._validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskAccessByUserEmailCommand>(), It.IsAny<CancellationToken>()))
-                      .ReturnsAsync(new ValidationResult());
-
-        this._unitOfWorkMock.Setup(u => u.Tasks.IsTaskOwnerAsync(command.TaskId, command.OwnerId, It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.Tasks.IsTaskOwnerAsync(command.TaskId, command.OwnerId, It.IsAny<CancellationToken>()))
                        .ReturnsAsync(true);
 
-        this._unitOfWorkMock.Setup(u => u.Users.GetByEmailAsync(command.Email!, It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.Users.GetByEmailAsync(command.Email!, It.IsAny<CancellationToken>()))
                        .ReturnsAsync((UserEntity?)null);
 
-        var handler = new DeleteTaskAccessByUserEmailCommandHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
+        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCode.InvalidOperation, result.Error!.Code);
         Assert.Equal("Opperation error.", result.Error.Message);
@@ -98,25 +84,23 @@ public class DeleteTaskAccessByUserEmailCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnFailure_WhenDeleteFails()
     {
+        // Arrange
         var user = new UserEntity("John", "john", "test@test.com", "hash");
         var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), user.Email);
 
-        this._validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskAccessByUserEmailCommand>(), It.IsAny<CancellationToken>()))
-                      .ReturnsAsync(new ValidationResult());
-
-        this._unitOfWorkMock.Setup(u => u.Tasks.IsTaskOwnerAsync(command.TaskId, command.OwnerId, It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.Tasks.IsTaskOwnerAsync(command.TaskId, command.OwnerId, It.IsAny<CancellationToken>()))
                        .ReturnsAsync(true);
 
-        this._unitOfWorkMock.Setup(u => u.Users.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.Users.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
                        .ReturnsAsync(user);
 
-        this._unitOfWorkMock.Setup(u => u.UserTaskAccesses.DeleteByIdAsync(command.TaskId, user.Id, It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.UserTaskAccesses.DeleteByIdAsync(command.TaskId, user.Id, It.IsAny<CancellationToken>()))
                        .ReturnsAsync(0);
 
-        var handler = new DeleteTaskAccessByUserEmailCommandHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
+        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCode.InvalidOperation, result.Error!.Code);
         Assert.Equal("Access doesn't deleted.", result.Error.Message);
@@ -129,30 +113,62 @@ public class DeleteTaskAccessByUserEmailCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldDeleteAccess_WhenAllChecksPass()
     {
+        // Arrange
         var user = new UserEntity("John", "john", "test@test.com", "hash");
         var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), user.Email);
 
-        this._validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskAccessByUserEmailCommand>(), It.IsAny<CancellationToken>()))
-                      .ReturnsAsync(new ValidationResult());
-
-        this._unitOfWorkMock.Setup(u => u.Tasks.IsTaskOwnerAsync(command.TaskId, command.OwnerId, It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.Tasks.IsTaskOwnerAsync(command.TaskId, command.OwnerId, It.IsAny<CancellationToken>()))
                        .ReturnsAsync(true);
 
-        this._unitOfWorkMock.Setup(u => u.Users.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.Users.GetByEmailAsync(user.Email, It.IsAny<CancellationToken>()))
                        .ReturnsAsync(user);
 
-        this._unitOfWorkMock.Setup(u => u.UserTaskAccesses.DeleteByIdAsync(command.TaskId, user.Id, It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.UserTaskAccesses.DeleteByIdAsync(command.TaskId, user.Id, It.IsAny<CancellationToken>()))
                        .ReturnsAsync(1);
 
-        this._unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
                        .ReturnsAsync(1);
 
-        var handler = new DeleteTaskAccessByUserEmailCommandHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
+        // Assert
         Assert.True(result.IsSuccess);
-        this._unitOfWorkMock.Verify(u => u.UserTaskAccesses.DeleteByIdAsync(command.TaskId, user.Id, It.IsAny<CancellationToken>()), Times.Once);
-        this._unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        this._uowMock.Verify(u => u.UserTaskAccesses.DeleteByIdAsync(command.TaskId, user.Id, It.IsAny<CancellationToken>()), Times.Once);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that the handler correctly normalizes the input email by trimming whitespace and
+    /// converting it to lowercase before querying the user repository.
+    /// </summary>
+    /// <remarks>
+    /// This test ensures the handler is resilient to user input variability, preventing
+    /// lookups from failing due to case sensitivity or accidental leading/trailing spaces.
+    /// </remarks>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Fact]
+    public async Task Handle_ShouldNormalizeEmail_BeforeSearching()
+    {
+        // Arrange
+        var rawEmail = "  User@Test.com  ";
+        var normalizedEmail = "user@test.com";
+        var user = new UserEntity("John", "john", normalizedEmail, "hash");
+        var command = new DeleteTaskAccessByUserEmailCommand(Guid.NewGuid(), Guid.NewGuid(), rawEmail);
+
+        this._uowMock.Setup(u => u.Tasks.IsTaskOwnerAsync(command.TaskId, command.OwnerId, It.IsAny<CancellationToken>()))
+                       .ReturnsAsync(true);
+
+        this._uowMock.Setup(u => u.Users.GetByEmailAsync(normalizedEmail, It.IsAny<CancellationToken>()))
+                       .ReturnsAsync(user);
+
+        this._uowMock.Setup(u => u.UserTaskAccesses.DeleteByIdAsync(command.TaskId, user.Id, It.IsAny<CancellationToken>()))
+                       .ReturnsAsync(1);
+
+        // Act
+        await this._handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        this._uowMock.Verify(u => u.Users.GetByEmailAsync(normalizedEmail, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

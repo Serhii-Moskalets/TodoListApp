@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using TinyResult;
 using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
@@ -12,11 +12,9 @@ namespace TodoListApp.Application.UserTaskAccess.Commands.CreateUserTaskAccess;
 /// </summary>
 public class CreateUserTaskAccessCommandHandler(
     IUnitOfWork unitOfWork,
-    IUserTaskAccessService userTaskAccessService,
-    IValidator<CreateUserTaskAccessCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<CreateUserTaskAccessCommand, bool>
+    IUserTaskAccessService userTaskAccessService)
+    : HandlerBase(unitOfWork), IRequestHandler<CreateUserTaskAccessCommand, Result<bool>>
 {
-    private readonly IValidator<CreateUserTaskAccessCommand> _validator = validator;
     private readonly IUserTaskAccessService _userTaskAccessService = userTaskAccessService;
 
     /// <summary>
@@ -28,14 +26,8 @@ public class CreateUserTaskAccessCommandHandler(
     /// A <see cref="Result{T}"/> indicating success if the access was created,
     /// or failure if the user does not exist, is the task owner, or already has access.
     /// </returns>
-    public async Task<Result<bool>> HandleAsync(CreateUserTaskAccessCommand command, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(CreateUserTaskAccessCommand command, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(this._validator, command);
-        if (!validation.IsSuccess)
-        {
-            return await Result<bool>.FailureAsync(validation.Error!.Code, validation.Error.Message);
-        }
-
         var email = command.Email!.Trim().ToLowerInvariant();
 
         var sharedUser = await this.UnitOfWork.Users.GetByEmailAsync(email, cancellationToken);

@@ -34,5 +34,8 @@ public class UserTaskAccessEntityConfiguration : IEntityTypeConfiguration<UserTa
             .WithMany(t => t.UserAccesses)
             .HasForeignKey(uta => uta.TaskId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Configure index
+        builder.HasIndex(uta => uta.TaskId);
     }
 }

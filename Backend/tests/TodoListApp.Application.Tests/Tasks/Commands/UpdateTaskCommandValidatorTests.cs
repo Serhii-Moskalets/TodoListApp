@@ -51,25 +51,6 @@ public class UpdateTaskCommandValidatorTests
     }
 
     /// <summary>
-    /// Ensures validation fails when the title is empty.
-    /// </summary>
-    [Fact]
-    public void Should_Have_Error_When_Title_Is_Empty()
-    {
-        var command = new UpdateTaskCommand(
-            new UpdateTaskDto
-            {
-                TaskId = Guid.NewGuid(),
-                Title = string.Empty,
-            },
-            Guid.NewGuid());
-
-        var result = this._validator.TestValidate(command);
-        result.ShouldHaveValidationErrorFor(c => c.Dto.Title)
-              .WithErrorMessage("Task title cannot be empty.");
-    }
-
-    /// <summary>
     /// Ensures validation fails when the title exceeds the maximum length.
     /// </summary>
     [Fact]

@@ -9,22 +9,16 @@ namespace TodoListApp.Application.Abstractions.Interfaces.Repositories;
 public interface ITaskListRepository : IRepository<TaskListEntity>
 {
     /// <summary>
-    /// Retrieves all task lists owned by a specific user.
+    /// Retrieves all task lists owned by the specified user.
     /// </summary>
-    /// <param name="userId">The identifier of the user.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A read-only collection of <see cref="TaskListEntity"/>.</returns>
-    Task<IReadOnlyCollection<TaskListEntity>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Retrieves a paginated collection of task lists for a specific user.
-    /// </summary>
-    /// <param name="userId">The identifier of the user.</param>
+    /// <param name="userId">The identifier of the user who owns the task lists.</param>
     /// <param name="page">The page number (1-based).</param>
     /// <param name="pageSize">The number of items per page.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
-    /// <returns>A tuple containing the paginated items and the total count of task lists.</returns>
-    Task<(IReadOnlyCollection<TaskListEntity> Items, int TotalCount)> GetPagedByUserIdAsync(
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to monitor for cancellation requests.</param>
+    /// <returns>
+    /// A read-only collection of task list instances owned by the user.
+    /// </returns>
+    Task<(IReadOnlyCollection<TaskListEntity> Items, int TotalCount)> GetTaskListsAsync(
         Guid userId,
         int page,
         int pageSize,

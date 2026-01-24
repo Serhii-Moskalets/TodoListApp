@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Tasks.Commands.DeleteOverdueTasks;
 
 namespace TodoListApp.Api.Controllers;
@@ -17,17 +16,6 @@ namespace TodoListApp.Api.Controllers;
 [Route("api/task-lists/{taskListId:guid}/tasks")]
 public class TaskListTasksController : BaseController
 {
-    private readonly ICommandHandler<DeleteOverdueTasksCommand, bool> _deleteOverdueTasksHandler;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TaskListTasksController"/> class.
-    /// </summary>
-    /// <param name="deleteOverdueTasksHandler">Handler to delete overdue tasks from a task list.</param>
-    public TaskListTasksController(ICommandHandler<DeleteOverdueTasksCommand, bool> deleteOverdueTasksHandler)
-    {
-        this._deleteOverdueTasksHandler = deleteOverdueTasksHandler;
-    }
-
     /// <summary>
     /// Deletes all overdue tasks in the specified task list.
     /// </summary>
@@ -40,7 +28,7 @@ public class TaskListTasksController : BaseController
     public async Task<IActionResult> DeleteOverdueTasks([FromRoute] Guid taskListId)
     {
         var command = new DeleteOverdueTasksCommand(taskListId, CurrentUserId);
-        var result = await this._deleteOverdueTasksHandler.HandleAsync(command, this.HttpContext.RequestAborted);
+        var result = await this.Mediator.Send(command, this.HttpContext.RequestAborted);
         return this.HandleNoContent(result);
     }
 }

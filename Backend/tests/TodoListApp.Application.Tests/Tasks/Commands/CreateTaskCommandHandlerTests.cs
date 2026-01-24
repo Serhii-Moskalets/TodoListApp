@@ -1,6 +1,4 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using Moq;
+﻿using Moq;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
@@ -16,43 +14,24 @@ namespace TodoListApp.Application.Tests.Tasks.Commands;
 /// </summary>
 public class CreateTaskCommandHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<ITaskRepository> _taskRepoMock;
+    private readonly Mock<ITaskListRepository> _taskListRepoMock;
+    private readonly CreateTaskCommandHandler _handler;
+
     /// <summary>
-    /// Ensures the handler returns a failure result when validation fails.
+    /// Initializes a new instance of the <see cref="CreateTaskCommandHandlerTests"/> class.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
+    public CreateTaskCommandHandlerTests()
     {
-        // Arrange
-        var validatorMock = new Mock<IValidator<CreateTaskCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<CreateTaskCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult([
-                new ValidationFailure("Title", "Title is required")
-            ]));
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._taskRepoMock = new Mock<ITaskRepository>();
+        this._taskListRepoMock = new Mock<ITaskListRepository>();
 
-        var uowMock = new Mock<IUnitOfWork>();
+        this._uowMock.Setup(u => u.TaskLists).Returns(this._taskListRepoMock.Object);
+        this._uowMock.Setup(u => u.Tasks).Returns(this._taskRepoMock.Object);
 
-        var handler = new CreateTaskCommandHandler(
-            uowMock.Object,
-            validatorMock.Object);
-
-        var createTaskDto = new CreateTaskDto
-        {
-            DueDate = DateTime.Now.AddDays(1),
-            TaskListId = Guid.NewGuid(),
-            Title = string.Empty,
-        };
-
-        var command = new CreateTaskCommand(createTaskDto, Guid.NewGuid());
-
-        // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-        Assert.Equal("Title is required", result.Error.Message);
+        this._handler = new CreateTaskCommandHandler(this._uowMock.Object);
     }
 
     /// <summary>
@@ -63,38 +42,23 @@ public class CreateTaskCommandHandlerTests
     public async Task Handle_ShouldReturnNotFound_WhenTaskListDoesNotExist()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<CreateTaskCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<CreateTaskCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
-
-        var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock
+        this._taskListRepoMock
             .Setup(r => r.GetTaskListByIdForUserAsync(
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
-                false,
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskListEntity?)null);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
-
-        var handler = new CreateTaskCommandHandler(
-            uowMock.Object,
-            validatorMock.Object);
-
-        var createTaskDto = new CreateTaskDto
-        {
-            DueDate = DateTime.Now.AddDays(1),
-            TaskListId = Guid.NewGuid(),
-            Title = "Title",
-        };
-
-        var command = new CreateTaskCommand(createTaskDto, Guid.NewGuid());
+        var command = new CreateTaskCommand(
+            new CreateTaskDto
+            {
+                TaskListId = Guid.NewGuid(),
+                Title = "Title",
+            }, Guid.NewGuid());
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.False(result.IsSuccess);
@@ -109,54 +73,38 @@ public class CreateTaskCommandHandlerTests
     public async Task Handle_ShouldCreateTask_WhenCommandIsValid()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<CreateTaskCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<CreateTaskCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
-
         var userId = Guid.NewGuid();
         var taskListId = Guid.NewGuid();
-
         var taskList = new TaskListEntity(userId, "My list");
 
-        var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock
+        this._taskListRepoMock
             .Setup(r => r.GetTaskListByIdForUserAsync(
                 taskListId,
                 userId,
-                true,
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(taskList);
 
-        var taskRepoMock = new Mock<ITaskRepository>();
-
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
-        uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
                .ReturnsAsync(1);
 
-        var handler = new CreateTaskCommandHandler(
-            uowMock.Object,
-            validatorMock.Object);
-
-        var createTaskDto = new CreateTaskDto
+        var dto = new CreateTaskDto
         {
             DueDate = DateTime.UtcNow.AddDays(1),
             TaskListId = taskListId,
             Title = "New task",
         };
 
-        var command = new CreateTaskCommand(createTaskDto, userId);
+        var command = new CreateTaskCommand(dto, userId);
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
         Assert.NotEqual(Guid.Empty, result.Value);
 
-        taskRepoMock.Verify(
+        this._taskRepoMock.Verify(
             r =>
             r.AddAsync(
                 It.Is<TaskEntity>(t =>
@@ -166,6 +114,6 @@ public class CreateTaskCommandHandlerTests
                 It.IsAny<CancellationToken>()),
             Times.Once);
 
-        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

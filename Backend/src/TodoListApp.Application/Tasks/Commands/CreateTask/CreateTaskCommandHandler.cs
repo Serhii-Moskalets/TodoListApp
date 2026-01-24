@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using TinyResult;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
@@ -13,26 +13,17 @@ namespace TodoListApp.Application.Tasks.Commands.CreateTask;
 /// Initializes a new instance of the <see cref="CreateTaskCommandHandler"/> class.
 /// </remarks>
 public class CreateTaskCommandHandler(
-    IUnitOfWork unitOfWork,
-    IValidator<CreateTaskCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<CreateTaskCommand, Guid>
+    IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), IRequestHandler<CreateTaskCommand, Result<Guid>>
 {
-    private readonly IValidator<CreateTaskCommand> _validator = validator;
-
     /// <summary>
     /// Handles the creation of a new task based on the provided command.
     /// </summary>
     /// <param name="command">The <see cref="CreateTaskCommand"/> containing task details.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
     /// <returns>A <see cref="Result{Guid}"/> containing the created task identifier.</returns>
-    public async Task<Result<Guid>> HandleAsync(CreateTaskCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(CreateTaskCommand command, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(this._validator, command);
-        if (!validation.IsSuccess)
-        {
-            return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
-        }
-
         var taskList = await this.UnitOfWork.TaskLists
             .GetTaskListByIdForUserAsync(command.Dto.TaskListId, command.UserId, cancellationToken: cancellationToken);
 

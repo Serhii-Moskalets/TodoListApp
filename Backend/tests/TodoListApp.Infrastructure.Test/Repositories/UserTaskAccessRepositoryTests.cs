@@ -19,6 +19,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task Add_GetByTaskAndUserIdAsync_ShouldAddUserTaskAccessAndGetByTaskAndUserId()
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -37,6 +38,7 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(access);
         await context.SaveChangesAsync();
 
+        // Act
         var saved = await repo.GetByTaskAndUserIdAsync(task.Id, user_2.Id);
 
         Assert.NotNull(saved);
@@ -52,6 +54,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task DeleteByTaskAndUserIdAsync_ShouldRemoveAccess()
     {
+        // Arrange
         await using var context = SqliteInMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -70,6 +73,7 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(access);
         await context.SaveChangesAsync();
 
+        // Act
         var deleted = await repo.DeleteByIdAsync(task.Id, user_2.Id);
 
         Assert.Equal(1, deleted);
@@ -84,6 +88,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task DeleteAllByTaskIdAsync_ShouldRemoveAccess()
     {
+        // Arrange
         await using var context = SqliteInMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -108,6 +113,7 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(access_2);
         await context.SaveChangesAsync();
 
+        // Act
         var deleted = await repo.DeleteAllByTaskIdAsync(task_1.Id);
 
         Assert.Equal(1, deleted);
@@ -123,6 +129,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task DeleteAllByUserIdAsync_ShouldRemoveAccess()
     {
+        // Arrange
         await using var context = SqliteInMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -147,6 +154,7 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(access_2);
         await context.SaveChangesAsync();
 
+        // Act
         var deleted = await repo.DeleteAllByUserIdAsync(user_2.Id);
 
         Assert.Equal(1, deleted);
@@ -155,39 +163,114 @@ public class UserTaskAccessRepositoryTests
     }
 
     /// <summary>
-    /// Verifies that all shared access entries for a task
-    /// are returned correctly.
+    /// Verifies that the repository correctly implements pagination and
+    /// includes task navigation properties when fetching users for a specific task.
     /// </summary>
     /// <returns>A task representing the asynchronous test execution.</returns>
     [Fact]
-    public async Task GetSharedTasksByTaskIdAsync_ShouldReturnAccessList()
+    public async Task GetUserTaskAccessByTaskIdAsync_ShouldReturnPaginatedAccessList()
     {
-        await using var context = InMemoryDbContextFactory.Create();
+        // Arrange
+        await using var context = SqliteInMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
-        var user_1 = new UserEntity("John1", "john3", "john1@example.com", "hash3");
-        await context.Users.AddAsync(user_1);
-        var user_2 = new UserEntity("John2", "john2", "john2@example.com", "hash2");
-        await context.Users.AddAsync(user_2);
-        var user_3 = new UserEntity("John3", "john1", "john3@example.com", "hash1");
-        await context.Users.AddAsync(user_3);
+        var owner = new UserEntity("Owner", "owner", "owner@example.com", "hash");
+        await context.Users.AddAsync(owner);
 
-        var taskList = new TaskListEntity(user_1.Id, "Task list 1");
+        var taskList = new TaskListEntity(owner.Id, "List");
         await context.TaskLists.AddAsync(taskList);
 
-        var task = new TaskEntity(user_1.Id, taskList.Id, "Task1");
+        var task = new TaskEntity(owner.Id, taskList.Id, "Task1") { CreatedDate = DateTime.UtcNow };
         await context.Tasks.AddAsync(task);
 
-        var access_1 = new UserTaskAccessEntity(task.Id, user_2.Id);
-        var access_2 = new UserTaskAccessEntity(task.Id, user_3.Id);
-        await repo.AddAsync(access_1);
-        await repo.AddAsync(access_2);
+        for (int i = 0; i < 15; i++)
+        {
+            var user = new UserEntity($"User{i}", $"u{i}", $"u{i}@ex.com", "h");
+            await context.Users.AddAsync(user);
+            await repo.AddAsync(new UserTaskAccessEntity(task.Id, user.Id));
+        }
+
         await context.SaveChangesAsync();
 
-        var shared = await repo.GetUserTaskAccessByTaskIdAsync(task.Id);
-        Assert.Equal(2, shared.Count);
-        Assert.Contains(shared, x => x.UserId == user_2.Id);
-        Assert.Contains(shared, x => x.UserId == user_3.Id);
+        // Act
+        var (items, totalCount) = await repo.GetUserTaskAccessByTaskIdAsync(task.Id, page: 1, pageSize: 10);
+
+        // Assert
+        Assert.Equal(15, totalCount);
+        Assert.Equal(10, items.Count);
+        Assert.All(items, x =>
+        {
+            Assert.NotNull(x.User);
+            Assert.Equal(task.Id, x.TaskId);
+        });
+    }
+
+    /// <summary>
+    /// Verifies that pagination offsets (skipping pages) work correctly when
+    /// retrieving tasks shared with a specific user.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task GetSharedTasksByUserIdAsync_ShouldReturnCorrectPagination()
+    {
+        // Arrange
+        await using var context = SqliteInMemoryDbContextFactory.Create();
+        var repo = new UserTaskAccessRepository(context);
+
+        var owner = new UserEntity("Owner", "owner", "owner@example.com", "hash");
+        var sharedUser = new UserEntity("Shared", "shared", "shared@example.com", "hash2");
+        await context.Users.AddRangeAsync(owner, sharedUser);
+
+        var list = new TaskListEntity(owner.Id, "List");
+        await context.TaskLists.AddAsync(list);
+
+        for (int i = 0; i < 5; i++)
+        {
+            var t = new TaskEntity(owner.Id, list.Id, $"Task{i}") { CreatedDate = DateTime.UtcNow.AddMinutes(i) };
+            await context.Tasks.AddAsync(t);
+            await repo.AddAsync(new UserTaskAccessEntity(t.Id, sharedUser.Id));
+        }
+
+        await context.SaveChangesAsync();
+
+        // Act
+        var (items, totalCount) = await repo.GetSharedTasksByUserIdAsync(sharedUser.Id, page: 2, pageSize: 2);
+
+        // Assert
+        Assert.Equal(5, totalCount);
+        Assert.Equal(2, items.Count);
+    }
+
+    /// <summary>
+    /// Verifies that shared tasks are returned in descending order based
+    /// on their creation date (newest first).
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task GetSharedTasksByUserIdAsync_ShouldReturnCorrectOrder()
+    {
+        // Arrange
+        await using var context = SqliteInMemoryDbContextFactory.Create();
+        var repo = new UserTaskAccessRepository(context);
+
+        var user = new UserEntity("U", "u", "u@e.com", "h");
+        await context.Users.AddAsync(user);
+        var list = new TaskListEntity(user.Id, "L");
+        await context.TaskLists.AddAsync(list);
+
+        var oldTask = new TaskEntity(user.Id, list.Id, "Old") { CreatedDate = DateTime.UtcNow.AddDays(-1) };
+        var newTask = new TaskEntity(user.Id, list.Id, "New") { CreatedDate = DateTime.UtcNow };
+
+        await context.Tasks.AddRangeAsync(oldTask, newTask);
+        await repo.AddAsync(new UserTaskAccessEntity(oldTask.Id, user.Id));
+        await repo.AddAsync(new UserTaskAccessEntity(newTask.Id, user.Id));
+        await context.SaveChangesAsync();
+
+        // Act
+        var (items, _) = await repo.GetSharedTasksByUserIdAsync(user.Id, page: 1, pageSize: 10);
+
+        // Assert
+        Assert.Equal("New", items.First().Task.Title);
     }
 
     /// <summary>
@@ -198,7 +281,8 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task GetSharedTasksByUserIdAsync_ShouldReturnCorrectTasks()
     {
-        await using var context = InMemoryDbContextFactory.Create();
+        // Arrenge
+        await using var context = SqliteInMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
         var owner = new UserEntity("Owner", "owner", "owner@example.com", "hash");
@@ -208,8 +292,8 @@ public class UserTaskAccessRepositoryTests
         var taskList = new TaskListEntity(owner.Id, "List");
         await context.TaskLists.AddAsync(taskList);
 
-        var task1 = new TaskEntity(owner.Id, taskList.Id, "Task1");
-        var task2 = new TaskEntity(owner.Id, taskList.Id, "Task2");
+        var task1 = new TaskEntity(owner.Id, taskList.Id, "Task1") { CreatedDate = DateTime.UtcNow };
+        var task2 = new TaskEntity(owner.Id, taskList.Id, "Task2") { CreatedDate = DateTime.UtcNow.AddMinutes(1) };
         await context.Tasks.AddRangeAsync(task1, task2);
 
         var access1 = new UserTaskAccessEntity(task1.Id, sharedUser.Id);
@@ -218,9 +302,13 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(access2);
         await context.SaveChangesAsync();
 
-        var sharedTasks = await repo.GetSharedTasksByUserIdAsync(sharedUser.Id);
-        Assert.Equal(2, sharedTasks.Count);
-        Assert.All(sharedTasks, t => Assert.Equal(sharedUser.Id, t.UserId));
+        // Act
+        var (items, totalCount) = await repo.GetSharedTasksByUserIdAsync(sharedUser.Id);
+
+        // Assert
+        Assert.Equal(2, totalCount);
+        Assert.Equal(2, items.Count);
+        Assert.All(items, t => Assert.Equal(sharedUser.Id, t.UserId));
     }
 
     /// <summary>
@@ -231,6 +319,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task ExistsAsync_ShouldReturnTrue_WhenAccessExists()
     {
+        // Arrenge
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -249,6 +338,7 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(access);
         await context.SaveChangesAsync();
 
+        // Assert
         Assert.True(await repo.ExistsAsync(task.Id, user_2.Id));
     }
 
@@ -260,6 +350,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task ExistsAsync_ShouldReturnFalse_WhenAccessDoesNotExist()
     {
+        // Arrenge
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -278,6 +369,7 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(access);
         await context.SaveChangesAsync();
 
+        // Assert
         Assert.False(await repo.ExistsAsync(Guid.NewGuid(), user_2.Id));
         Assert.False(await repo.ExistsAsync(task.Id, Guid.NewGuid()));
     }
@@ -290,6 +382,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task ExistsByUserIdAsync_ShouldReturnTrue_WhenUserHasAccess()
     {
+        // Arrenge
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -306,6 +399,7 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(access);
         await context.SaveChangesAsync();
 
+        // Assert
         Assert.True(await repo.ExistsByUserIdAsync(user.Id));
     }
 
@@ -317,9 +411,11 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task ExistsByUserIdAsync_ShouldReturnFalse_WhenUserHasNoAccess()
     {
+        // Arrenge
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
+        // Assert
         Assert.False(await repo.ExistsByUserIdAsync(Guid.NewGuid()));
     }
 
@@ -331,6 +427,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task ExistsByTaskIdAsync_ShouldReturnCorrectValues()
     {
+        // Arrenge
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -346,6 +443,7 @@ public class UserTaskAccessRepositoryTests
         await repo.AddAsync(new UserTaskAccessEntity(task.Id, user.Id));
         await context.SaveChangesAsync();
 
+        // Assert
         Assert.True(await repo.ExistsByTaskIdAsync(task.Id));
         Assert.False(await repo.ExistsByTaskIdAsync(Guid.NewGuid()));
     }

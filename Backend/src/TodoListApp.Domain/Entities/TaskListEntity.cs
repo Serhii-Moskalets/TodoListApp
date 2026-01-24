@@ -6,7 +6,7 @@ namespace TodoListApp.Domain.Entities;
 /// <summary>
 /// Represents a task list owned by a user, containing multiple tasks.
 /// </summary>
-[Table("Task_Lists")]
+[Table("task_lists")]
 public class TaskListEntity : BaseEntity
 {
     /// <summary>
@@ -40,19 +40,19 @@ public class TaskListEntity : BaseEntity
     /// <summary>
     /// Gets the title of the task list.
     /// </summary>
-    [Column("Title")]
+    [Column("title")]
     public string Title { get; private set; } = null!;
 
     /// <summary>
     /// Gets the creation date of the task list.
     /// </summary>
-    [Column("Created_Date")]
+    [Column("created_date")]
     public DateTime CreatedDate { get; init; }
 
     /// <summary>
     /// Gets the ID of the user who owns this task list.
     /// </summary>
-    [Column("Owner_Id")]
+    [Column("owner_id")]
     public Guid OwnerId { get; init; }
 
     /// <summary>

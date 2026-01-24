@@ -1,11 +1,9 @@
-﻿using FluentValidation;
-using Moq;
+﻿using Moq;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Tasks.Commands.DeleteOverdueTasks;
 using TodoListApp.Domain.Entities;
-using FVResult = FluentValidation.Results.ValidationResult;
 
 namespace TodoListApp.Application.Tests.Tasks.Commands;
 
@@ -15,30 +13,21 @@ namespace TodoListApp.Application.Tests.Tasks.Commands;
 /// </summary>
 public class DeleteOverdueTasksCommandHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<ITaskListRepository> _taskListRepoMock;
+    private readonly DeleteOverdueTasksCommandHandler _handler;
+
     /// <summary>
-    /// Ensures the handler returns a failure result when validation fails.
+    /// Initializes a new instance of the <see cref="DeleteOverdueTasksCommandHandlerTests"/> class.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
+    public DeleteOverdueTasksCommandHandlerTests()
     {
-        // Arrange
-        var validatorMock = new Mock<IValidator<DeleteOverdueTasksCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<DeleteOverdueTasksCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FVResult([new FluentValidation.Results.ValidationFailure("TaskListId", "Validation failed")]));
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._taskListRepoMock = new Mock<ITaskListRepository>();
 
-        var uowMock = new Mock<IUnitOfWork>();
-        var handler = new DeleteOverdueTasksCommandHandler(uowMock.Object, validatorMock.Object);
+        this._uowMock.Setup(u => u.TaskLists).Returns(this._taskListRepoMock.Object);
 
-        var command = new DeleteOverdueTasksCommand(Guid.NewGuid(), Guid.NewGuid());
-
-        // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("Validation failed", result.Error!.Message);
+        this._handler = new DeleteOverdueTasksCommandHandler(this._uowMock.Object);
     }
 
     /// <summary>
@@ -49,24 +38,16 @@ public class DeleteOverdueTasksCommandHandlerTests
     public async Task Handle_ShouldReturnNotFound_WhenTaskListDoesNotExist()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<DeleteOverdueTasksCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<DeleteOverdueTasksCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FVResult());
-
-        var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock
+        this._taskListRepoMock
             .Setup(r => r.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskListEntity?)null);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
+        this._uowMock.Setup(u => u.TaskLists).Returns(this._taskListRepoMock.Object);
 
-        var handler = new DeleteOverdueTasksCommandHandler(uowMock.Object, validatorMock.Object);
         var command = new DeleteOverdueTasksCommand(Guid.NewGuid(), Guid.NewGuid());
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.False(result.IsSuccess);
@@ -81,32 +62,23 @@ public class DeleteOverdueTasksCommandHandlerTests
     public async Task Handle_ShouldDeleteOverdueTasks_WhenTaskListExists()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<DeleteOverdueTasksCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<DeleteOverdueTasksCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FVResult());
+        var userId = Guid.NewGuid();
+        var taskListMock = new Mock<TaskListEntity>(userId, "My list") { CallBase = true };
 
-        var taskList = new Mock<TaskListEntity>(Guid.NewGuid(), "My list") { CallBase = true };
-        taskList.Setup(t => t.DeleteOverdueTasks(It.IsAny<DateTime>()));
+        this._taskListRepoMock
+            .Setup(r => r.GetTaskListByIdForUserAsync(taskListMock.Object.Id, userId, false, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(taskListMock.Object);
 
-        var taskListRepoMock = new Mock<ITaskListRepository>();
-        taskListRepoMock
-            .Setup(r => r.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(taskList.Object);
+        this._uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists).Returns(taskListRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        var handler = new DeleteOverdueTasksCommandHandler(uowMock.Object, validatorMock.Object);
-        var command = new DeleteOverdueTasksCommand(Guid.NewGuid(), Guid.NewGuid());
+        var command = new DeleteOverdueTasksCommand(taskListMock.Object.Id, userId);
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
-        taskList.Verify(t => t.DeleteOverdueTasks(It.IsAny<DateTime>()), Times.Once);
-        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        taskListMock.Verify(t => t.DeleteOverdueTasks(It.IsAny<DateTime>()), Times.Once);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

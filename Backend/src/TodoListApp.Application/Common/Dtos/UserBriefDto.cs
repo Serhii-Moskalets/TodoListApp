@@ -11,6 +11,16 @@ public class UserBriefDto
     public Guid Id { get; init; }
 
     /// <summary>
+    /// Gets the firts name of the user.
+    /// </summary>
+    public string FirstName { get; init; } = null!;
+
+    /// <summary>
+    /// Gets the last name of the user.
+    /// </summary>
+    public string? LastName { get; init; }
+
+    /// <summary>
     /// Gets the username of the user.
     /// </summary>
     public string UserName { get; init; } = null!;

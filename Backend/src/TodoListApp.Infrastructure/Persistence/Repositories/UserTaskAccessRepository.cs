@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Domain.Entities;
+using TodoListApp.Infrastructure.Extensions;
 using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 namespace TodoListApp.Infrastructure.Persistence.Repositories;
@@ -165,12 +166,10 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
         }
 
         return await this._dbSet
-        .Include(x => x.User)
-        .Include(x => x.Task)
-            .ThenInclude(t => t.Comments)
-        .Include(x => x.Task)
-            .ThenInclude(t => t.Tag)
-        .FirstOrDefaultAsync(x => x.TaskId == taskId && x.UserId == userId, cancellationToken);
+            .AsNoTracking()
+            .Include(x => x.Task)
+                .ThenInclude(t => t.Tag)
+            .FirstOrDefaultAsync(x => x.TaskId == taskId && x.UserId == userId, cancellationToken);
     }
 
     /// <summary>
@@ -178,49 +177,71 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
     /// This is typically used by the owner of the task to see which users have access.
     /// </summary>
     /// <param name="taskId">The ID of the task.</param>
+    /// <param name="page">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>
     /// A task that returns a read-only collection of <see cref="UserTaskAccessEntity"/> entries
     /// representing all users who currently have access to the task.
     /// </returns>
-    public async Task<IReadOnlyCollection<UserTaskAccessEntity>> GetUserTaskAccessByTaskIdAsync(
+    public async Task<(IReadOnlyCollection<UserTaskAccessEntity> Items, int TotalCount)> GetUserTaskAccessByTaskIdAsync(
         Guid taskId,
+        int page = 1,
+        int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
         if (taskId == Guid.Empty)
         {
-            return Array.Empty<UserTaskAccessEntity>();
+            return (Array.Empty<UserTaskAccessEntity>(), 0);
         }
 
-        return await this._dbSet
-            .Include(x => x.User)
-            .Where(x => x.TaskId == taskId)
-            .ToListAsync(cancellationToken);
+        var taskAccessQuery = this._dbSet.AsNoTracking()
+           .Where(x => x.TaskId == taskId);
+
+        var totalCount = await taskAccessQuery.CountAsync(cancellationToken);
+
+        var items = await taskAccessQuery
+           .Include(x => x.User)
+           .OrderBy(x => x.User.FirstName)
+           .ApplyPagination(page, pageSize)
+           .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
 
     /// <summary>
     /// Retrieves all user-task access entries for a specific user.
     /// </summary>
     /// <param name="userId">The ID of the user.</param>
+    /// <param name="page">The page number (1-based).</param>
+    /// <param name="pageSize">The number of items per page.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>
     /// A task that returns a read-only collection of <see cref="UserTaskAccessEntity"/>
     /// entries representing the tasks shared with the user.
     /// </returns>
-    public async Task<IReadOnlyCollection<UserTaskAccessEntity>> GetSharedTasksByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<(IReadOnlyCollection<UserTaskAccessEntity> Items, int TotalCount)> GetSharedTasksByUserIdAsync(
+        Guid userId,
+        int page = 1,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         if (userId == Guid.Empty)
         {
-            return Array.Empty<UserTaskAccessEntity>();
+            return (Array.Empty<UserTaskAccessEntity>(), 0);
         }
 
-        return await this._dbSet
-            .Include(x => x.User)
-            .Include(x => x.Task)
-                .ThenInclude(t => t.Comments)
-            .Include(x => x.Task)
-                .ThenInclude(t => t.Tag)
-            .Where(x => x.UserId == userId)
+        var taskAccessQuery = this._dbSet.AsNoTracking()
+            .Where(x => x.UserId == userId);
+
+        var totalCount = await taskAccessQuery.CountAsync(cancellationToken);
+
+        var items = await taskAccessQuery
+            .Include(x => x.Task).ThenInclude(t => t.Tag)
+            .OrderByDescending(x => x.Task.CreatedDate)
+            .ApplyPagination(page, pageSize)
             .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
 }

@@ -192,22 +192,59 @@ public class TaskEntityTests
     }
 
     /// <summary>
-    /// Verifies that updating task details throws an <see cref="DomainException"/>
-    /// when the title is invalid.
+    /// Verifies that the existing task title is preserved when the provided update value
+    /// is null or an empty string.
     /// </summary>
-    /// <param name="invalidTitle">An invalid task title.</param>
+    /// <param name="invalidTitle">The null or empty title string to test.</param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    [InlineData("  ")]
-    public void Update_ShouldThrow_WhenTitleInvalid(string? invalidTitle)
+    public void Update_ShouldKeepOldTitle_WhenTitleIsNullOrEmpty(string? invalidTitle)
     {
-        var task = new TaskEntity(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            "Old title");
+        // Arrange
+        var oldTitle = "Old title";
+        var task = new TaskEntity(Guid.NewGuid(), Guid.NewGuid(), oldTitle);
 
-        Assert.Throws<DomainException>(() => task.UpdateDetails(invalidTitle!));
+        // Act
+        task.UpdateDetails(invalidTitle);
+
+        // Assert
+        Assert.Equal(oldTitle, task.Title);
+    }
+
+    /// <summary>
+    /// Verifies that the original due date is maintained if the new due date
+    /// provided during the update is null.
+    /// </summary>
+    [Fact]
+    public void Update_ShouldKeepOldDueDate_WhenNewDueDateIsNull()
+    {
+        // Arrange
+        var oldDate = DateTime.UtcNow.AddDays(1);
+        var task = new TaskEntity(Guid.NewGuid(), Guid.NewGuid(), "Title", oldDate);
+
+        // Act
+        task.UpdateDetails("New Title", dueDate: null);
+
+        // Assert
+        Assert.Equal(oldDate, task.DueDate);
+    }
+
+    /// <summary>
+    /// Verifies that the task description is successfully cleared (set to null)
+    /// when null is explicitly passed as the new description value.
+    /// </summary>
+    [Fact]
+    public void Update_ShouldClearDescription_WhenDescriptionIsNull()
+    {
+        // Arrange
+        var task = new TaskEntity(Guid.NewGuid(), Guid.NewGuid(), "Title", description: "Old Description");
+
+        // Act
+        task.UpdateDetails("Title", description: null);
+
+        // Assert
+        Assert.Null(task.Description);
     }
 
     /// <summary>

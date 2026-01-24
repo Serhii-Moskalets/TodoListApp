@@ -1,16 +1,22 @@
 ﻿using System;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using TinyResult;
 
 namespace TodoListApp.Api.Controllers;
 
 /// <summary>
 /// Base controller that provides common properties and methods
-/// for API controllers, such as retrieving the current user's ID.
+/// for API controllers, such as retrieving the current user's ID and MediatR sender.
 /// </summary>
+[ApiController]
+[Route("api/[controller]")]
 public abstract class BaseController : ControllerBase
 {
+    private ISender? _mediator;
+
     /// <summary>
     /// Gets the current user's ID.
     /// </summary>
@@ -20,6 +26,14 @@ public abstract class BaseController : ControllerBase
     /// from the authentication context or JWT token.
     /// </remarks>
     protected static Guid CurrentUserId => Guid.Parse("b3d5f0a1-6c3b-4a2e-9f1c-123456789abc");
+
+    /// <summary>
+    ///  Gets the Mediatr sender for dispatching commands and queries.
+    /// </summary>
+    /// <remarks>
+    /// Lazily retrieves the <see cref="ISender"/> service from the current HTTP context.
+    /// </remarks>
+    protected ISender Mediator => this._mediator ??= this.HttpContext.RequestServices.GetRequiredService<ISender>();
 
     /// <summary>
     /// Converts an application <see cref="Result{T}"/> into a corresponding HTTP response.
@@ -41,6 +55,7 @@ public abstract class BaseController : ControllerBase
         {
             TinyResult.Enums.ErrorCode.ValidationError => this.BadRequest(result.Error),
             TinyResult.Enums.ErrorCode.NotFound => this.NotFound(result.Error),
+            TinyResult.Enums.ErrorCode.InvalidOperation => this.Conflict(result.Error),
             _ => this.StatusCode(StatusCodes.Status500InternalServerError, result.Error)
         };
     }

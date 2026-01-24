@@ -1,10 +1,10 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using TinyResult;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
 using TodoListApp.Application.Common.Dtos;
+using TodoListApp.Application.Common.Extensions;
 using TodoListApp.Application.UserTaskAccess.Mappers;
-using TodoListApp.Application.UserTaskAccess.Queries.GetSharedTaskById;
 
 namespace TodoListApp.Application.UserTaskAccess.Queries.GetSharedTasksByUserId;
 
@@ -12,13 +12,9 @@ namespace TodoListApp.Application.UserTaskAccess.Queries.GetSharedTasksByUserId;
 /// Handles the <see cref="GetSharedTasksByUserIdQuery"/> by retrieving
 /// all tasks that are shared with the specified user.
 /// </summary>
-public class GetSharedTasksByUserIdQueryHandler(
-    IUnitOfWork unitOfWork,
-    IValidator<GetSharedTasksByUserIdQuery> validator)
-    : HandlerBase(unitOfWork), IQueryHandler<GetSharedTasksByUserIdQuery, IEnumerable<TaskDto>>
+public class GetSharedTasksByUserIdQueryHandler(IUnitOfWork unitOfWork)
+    : HandlerBase(unitOfWork), IRequestHandler<GetSharedTasksByUserIdQuery, Result<PagedResultDto<TaskDto>>>
 {
-    private readonly IValidator<GetSharedTasksByUserIdQuery> _validator = validator;
-
     /// <summary>
     /// Processes the query to retrieve tasks shared with a specific user.
     /// </summary>
@@ -32,18 +28,17 @@ public class GetSharedTasksByUserIdQueryHandler(
     /// A <see cref="Result{T}"/> containing a collection of <see cref="TaskDto"/>
     /// representing tasks shared with the user.
     /// </returns>
-    public async Task<Result<IEnumerable<TaskDto>>> Handle(GetSharedTasksByUserIdQuery query, CancellationToken cancellationToken)
+    public async Task<Result<PagedResultDto<TaskDto>>> Handle(GetSharedTasksByUserIdQuery query, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(this._validator, query);
-        if (!validation.IsSuccess)
-        {
-            return await Result<IEnumerable<TaskDto>>.FailureAsync(validation.Error!.Code, validation.Error.Message);
-        }
+        var (items, totalCount) = await this.UnitOfWork.UserTaskAccesses
+            .GetSharedTasksByUserIdAsync(
+            query.UserId,
+            query.Page,
+            query.PageSize,
+            cancellationToken);
 
-        var sharedTaskEntities = await this.UnitOfWork.UserTaskAccesses
-            .GetSharedTasksByUserIdAsync(query.UserId, cancellationToken);
+        var result = items.ToPagedResult(totalCount, query.Page, query.PageSize, TaskAccessForUserMapper.Map);
 
-        return await Result<IEnumerable<TaskDto>>.SuccessAsync(
-            TaskAccessForUserMapper.Map(sharedTaskEntities));
+        return await Result<PagedResultDto<TaskDto>>.SuccessAsync(result);
     }
 }

@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using TinyResult;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Services;
@@ -16,11 +16,9 @@ namespace TodoListApp.Application.Comment.Commands.CreateComment;
 /// </remarks>
 public class CreateCommentCommandHandler(
     IUnitOfWork unitOfWork,
-    ITaskAccessService taskAccessService,
-    IValidator<CreateCommentCommand> validator)
-    : HandlerBase(unitOfWork), ICommandHandler<CreateCommentCommand, Guid>
+    ITaskAccessService taskAccessService)
+    : HandlerBase(unitOfWork), IRequestHandler<CreateCommentCommand, Result<Guid>>
 {
-    private readonly IValidator<CreateCommentCommand> _validator = validator;
     private readonly ITaskAccessService _taskAccessService = taskAccessService;
 
     /// <summary>
@@ -32,14 +30,8 @@ public class CreateCommentCommandHandler(
     /// A <see cref="Result{T}"/> containing the ID of the created comment on success,
     /// or an error if validation fails or the user has no access.
     /// </returns>
-    public async Task<Result<Guid>> HandleAsync(CreateCommentCommand command, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(CreateCommentCommand command, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(this._validator, command);
-        if (!validation.IsSuccess)
-        {
-            return await Result<Guid>.FailureAsync(validation.Error!.Code, validation.Error.Message);
-        }
-
         if (!await this._taskAccessService.HasAccessAsync(command.TaskId, command.UserId, cancellationToken))
         {
             return await Result<Guid>.FailureAsync(ErrorCode.InvalidOperation, "You don't have access to this task.");

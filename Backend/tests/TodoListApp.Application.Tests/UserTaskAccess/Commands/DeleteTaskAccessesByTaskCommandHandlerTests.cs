@@ -1,6 +1,4 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using Moq;
+﻿using Moq;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.UserTaskAccess.Commands.DeleteTaskAccessesByTask;
@@ -14,40 +12,24 @@ namespace TodoListApp.Application.Tests.UserTaskAccess.Commands;
 /// </summary>
 public class DeleteTaskAccessesByTaskCommandHandlerTests
 {
-    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<ITaskRepository> _tasksRepoMock = new();
-    private readonly Mock<IUserTaskAccessRepository> _userTaskAccessRepoMock = new();
-    private readonly Mock<IValidator<DeleteTaskAccessesByTaskCommand>> _validatorMock = new();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<ITaskRepository> _tasksRepoMock;
+    private readonly Mock<IUserTaskAccessRepository> _userTaskAccessRepoMock;
+    private readonly DeleteTaskAccessesByTaskCommandHandler _handler;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DeleteTaskAccessesByTaskCommandHandlerTests"/> class.
-    /// Sets up repository mocks and configures the unit of work to return them.
     /// </summary>
     public DeleteTaskAccessesByTaskCommandHandlerTests()
     {
+        this._unitOfWorkMock = new Mock<IUnitOfWork>();
+        this._tasksRepoMock = new Mock<ITaskRepository>();
+        this._userTaskAccessRepoMock = new Mock<IUserTaskAccessRepository>();
+
         this._unitOfWorkMock.Setup(u => u.Tasks).Returns(this._tasksRepoMock.Object);
         this._unitOfWorkMock.Setup(u => u.UserTaskAccesses).Returns(this._userTaskAccessRepoMock.Object);
-    }
 
-    /// <summary>
-    /// Ensures the handler returns a failure result when validation fails.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
-    {
-        var command = new DeleteTaskAccessesByTaskCommand(Guid.Empty, Guid.NewGuid());
-
-        this._validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskAccessesByTaskCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult([new ValidationFailure("TaskId", "TaskId is required.")]));
-
-        var handler = new DeleteTaskAccessesByTaskCommandHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
-
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal("TaskId is required.", result.Error!.Message);
+        this._handler = new DeleteTaskAccessesByTaskCommandHandler(this._unitOfWorkMock.Object);
     }
 
     /// <summary>
@@ -58,65 +40,41 @@ public class DeleteTaskAccessesByTaskCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnFailure_WhenTaskNotFoundOrUserNotOwner()
     {
+        // Arrange
         var taskId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var command = new DeleteTaskAccessesByTaskCommand(taskId, userId);
-
-        this._validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskAccessesByTaskCommand>(), It.IsAny<CancellationToken>()))
-                      .ReturnsAsync(new ValidationResult());
 
         this._tasksRepoMock.Setup(r => r.GetTaskByIdForUserAsync(taskId, userId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                       .ReturnsAsync((TaskEntity?)null);
 
-        var handler = new DeleteTaskAccessesByTaskCommandHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
+        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal("You do not have permission to delete accesses for this task.", result.Error!.Message);
+        this._userTaskAccessRepoMock.Verify(r => r.DeleteAllByTaskIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
-    /// Ensures the handler returns a failure result when no shared accesses exist for the task.
+    /// Verifies that the handler successfully removes all shared access entries associated with a task
+    /// when the task exists and the requesting user is the authorized owner.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    /// <remarks>
+    /// This test ensures that the "Delete All" logic correctly orchestrates the retrieval
+    /// of the task for the specific user and invokes the repository's bulk deletion method
+    /// followed by a unit of work commit.
+    /// </remarks>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenNoSharedAccessesExist()
+    public async Task Handle_ShouldDeleteAllAccesses_WhenTaskExistsAndHasSharedAccesses()
     {
+        // Arrange
         var taskId = Guid.NewGuid();
         var userId = Guid.NewGuid();
         var task = new TaskEntity(userId, Guid.NewGuid(), "Test Task");
         var command = new DeleteTaskAccessesByTaskCommand(taskId, userId);
-
-        this._validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskAccessesByTaskCommand>(), It.IsAny<CancellationToken>()))
-                      .ReturnsAsync(new ValidationResult());
-
-        this._tasksRepoMock.Setup(r => r.GetTaskByIdForUserAsync(taskId, userId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                      .ReturnsAsync(task);
-
-        this._userTaskAccessRepoMock.Setup(r => r.ExistsByTaskIdAsync(taskId, It.IsAny<CancellationToken>()))
-                               .ReturnsAsync(false);
-
-        var handler = new DeleteTaskAccessesByTaskCommandHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal("There are no shared accesses for this task.", result.Error!.Message);
-    }
-
-    /// <summary>
-    /// Ensures the handler deletes all user-task accesses successfully when the task exists and the user is the owner.
-    /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
-    [Fact]
-    public async Task Handle_ShouldDeleteAllAccesses_WhenTaskExistsAndUserIsOwner()
-    {
-        var taskId = Guid.NewGuid();
-        var userId = Guid.NewGuid();
-        var task = new TaskEntity(userId, Guid.NewGuid(), "Test Task");
-        var command = new DeleteTaskAccessesByTaskCommand(taskId, userId);
-
-        this._validatorMock.Setup(v => v.ValidateAsync(It.IsAny<DeleteTaskAccessesByTaskCommand>(), It.IsAny<CancellationToken>()))
-                      .ReturnsAsync(new ValidationResult());
 
         this._tasksRepoMock.Setup(r => r.GetTaskByIdForUserAsync(taskId, userId, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                       .ReturnsAsync(task);
@@ -125,17 +83,16 @@ public class DeleteTaskAccessesByTaskCommandHandlerTests
                                .ReturnsAsync(true);
 
         this._userTaskAccessRepoMock.Setup(r => r.DeleteAllByTaskIdAsync(taskId, It.IsAny<CancellationToken>()))
-                               .ReturnsAsync(1);
+                               .ReturnsAsync(5);
 
         this._unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
                        .ReturnsAsync(1);
 
-        var handler = new DeleteTaskAccessesByTaskCommandHandler(this._unitOfWorkMock.Object, this._validatorMock.Object);
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
+        // Assert
         Assert.True(result.IsSuccess);
-
         this._userTaskAccessRepoMock.Verify(r => r.DeleteAllByTaskIdAsync(taskId, It.IsAny<CancellationToken>()), Times.Once);
         this._unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

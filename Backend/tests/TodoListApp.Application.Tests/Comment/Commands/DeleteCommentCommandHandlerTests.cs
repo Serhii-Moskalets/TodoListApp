@@ -1,6 +1,4 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using Moq;
+﻿using Moq;
 using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
@@ -15,31 +13,24 @@ namespace TodoListApp.Application.Tests.Comment.Commands;
 /// </summary>
 public class DeleteCommentCommandHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<ICommentRepository> _commentsRepoMock;
+    private readonly Mock<ITaskRepository> _taskRepoMock;
+    private readonly DeleteCommentCommandHandler _handler;
+
     /// <summary>
-    /// Returns failure if validation fails.
+    /// Initializes a new instance of the <see cref="DeleteCommentCommandHandlerTests"/> class.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task HandleAsync_ShouldReturnFailure_WhenValidationFails()
+    public DeleteCommentCommandHandlerTests()
     {
-        // Arrange
-        var validatorMock = new Mock<IValidator<DeleteCommentCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<DeleteCommentCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult([new ValidationFailure("CommentId", "Required")]));
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._commentsRepoMock = new Mock<ICommentRepository>();
+        this._taskRepoMock = new Mock<ITaskRepository>();
 
-        var uowMock = new Mock<IUnitOfWork>();
+        this._uowMock.Setup(u => u.Comments).Returns(this._commentsRepoMock.Object);
+        this._uowMock.Setup(u => u.Tasks).Returns(this._taskRepoMock.Object);
 
-        var handler = new DeleteCommentCommandHandler(uowMock.Object, validatorMock.Object);
-
-        var command = new DeleteCommentCommand(Guid.Empty, Guid.NewGuid());
-
-        // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Equal("Required", result.Error!.Message);
+        this._handler = new DeleteCommentCommandHandler(this._uowMock.Object);
     }
 
     /// <summary>
@@ -50,21 +41,14 @@ public class DeleteCommentCommandHandlerTests
     public async Task HandleAsync_ShouldReturnFailure_WhenCommentNotFound()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<DeleteCommentCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<DeleteCommentCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
-
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Comments.GetByIdAsync(It.IsAny<Guid>(), true, It.IsAny<CancellationToken>()))
-               .ReturnsAsync((CommentEntity?)null);
-
-        var handler = new DeleteCommentCommandHandler(uowMock.Object, validatorMock.Object);
+        this._commentsRepoMock
+            .Setup(u => u.GetByIdAsync(It.IsAny<Guid>(), true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((CommentEntity?)null);
 
         var command = new DeleteCommentCommand(Guid.NewGuid(), Guid.NewGuid());
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.False(result.IsSuccess);
@@ -80,25 +64,17 @@ public class DeleteCommentCommandHandlerTests
     public async Task HandleAsync_ShouldReturnFailure_WhenUserHasNoPermission()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<DeleteCommentCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<DeleteCommentCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
-
         var comment = new CommentEntity(Guid.NewGuid(), Guid.NewGuid(), "Test");
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Comments.GetByIdAsync(It.IsAny<Guid>(), true, It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.Comments.GetByIdAsync(It.IsAny<Guid>(), true, It.IsAny<CancellationToken>()))
                .ReturnsAsync(comment);
-        uowMock.Setup(u => u.Tasks.IsTaskOwnerAsync(comment.TaskId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.Tasks.IsTaskOwnerAsync(comment.TaskId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                .ReturnsAsync(false);
-
-        var handler = new DeleteCommentCommandHandler(uowMock.Object, validatorMock.Object);
 
         var command = new DeleteCommentCommand(comment.Id, Guid.NewGuid());
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.False(result.IsSuccess);
@@ -114,42 +90,22 @@ public class DeleteCommentCommandHandlerTests
     public async Task HandleAsync_ShouldDeleteComment_WhenUserIsCommentOwner()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<DeleteCommentCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<DeleteCommentCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
-
         var userId = Guid.NewGuid();
-        var taskId = Guid.NewGuid();
-        var comment = new CommentEntity(taskId, userId, "Test");
+        var comment = new CommentEntity(Guid.NewGuid(), userId, "Test");
 
-        var commentsRepoMock = new Mock<ICommentRepository>();
-        commentsRepoMock.Setup(r => r.DeleteAsync(comment, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        this._commentsRepoMock
+            .Setup(u => u.GetByIdAsync(comment.Id, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(comment);
 
-        commentsRepoMock.Setup(r => r.GetByIdAsync(comment.Id, true, It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(comment);
-
-        var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(t => t.IsTaskOwnerAsync(taskId, userId, It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(false);
-
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Comments.GetByIdAsync(comment.Id, true, It.IsAny<CancellationToken>()))
-               .ReturnsAsync(comment);
-        uowMock.Setup(u => u.Comments).Returns(commentsRepoMock.Object);
-        uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        var handler = new DeleteCommentCommandHandler(uowMock.Object, validatorMock.Object);
         var command = new DeleteCommentCommand(comment.Id, userId);
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
-        commentsRepoMock.Verify(r => r.DeleteAsync(comment, It.IsAny<CancellationToken>()), Times.Once);
-        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        this._commentsRepoMock.Verify(r => r.DeleteAsync(comment, It.IsAny<CancellationToken>()), Times.Once);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     /// <summary>
@@ -160,40 +116,26 @@ public class DeleteCommentCommandHandlerTests
     public async Task HandleAsync_ShouldDeleteComment_WhenUserIsTaskOwner()
     {
         // Arrange
-        var validatorMock = new Mock<IValidator<DeleteCommentCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<DeleteCommentCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
-
         var commentOwnerId = Guid.NewGuid();
         var taskOwnerId = Guid.NewGuid();
-        var taskId = Guid.NewGuid();
-        var comment = new CommentEntity(taskId, commentOwnerId, "Test");
+        var comment = new CommentEntity(Guid.NewGuid(), commentOwnerId, "Test");
 
-        var commentsRepoMock = new Mock<ICommentRepository>();
-        commentsRepoMock.Setup(r => r.DeleteAsync(comment, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        this._commentsRepoMock
+             .Setup(u => u.GetByIdAsync(comment.Id, true, It.IsAny<CancellationToken>()))
+             .ReturnsAsync(comment);
 
-        commentsRepoMock.Setup(r => r.GetByIdAsync(comment.Id, true, It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(comment);
+        this._taskRepoMock
+            .Setup(t => t.IsTaskOwnerAsync(comment.TaskId, taskOwnerId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
 
-        var taskRepoMock = new Mock<ITaskRepository>();
-        taskRepoMock.Setup(t => t.IsTaskOwnerAsync(taskId, taskOwnerId, It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(true);
-
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.Comments).Returns(commentsRepoMock.Object);
-        uowMock.Setup(u => u.Tasks).Returns(taskRepoMock.Object);
-        uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        var handler = new DeleteCommentCommandHandler(uowMock.Object, validatorMock.Object);
         var command = new DeleteCommentCommand(comment.Id, taskOwnerId);
 
         // Act
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
-        commentsRepoMock.Verify(r => r.DeleteAsync(comment, It.IsAny<CancellationToken>()), Times.Once);
-        uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        this._commentsRepoMock.Verify(r => r.DeleteAsync(comment, It.IsAny<CancellationToken>()), Times.Once);
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -1,6 +1,5 @@
-﻿using FluentValidation;
-using FluentValidation.Results;
-using Moq;
+﻿using Moq;
+using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.TaskList.Commands.UpdateTaskList;
@@ -14,28 +13,22 @@ namespace TodoListApp.Application.Tests.TaskList.Commands;
 /// </summary>
 public class UpdateTaskListCommandHandlerTests
 {
+    private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<IUniqueNameService> _uniqueNameServiceMock;
+    private readonly Mock<ITaskListRepository> _taskListRepoMock;
+    private readonly UpdateTaskListCommandHandler _handler;
+
     /// <summary>
-    /// Returns failure if validation fails.
+    /// Initializes a new instance of the <see cref="UpdateTaskListCommandHandlerTests"/> class.
     /// </summary>
-    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
-    [Fact]
-    public async Task Handle_ShouldReturnFailure_WhenValidationFails()
+    public UpdateTaskListCommandHandlerTests()
     {
-        var validatorMock = new Mock<IValidator<UpdateTaskListCommand>>();
-        validatorMock
-            .Setup(v => v.ValidateAsync(It.IsAny<UpdateTaskListCommand>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult([new ValidationFailure("NewTitle", "Required")]));
+        this._uowMock = new Mock<IUnitOfWork>();
+        this._uniqueNameServiceMock = new Mock<IUniqueNameService>();
+        this._taskListRepoMock = new Mock<ITaskListRepository>();
 
-        var uowMock = new Mock<IUnitOfWork>();
-        var serviceMock = new Mock<ITaskListNameUniquenessService>();
-
-        var handler = new UpdateTaskListCommandHandler(uowMock.Object, serviceMock.Object, validatorMock.Object);
-
-        var command = new UpdateTaskListCommand(Guid.NewGuid(), Guid.NewGuid(), string.Empty);
-        var result = await handler.HandleAsync(command, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal("Required", result.Error!.Message);
+        this._uowMock.Setup(tl => tl.TaskLists).Returns(this._taskListRepoMock.Object);
+        this._handler = new UpdateTaskListCommandHandler(this._uowMock.Object, this._uniqueNameServiceMock.Object);
     }
 
     /// <summary>
@@ -45,21 +38,22 @@ public class UpdateTaskListCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnNotFound_WhenTaskListDoesNotExist()
     {
-        var validatorMock = new Mock<IValidator<UpdateTaskListCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<UpdateTaskListCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult());
-
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
-               .ReturnsAsync((TaskListEntity)null!);
-
-        var serviceMock = new Mock<ITaskListNameUniquenessService>();
-
-        var handler = new UpdateTaskListCommandHandler(uowMock.Object, serviceMock.Object, validatorMock.Object);
+        // Arrange
+        this._uowMock.Setup(
+            u =>
+            u.TaskLists.GetTaskListByIdForUserAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
+                It.IsAny<bool>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TaskListEntity)null!);
 
         var command = new UpdateTaskListCommand(Guid.NewGuid(), Guid.NewGuid(), "NewTitle");
-        var result = await handler.HandleAsync(command, CancellationToken.None);
 
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
+
+        // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal("Task list not found.", result.Error!.Message);
     }
@@ -71,25 +65,24 @@ public class UpdateTaskListCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldReturnSuccess_WhenTitleIsUnchanged()
     {
-        var validatorMock = new Mock<IValidator<UpdateTaskListCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<UpdateTaskListCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult());
-
+        // Arrange
         var taskList = new TaskListEntity(Guid.NewGuid(), "SameTitle");
 
-        var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
+        this._uowMock.Setup(u => u.TaskLists.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
                .ReturnsAsync(taskList);
 
-        var serviceMock = new Mock<ITaskListNameUniquenessService>();
-
-        var handler = new UpdateTaskListCommandHandler(uowMock.Object, serviceMock.Object, validatorMock.Object);
-
         var command = new UpdateTaskListCommand(taskList.Id, Guid.NewGuid(), "SameTitle");
-        var result = await handler.HandleAsync(command, CancellationToken.None);
 
+        // Act
+        var result = await this._handler.Handle(command, CancellationToken.None);
+
+        // Assert
         Assert.True(result.IsSuccess);
-        serviceMock.Verify(s => s.GetUniqueNameAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        this._uniqueNameServiceMock.Verify(
+            s => s.GetUniqueNameAsync(
+            It.IsAny<string>(),
+            It.IsAny<Func<string, CancellationToken, Task<bool>>>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
@@ -99,29 +92,33 @@ public class UpdateTaskListCommandHandlerTests
     [Fact]
     public async Task Handle_ShouldUpdateTitle_WhenNewTitleIsDifferent()
     {
-        var validatorMock = new Mock<IValidator<UpdateTaskListCommand>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<UpdateTaskListCommand>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync(new ValidationResult());
-
+        // Arrange
+        var userId = Guid.NewGuid();
         var taskList = new TaskListEntity(Guid.NewGuid(), "OldTitle");
+        var newTitle = "NewTitle";
 
         var uowMock = new Mock<IUnitOfWork>();
-        uowMock.Setup(u => u.TaskLists.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
-               .ReturnsAsync(taskList);
+        uowMock.Setup(u => u.TaskLists.GetTaskListByIdForUserAsync(taskList.Id, userId, false, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(taskList);
+
         uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-        var serviceMock = new Mock<ITaskListNameUniquenessService>();
-        serviceMock.Setup(s => s.GetUniqueNameAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                   .ReturnsAsync((Guid userId, string newTitle, CancellationToken _) => newTitle + " Unique");
+        var serviceMock = new Mock<IUniqueNameService>();
+        serviceMock.Setup(s => s.GetUniqueNameAsync(
+                It.Is<string>(t => t == newTitle),
+                It.IsAny<Func<string, CancellationToken, Task<bool>>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("NewTitle Unique");
 
-        var handler = new UpdateTaskListCommandHandler(uowMock.Object, serviceMock.Object, validatorMock.Object);
+        var handler = new UpdateTaskListCommandHandler(uowMock.Object, serviceMock.Object);
 
-        var command = new UpdateTaskListCommand(taskList.Id, Guid.NewGuid(), "NewTitle");
-        var result = await handler.HandleAsync(command, CancellationToken.None);
+        var command = new UpdateTaskListCommand(taskList.Id, userId, "NewTitle");
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal("NewTitle Unique", taskList.Title);
-        serviceMock.Verify(s => s.GetUniqueNameAsync(It.IsAny<Guid>(), "NewTitle", It.IsAny<CancellationToken>()), Times.Once);
         uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

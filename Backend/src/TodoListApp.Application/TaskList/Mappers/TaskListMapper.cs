@@ -16,12 +16,12 @@ public static partial class TaskListMapper
     /// </summary>
     /// <param name="entity">The source task list entity.</param>
     /// <returns>A <see cref="TaskListDto"/> with mapped properties.</returns>
-    public static partial TaskListDto Map(TaskEntity entity);
+    public static partial TaskListDto Map(TaskListEntity entity);
 
     /// <summary>
     /// Maps a collection of <see cref="TaskListEntity"/> objects to a list of <see cref="TaskListDto"/> objects.
     /// </summary>
     /// <param name="entities">The source collection of task list entities.</param>
     /// <returns>A list of <see cref="TaskListDto"/> objects.</returns>
-    public static partial IList<TaskListDto> Map(IReadOnlyCollection<TaskListEntity> entities);
+    public static partial IReadOnlyCollection<TaskListDto> Map(IReadOnlyCollection<TaskListEntity> entities);
 }

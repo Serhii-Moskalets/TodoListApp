@@ -17,5 +17,11 @@ public class GetCommentsQueryValidator : AbstractValidator<GetCommentsQuery>
 
         this.RuleFor(x => x.TaskId)
             .NotEmpty().WithMessage("Task ID is required.");
+
+        this.RuleFor(x => x.Page)
+            .GreaterThanOrEqualTo(1).WithMessage("Page must be at least 1.");
+
+        this.RuleFor(x => x.PageSize)
+                .InclusiveBetween(1, 100).WithMessage("PageSize must be between 1 and 100.");
     }
 }

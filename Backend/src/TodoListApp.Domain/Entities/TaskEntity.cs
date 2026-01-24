@@ -7,7 +7,7 @@ namespace TodoListApp.Domain.Entities;
 /// <summary>
 /// Represents a task within a task list, including its owner, status, due date, and related comments.
 /// </summary>
-[Table("Tasks")]
+[Table("tasks")]
 public class TaskEntity : BaseEntity
 {
     /// <summary>
@@ -64,49 +64,49 @@ public class TaskEntity : BaseEntity
     /// <summary>
     /// Gets the title of the task.
     /// </summary>
-    [Column("Title")]
+    [Column("title")]
     public string Title { get; private set; } = null!;
 
     /// <summary>
     /// Gets the description of the task.
     /// </summary>
-    [Column("Description")]
+    [Column("description")]
     public string? Description { get; private set; }
 
     /// <summary>
     /// Gets the time when the task was created.
     /// </summary>
-    [Column("Created_Date")]
+    [Column("created_date")]
     public DateTime CreatedDate { get; init; }
 
     /// <summary>
     /// Gets the due date of the task.
     /// </summary>
-    [Column("Due_Date")]
+    [Column("due_date")]
     public DateTime? DueDate { get; private set; }
 
     /// <summary>
     /// Gets the status of the task.
     /// </summary>
-    [Column("Status")]
+    [Column("status")]
     public StatusTask Status { get; private set; }
 
     /// <summary>
     /// Gets the ID of the user who owns the task.
     /// </summary>
-    [Column("Owner_Id")]
+    [Column("owner_id")]
     public Guid OwnerId { get; init; }
 
     /// <summary>
     /// Gets the ID of the task list that this task belongs to.
     /// </summary>
-    [Column("Task_List_Id")]
+    [Column("task_list_id")]
     public Guid TaskListId { get; init; }
 
     /// <summary>
     /// Gets the ID of the tag associated with the task, if any.
     /// </summary>
-    [Column("Tag_Id")]
+    [Column("tag_id")]
     public Guid? TagId { get; private set; }
 
     /// <summary>
@@ -141,22 +141,17 @@ public class TaskEntity : BaseEntity
     /// <param name="description">The new description of the task.</param>
     /// <param name="dueDate">The new due date of the task.</param>
     /// <exception cref="DomainException">
-    /// Thrown when <paramref name="title"/> is null, empty, or consists only of white-space characters.
-    /// Thrown when <paramref name="dueDate"/> is in the past.
+    /// Thrown when <paramref name="title"/> or <paramref name="description"/> exceed their length limits,
+    /// or when <paramref name="dueDate"/> is in the past.
     /// </exception>
-    public virtual void UpdateDetails(string title, string? description = null, DateTime? dueDate = null)
+    public virtual void UpdateDetails(string? title, string? description = null, DateTime? dueDate = null)
     {
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            throw new DomainException("Title cannot be empty.");
-        }
-
-        if (title.Length > 100)
+        if (title?.Length > 100)
         {
             throw new DomainException("Title cannot exceed 100 characters.");
         }
 
-        if (dueDate < DateTime.UtcNow)
+        if (dueDate.HasValue && dueDate < DateTime.UtcNow)
         {
             throw new DomainException("Due date cannot be in the past.");
         }
@@ -166,9 +161,9 @@ public class TaskEntity : BaseEntity
             throw new DomainException("Description cannot exceed 1000 characters.");
         }
 
-        this.Title = title.Trim();
+        this.Title = !string.IsNullOrEmpty(title) ? title.Trim() : this.Title;
         this.Description = description?.Trim();
-        this.DueDate = dueDate;
+        this.DueDate = dueDate ?? this.DueDate;
     }
 
     /// <summary>
