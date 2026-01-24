@@ -18,6 +18,7 @@ namespace TodoListApp.Api.Controllers;
 /// Provides endpoints to retrieve shared tasks, get users with access to a task,
 /// and manage access assignments and deletions.
 /// </summary>
+[Route("api/access")]
 public class UserTaskAccessesController : BaseController
 {
     /// <summary>

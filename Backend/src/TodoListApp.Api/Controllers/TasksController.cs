@@ -45,7 +45,7 @@ public class TasksController : BaseController
     /// <param name="request">Filtering and sorting parameters.</param>
     /// <returns>A list of tasks.</returns>
     [HttpGet]
-    public async Task<IActionResult> GetAllTasks([FromQuery] GetTasksRequest request)
+    public async Task<IActionResult> GetTasks([FromQuery] GetTasksRequest request)
     {
         var query = new GetTasksQuery(
             CurrentUserId,

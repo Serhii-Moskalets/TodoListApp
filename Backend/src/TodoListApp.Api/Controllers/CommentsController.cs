@@ -12,6 +12,7 @@ namespace TodoListApp.Api.Controllers;
 /// <summary>
 /// Provides HTTP endpoints for managing comments related to tasks.
 /// </summary>
+[Route("api/tasks/{taskId:guid}/comments")]
 public class CommentsController : BaseController
 {
     /// <summary>
@@ -57,7 +58,7 @@ public class CommentsController : BaseController
     /// Returns <see cref="NoContentResult"/> if the comment was successfully deleted;
     /// otherwise, returns <see cref="BadRequestObjectResult"/> with error details.
     /// </returns>
-    [HttpDelete("{commentId:guid}")]
+    [HttpDelete("~/api/comments/{commentId:guid}")]
     public async Task<IActionResult> DeleteComment([FromRoute] Guid commentId)
     {
         var command = new DeleteCommentCommand(commentId, CurrentUserId);
@@ -74,7 +75,7 @@ public class CommentsController : BaseController
     /// Returns <see cref="NoContentResult"/> if the comment was successfully updated;
     /// otherwise, returns <see cref="BadRequestObjectResult"/> with error details.
     /// </returns>
-    [HttpPut("{commentId:guid}")]
+    [HttpPut("~/api/comments/{commentId:guid}")]
     public async Task<IActionResult> UpdateComment(
         [FromRoute] Guid commentId,
         [FromBody] CommentTextRequest request)
