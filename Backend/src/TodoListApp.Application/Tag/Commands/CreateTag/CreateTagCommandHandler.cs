@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using TinyResult;
+using TinyResult.Enums;
 using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Application.Abstractions.Messaging;
@@ -14,8 +15,7 @@ namespace TodoListApp.Application.Tag.Commands.CreateTag;
 /// </summary>
 public class CreateTagCommandHandler(
     IUnitOfWork unitOfWork,
-    IUniqueNameService uniqueNameService,
-    ISender mediator)
+    IUniqueNameService uniqueNameService)
     : HandlerBase(unitOfWork), IRequestHandler<CreateTagCommand, Result<Guid>>
 {
     /// <summary>
@@ -34,14 +34,15 @@ public class CreateTagCommandHandler(
         var tagEntity = new TagEntity(uniqueName, command.UserId);
         await this.UnitOfWork.Tags.AddAsync(tagEntity, cancellationToken);
 
-        var addTagCommand = new AddTagToTaskCommand(command.TaskId, command.UserId, tagEntity.Id);
-        var tagResult = await mediator.Send(addTagCommand, cancellationToken);
+        var task = await this.UnitOfWork.Tasks
+        .GetTaskByIdForUserAsync(command.TaskId, command.UserId, false, cancellationToken);
 
-        if (!tagResult.IsSuccess)
+        if (task is null)
         {
-            await this.UnitOfWork.Tags.DeleteAsync(tagEntity, cancellationToken);
-            return await Result<Guid>.FailureAsync(tagResult.Error!.Code, tagResult.Error.Message);
+            return await Result<Guid>.FailureAsync(ErrorCode.NotFound, "Task not found.");
         }
+
+        task.SetTag(tagEntity.Id);
 
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
