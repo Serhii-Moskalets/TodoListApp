@@ -21,7 +21,6 @@ public class UpdateTaskCommandValidator : AbstractValidator<UpdateTaskCommand>
             .NotEmpty().WithMessage("User ID is required.");
 
         this.RuleFor(x => x.Dto.Title)
-            .NotEmpty().WithMessage("Task title cannot be empty.")
             .MaximumLength(100).WithMessage("Title cannot exceed 100 characters.");
 
         this.RuleFor(x => x.Dto.Description)

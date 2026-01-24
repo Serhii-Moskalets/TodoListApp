@@ -141,22 +141,17 @@ public class TaskEntity : BaseEntity
     /// <param name="description">The new description of the task.</param>
     /// <param name="dueDate">The new due date of the task.</param>
     /// <exception cref="DomainException">
-    /// Thrown when <paramref name="title"/> is null, empty, or consists only of white-space characters.
-    /// Thrown when <paramref name="dueDate"/> is in the past.
+    /// Thrown when <paramref name="title"/> or <paramref name="description"/> exceed their length limits,
+    /// or when <paramref name="dueDate"/> is in the past.
     /// </exception>
-    public virtual void UpdateDetails(string title, string? description = null, DateTime? dueDate = null)
+    public virtual void UpdateDetails(string? title, string? description = null, DateTime? dueDate = null)
     {
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            throw new DomainException("Title cannot be empty.");
-        }
-
-        if (title.Length > 100)
+        if (title?.Length > 100)
         {
             throw new DomainException("Title cannot exceed 100 characters.");
         }
 
-        if (dueDate < DateTime.UtcNow)
+        if (dueDate.HasValue && dueDate < DateTime.UtcNow)
         {
             throw new DomainException("Due date cannot be in the past.");
         }
@@ -166,9 +161,9 @@ public class TaskEntity : BaseEntity
             throw new DomainException("Description cannot exceed 1000 characters.");
         }
 
-        this.Title = title.Trim();
+        this.Title = !string.IsNullOrEmpty(title) ? title.Trim() : this.Title;
         this.Description = description?.Trim();
-        this.DueDate = dueDate;
+        this.DueDate = dueDate ?? this.DueDate;
     }
 
     /// <summary>

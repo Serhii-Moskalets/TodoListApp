@@ -37,7 +37,7 @@ public class UpdateTaskCommandHandler(
             return await Result<bool>.SuccessAsync(true);
         }
 
-        task.UpdateDetails(command.Dto.Title!, command.Dto.Description, command.Dto.DueDate);
+        task.UpdateDetails(command.Dto.Title, command.Dto.Description, command.Dto.DueDate);
         await this.UnitOfWork.SaveChangesAsync(cancellationToken);
 
         return await Result<bool>.SuccessAsync(true);
