@@ -73,7 +73,7 @@ public class UserEntity : BaseEntity
     public string? LastName { get; private set; }
 
     /// <summary>
-    /// Gets he username of the user.
+    /// Gets the username of the user.
     /// </summary>
     [Column("user_name")]
     public string UserName { get; private set; } = null!;
