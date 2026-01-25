@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,8 +8,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Sinks.PostgreSQL;
+using TodoListApp.Api.Middleware;
 using TodoListApp.Application.Abstractions.Interfaces.TodoListAppDbContext;
 using TodoListApp.Application.Common.Extensions;
+using TodoListApp.Domain.Exceptions;
 using TodoListApp.Infrastructure.Extensions;
 using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
@@ -59,28 +60,20 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UseExceptionHandler(errorApp =>
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.UseSerilogRequestLogging(options =>
 {
-    errorApp.Run(async context =>
+    options.GetLevel = (_, _, ex) =>
     {
-        context.Response.StatusCode = 500;
-        context.Response.ContentType = "application/json";
-
-        var errorFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
-        if (errorFeature != null)
+        if (ex is DomainException)
         {
-            var ex = errorFeature.Error;
-            Log.Error(ex, "Unhandled exception occurred while processing request.");
-            await context.Response.WriteAsJsonAsync(new
-            {
-                context.Response.StatusCode,
-                Message = "An unexpected error occurred. Please try again later.",
-            });
+            return Serilog.Events.LogEventLevel.Information;
         }
-    });
-});
 
-app.UseSerilogRequestLogging();
+        return ex != null ? Serilog.Events.LogEventLevel.Error : Serilog.Events.LogEventLevel.Information;
+    };
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

@@ -29,6 +29,6 @@ public class TaskListTasksController : BaseController
     {
         var command = new DeleteOverdueTasksCommand(taskListId, CurrentUserId);
         var result = await this.Mediator.Send(command, this.HttpContext.RequestAborted);
-        return this.HandleNoContent(result);
+        return this.HandleResult(result);
     }
 }

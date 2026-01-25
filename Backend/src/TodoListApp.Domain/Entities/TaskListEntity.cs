@@ -87,20 +87,4 @@ public class TaskListEntity : BaseEntity
 
         this.Title = title.Trim();
     }
-
-    /// <summary>
-    /// Deletes all overdue tasks for the given point in time.
-    /// </summary>
-    /// <param name="now">The current date and time used to determine overdue tasks.</param>
-    public virtual void DeleteOverdueTasks(DateTime now)
-    {
-        var overdueTasks = this.Tasks
-            .Where(t => t.DueDate.HasValue && t.DueDate < now)
-            .ToList();
-
-        foreach (var task in overdueTasks)
-        {
-            this.Tasks.Remove(task);
-        }
-    }
 }

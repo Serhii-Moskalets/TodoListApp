@@ -57,5 +57,16 @@ public class TodoListAppDbContext : DbContext, ITodoListAppDbContext
 
         // Apply all entity configurations from the assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TodoListAppDbContext).Assembly);
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            var properties = entityType.GetProperties()
+                .Where(p => p.ClrType == typeof(DateTime) || p.ClrType == typeof(DateTime?));
+
+            foreach (var property in properties)
+            {
+                property.SetColumnType("timestamp with time zone");
+            }
+        }
     }
 }

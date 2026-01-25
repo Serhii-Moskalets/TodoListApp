@@ -18,7 +18,7 @@ namespace TodoListApp.Api.Requests.Task;
 public record GetTasksRequest(
     Guid TaskListId,
     int Page = 1,
-    int PageSize = 1,
+    int PageSize = 10,
     IReadOnlyCollection<StatusTask>? TaskStatuses = null,
     DateTime? DueBefore = null,
     DateTime? DueAfter = null,
