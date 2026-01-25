@@ -19,15 +19,20 @@ public class TaskListRepositoryTests
     [Fact]
     public async Task ExistsByTitle_ReturnTrue_WhenTaskListExists()
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TaskListRepository(context);
 
         var userId = Guid.NewGuid();
         var taskList = new TaskListEntity(userId, title: "Task List");
+
         await repo.AddAsync(taskList);
         await context.SaveChangesAsync();
 
+        // Act
         var exists = await repo.ExistsByTitleAsync("Task List", userId);
+
+        // Assert
         Assert.True(exists);
     }
 
@@ -39,11 +44,15 @@ public class TaskListRepositoryTests
     [Fact]
     public async Task ExistsByTitle_ReturnFalse_WhenTaskListDoesNotExists()
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TaskListRepository(context);
         var userId = Guid.NewGuid();
 
+        // Act
         var exists = await repo.ExistsByTitleAsync("Task List", userId);
+
+        // Assert
         Assert.False(exists);
     }
 
@@ -59,10 +68,12 @@ public class TaskListRepositoryTests
     [InlineData("  ")]
     public async Task ExistsByTitle_MustThrow_WhenTitleIsNullOrWhiteSpace(string? title)
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TaskListRepository(context);
         var userId = Guid.NewGuid();
 
+        // Assert&Act
         await Assert.ThrowsAsync<ArgumentException>(
             () => repo.ExistsByTitleAsync(title!, userId));
     }
@@ -90,14 +101,14 @@ public class TaskListRepositoryTests
         await context.AddRangeAsync(taskLists);
         await context.SaveChangesAsync();
 
-        // Act - беремо 1 сторінку розміром 2
+        // Act
         var (items, totalCount) = await repo.GetTaskListsAsync(userId, page: 1, pageSize: 2);
 
         // Assert
-        Assert.Equal(3, totalCount); // Всього 3
-        Assert.Equal(2, items.Count); // На сторінці 2
-        Assert.Contains(items, x => x.Title == "List A");
-        Assert.Contains(items, x => x.Title == "List B");
+        Assert.Equal(3, totalCount);
+        Assert.Equal(2, items.Count);
+        Assert.Equal("List A", items.ElementAt(0).Title);
+        Assert.Equal("List B", items.ElementAt(1).Title);
     }
 
     /// <summary>
@@ -129,6 +140,37 @@ public class TaskListRepositoryTests
     }
 
     /// <summary>
+    /// Verifies that <see cref="TaskListRepository.GetTaskListsAsync"/> returns task lists
+    /// ordered by their creation date.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task GetTaskListsAsync_ShouldReturnListsOrderedByCreatedDate()
+    {
+        // Arrange
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new TaskListRepository(context);
+        var userId = Guid.NewGuid();
+
+        var listOld = new TaskListEntity(userId, "Old List") { CreatedDate = DateTime.UtcNow.AddMinutes(-10) };
+        var listMiddle = new TaskListEntity(userId, "Middle List") { CreatedDate = DateTime.UtcNow.AddMinutes(-5) };
+        var listNew = new TaskListEntity(userId, "New List") { CreatedDate = DateTime.UtcNow };
+
+        await context.AddRangeAsync(listMiddle, listNew, listOld);
+        await context.SaveChangesAsync();
+
+        // Act
+        var (items, totalCount) = await repo.GetTaskListsAsync(userId, page: 1, pageSize: 10);
+        var itemsList = items.ToList();
+
+        // Assert
+        Assert.Equal(3, totalCount);
+        Assert.Equal("Old List", itemsList[0].Title);
+        Assert.Equal("Middle List", itemsList[1].Title);
+        Assert.Equal("New List", itemsList[2].Title);
+    }
+
+    /// <summary>
     /// Verifies that <see cref="TaskListRepository.GetTaskListByIdForUserAsync"/>
     /// retrieves the correct task list by its ID.
     /// </summary>
@@ -136,6 +178,7 @@ public class TaskListRepositoryTests
     [Fact]
     public async Task GetByIdForUser_ReturnTaskList_WhenTaskListExists()
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TaskListRepository(context);
 
@@ -145,7 +188,10 @@ public class TaskListRepositoryTests
         await repo.AddAsync(taskList);
         await context.SaveChangesAsync();
 
+        // Act
         var saved = await repo.GetTaskListByIdForUserAsync(taskList.Id, userId);
+
+        // Assert
         Assert.NotNull(saved);
         Assert.Equal(taskList.Title, saved.Title);
     }
@@ -158,12 +204,17 @@ public class TaskListRepositoryTests
     [Fact]
     public async Task GetByIdForUser_ReturnTaskListEmpty_WhenTaskListDoesNotExists()
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TaskListRepository(context);
 
         var userId = Guid.NewGuid();
         var taskListId = Guid.NewGuid();
+
+        // Act
         var saved = await repo.GetTaskListByIdForUserAsync(taskListId, userId);
+
+        // Assert
         Assert.Null(saved);
     }
 
@@ -175,6 +226,7 @@ public class TaskListRepositoryTests
     [Fact]
     public async Task GetTaskListByIdForUserAsync_ReturnsNull_WhenUserMismatch()
     {
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new TaskListRepository(context);
 
@@ -184,7 +236,10 @@ public class TaskListRepositoryTests
         await repo.AddAsync(taskList);
         await context.SaveChangesAsync();
 
+        // Act
         var result = await repo.GetTaskListByIdForUserAsync(taskList.Id, user2);
+
+        // Assert
         Assert.Null(result);
     }
 }

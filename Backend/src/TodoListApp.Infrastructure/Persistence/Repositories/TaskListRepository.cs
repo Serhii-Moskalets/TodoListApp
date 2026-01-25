@@ -66,7 +66,7 @@ public class TaskListRepository(TodoListAppDbContext context)
         var totalCount = await taskListsQuery.CountAsync(cancellationToken);
 
         var items = await taskListsQuery
-            .OrderBy(x => x.Title)
+            .OrderBy(x => x.CreatedDate)
             .ApplyPagination(page, pageSize)
             .ToListAsync(cancellationToken);
 

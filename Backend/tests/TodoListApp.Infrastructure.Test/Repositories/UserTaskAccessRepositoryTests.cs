@@ -281,7 +281,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task GetSharedTasksByUserIdAsync_ShouldReturnCorrectTasks()
     {
-        // Arrenge
+        // Arrange
         await using var context = SqliteInMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -309,6 +309,48 @@ public class UserTaskAccessRepositoryTests
         Assert.Equal(2, totalCount);
         Assert.Equal(2, items.Count);
         Assert.All(items, t => Assert.Equal(sharedUser.Id, t.UserId));
+    }
+
+    /// <summary>
+    /// Verifies that shared tasks are returned in descending order (newest first)
+    /// based on the CreatedDate of the access record.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task GetSharedTasksByUserIdAsync_ShouldReturnNewestFirst()
+    {
+        // Arrange
+        await using var context = SqliteInMemoryDbContextFactory.Create();
+        var repo = new UserTaskAccessRepository(context);
+
+        var user = new UserEntity("SharedUser", "user", "user@e.com", "hash");
+        var owner = new UserEntity("Owner", "owner", "owner@e.com", "hash");
+        await context.Users.AddRangeAsync(user, owner);
+
+        var list = new TaskListEntity(owner.Id, "List");
+        await context.TaskLists.AddAsync(list);
+
+        var task1 = new TaskEntity(owner.Id, list.Id, "Oldest");
+        var task2 = new TaskEntity(owner.Id, list.Id, "Middle");
+        var task3 = new TaskEntity(owner.Id, list.Id, "Newest");
+        await context.Tasks.AddRangeAsync(task1, task2, task3);
+
+        var accessOld = new UserTaskAccessEntity(task1.Id, user.Id) { CreatedDate = DateTime.UtcNow.AddHours(-2) };
+        var accessMiddle = new UserTaskAccessEntity(task2.Id, user.Id) { CreatedDate = DateTime.UtcNow.AddHours(-1) };
+        var accessNew = new UserTaskAccessEntity(task3.Id, user.Id) { CreatedDate = DateTime.UtcNow };
+
+        await context.UserTaskAccesses.AddRangeAsync(accessOld, accessMiddle, accessNew);
+        await context.SaveChangesAsync();
+
+        // Act
+        var (items, _) = await repo.GetSharedTasksByUserIdAsync(user.Id, page: 1, pageSize: 10);
+
+        // Assert
+        var titlesInOrder = items.Select(x => x.Task.Title).ToList();
+
+        Assert.Equal("Newest", titlesInOrder[0]);
+        Assert.Equal("Middle", titlesInOrder[1]);
+        Assert.Equal("Oldest", titlesInOrder[2]);
     }
 
     /// <summary>
@@ -350,7 +392,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task ExistsAsync_ShouldReturnFalse_WhenAccessDoesNotExist()
     {
-        // Arrenge
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -382,7 +424,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task ExistsByUserIdAsync_ShouldReturnTrue_WhenUserHasAccess()
     {
-        // Arrenge
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -411,7 +453,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task ExistsByUserIdAsync_ShouldReturnFalse_WhenUserHasNoAccess()
     {
-        // Arrenge
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -427,7 +469,7 @@ public class UserTaskAccessRepositoryTests
     [Fact]
     public async Task ExistsByTaskIdAsync_ShouldReturnCorrectValues()
     {
-        // Arrenge
+        // Arrange
         await using var context = InMemoryDbContextFactory.Create();
         var repo = new UserTaskAccessRepository(context);
 
@@ -446,5 +488,45 @@ public class UserTaskAccessRepositoryTests
         // Assert
         Assert.True(await repo.ExistsByTaskIdAsync(task.Id));
         Assert.False(await repo.ExistsByTaskIdAsync(Guid.NewGuid()));
+    }
+
+    /// <summary>
+    /// Verifies that the access entries are returned in alphabetical order by user's first name.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test execution.</returns>
+    [Fact]
+    public async Task GetUserTaskAccessByTaskIdAsync_ShouldReturnInAlphabeticalOrder()
+    {
+        // Arrange
+        await using var context = SqliteInMemoryDbContextFactory.Create();
+        var repo = new UserTaskAccessRepository(context);
+
+        var owner = new UserEntity("Owner", "owner", "owner@example.com", "hash");
+        await context.Users.AddAsync(owner);
+        var taskList = new TaskListEntity(owner.Id, "List");
+        await context.TaskLists.AddAsync(taskList);
+        var task = new TaskEntity(owner.Id, taskList.Id, "Task1");
+        await context.Tasks.AddAsync(task);
+
+        var userNames = new[] { "Zebra", "Alice", "Charlie", "Bob" };
+        foreach (var name in userNames)
+        {
+            var user = new UserEntity(name, name.ToLower(), $"{name}@ex.com", "h");
+            await context.Users.AddAsync(user);
+            await repo.AddAsync(new UserTaskAccessEntity(task.Id, user.Id));
+        }
+
+        await context.SaveChangesAsync();
+
+        // Act
+        var (items, _) = await repo.GetUserTaskAccessByTaskIdAsync(task.Id, page: 1, pageSize: 10);
+
+        // Assert
+        var namesInOrder = items.Select(x => x.User.FirstName).ToList();
+
+        Assert.Equal("Alice", namesInOrder[0]);
+        Assert.Equal("Bob", namesInOrder[1]);
+        Assert.Equal("Charlie", namesInOrder[2]);
+        Assert.Equal("Zebra", namesInOrder[3]);
     }
 }

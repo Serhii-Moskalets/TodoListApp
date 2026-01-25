@@ -44,7 +44,7 @@ public class TagRepository(TodoListAppDbContext context)
         var totalCount = await tagsQuery.CountAsync(cancellationToken);
 
         var items = await tagsQuery
-            .OrderBy(x => x.Name)
+            .OrderBy(x => x.CreatedDate)
             .ApplyPagination(page, pageSize)
             .ToListAsync(cancellationToken);
 
