@@ -55,7 +55,6 @@ public class TaskEntity : BaseEntity
         this.Title = title.Trim();
         this.Description = description?.Trim();
         this.Status = StatusTask.NotStarted;
-        this.CreatedDate = DateTime.UtcNow;
         this.DueDate = dueDate;
     }
 
@@ -72,12 +71,6 @@ public class TaskEntity : BaseEntity
     /// </summary>
     [Column("description")]
     public string? Description { get; private set; }
-
-    /// <summary>
-    /// Gets the time when the task was created.
-    /// </summary>
-    [Column("created_date")]
-    public DateTime CreatedDate { get; init; }
 
     /// <summary>
     /// Gets the due date of the task.

@@ -98,6 +98,37 @@ public class TagRepositoryTests
     }
 
     /// <summary>
+    /// Verifies that <see cref="TagRepository.GetTagsAsync"/> returns tags
+    /// ordered by their creation date.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    [Fact]
+    public async Task GetTagsAsync_ShouldReturnTagsOrderedByCreatedDate()
+    {
+        // Arrange
+        await using var context = InMemoryDbContextFactory.Create();
+        var repo = new TagRepository(context);
+        var userId = Guid.NewGuid();
+
+        var tagOld = new TagEntity("Oldest", userId) { CreatedDate = DateTime.UtcNow.AddMinutes(-10) };
+        var tagMiddle = new TagEntity("Middle", userId) { CreatedDate = DateTime.UtcNow.AddMinutes(-5) };
+        var tagNew = new TagEntity("Newest", userId) { CreatedDate = DateTime.UtcNow };
+
+        context.Tags.AddRange(tagMiddle, tagOld, tagNew);
+        await context.SaveChangesAsync();
+
+        // Act
+        var (items, totalCount) = await repo.GetTagsAsync(userId, page: 1, pageSize: 10);
+        var itemsList = items.ToList();
+
+        // Assert
+        Assert.Equal(3, totalCount);
+        Assert.Equal("Oldest", itemsList[0].Name);
+        Assert.Equal("Middle", itemsList[1].Name);
+        Assert.Equal("Newest", itemsList[2].Name);
+    }
+
+    /// <summary>
     /// Verifies that <see cref="TagRepository.GetTagByIdForUserAsync"/> returns the tag
     /// only if it belongs to the specified user.
     /// </summary>

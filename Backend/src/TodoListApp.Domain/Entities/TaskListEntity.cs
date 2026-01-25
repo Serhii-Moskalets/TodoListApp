@@ -32,7 +32,6 @@ public class TaskListEntity : BaseEntity
 
         this.OwnerId = ownerId;
         this.Title = title.Trim();
-        this.CreatedDate = DateTime.UtcNow;
     }
 
     private TaskListEntity() { }
@@ -42,12 +41,6 @@ public class TaskListEntity : BaseEntity
     /// </summary>
     [Column("title")]
     public string Title { get; private set; } = null!;
-
-    /// <summary>
-    /// Gets the creation date of the task list.
-    /// </summary>
-    [Column("created_date")]
-    public DateTime CreatedDate { get; init; }
 
     /// <summary>
     /// Gets the ID of the user who owns this task list.
@@ -80,7 +73,7 @@ public class TaskListEntity : BaseEntity
             throw new DomainException("Title of the task list cannot be empty.");
         }
 
-        if (title.Length > 100)
+        if (title.Length > 50)
         {
             throw new DomainException("Title cannot exceed 50 characters.");
         }

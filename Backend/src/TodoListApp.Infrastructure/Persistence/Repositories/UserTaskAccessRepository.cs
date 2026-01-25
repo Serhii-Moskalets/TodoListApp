@@ -238,7 +238,7 @@ public class UserTaskAccessRepository : IUserTaskAccessRepository
 
         var items = await taskAccessQuery
             .Include(x => x.Task).ThenInclude(t => t.Tag)
-            .OrderByDescending(x => x.Task.CreatedDate)
+            .OrderByDescending(x => x.CreatedDate)
             .ApplyPagination(page, pageSize)
             .ToListAsync(cancellationToken);
 

@@ -34,6 +34,12 @@ public class UserTaskAccessEntity
     public Guid UserId { get; init; }
 
     /// <summary>
+    /// Gets the date and time when the shared access was created.
+    /// </summary>
+    [Column("created_date")]
+    public DateTime CreatedDate { get; init; } = DateTime.UtcNow;
+
+    /// <summary>
     /// Gets the task associated with this access.
     /// </summary>
     public virtual TaskEntity Task { get; init; } = null!;
