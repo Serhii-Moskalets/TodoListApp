@@ -14,6 +14,7 @@ namespace TodoListApp.Application.Tests.Tasks.Commands;
 public class DeleteOverdueTasksCommandHandlerTests
 {
     private readonly Mock<IUnitOfWork> _uowMock;
+    private readonly Mock<ITaskRepository> _taskRepoMock;
     private readonly Mock<ITaskListRepository> _taskListRepoMock;
     private readonly DeleteOverdueTasksCommandHandler _handler;
 
@@ -23,8 +24,10 @@ public class DeleteOverdueTasksCommandHandlerTests
     public DeleteOverdueTasksCommandHandlerTests()
     {
         this._uowMock = new Mock<IUnitOfWork>();
+        this._taskRepoMock = new Mock<ITaskRepository>();
         this._taskListRepoMock = new Mock<ITaskListRepository>();
 
+        this._uowMock.Setup(u => u.Tasks).Returns(this._taskRepoMock.Object);
         this._uowMock.Setup(u => u.TaskLists).Returns(this._taskListRepoMock.Object);
 
         this._handler = new DeleteOverdueTasksCommandHandler(this._uowMock.Object);
@@ -38,13 +41,16 @@ public class DeleteOverdueTasksCommandHandlerTests
     public async Task Handle_ShouldReturnNotFound_WhenTaskListDoesNotExist()
     {
         // Arrange
+        var userId = Guid.NewGuid();
+        var taskListId = Guid.NewGuid();
+
         this._taskListRepoMock
-            .Setup(r => r.GetTaskListByIdForUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), false, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetTaskListByIdForUserAsync(taskListId, userId, false, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskListEntity?)null);
 
         this._uowMock.Setup(u => u.TaskLists).Returns(this._taskListRepoMock.Object);
 
-        var command = new DeleteOverdueTasksCommand(Guid.NewGuid(), Guid.NewGuid());
+        var command = new DeleteOverdueTasksCommand(taskListId, userId);
 
         // Act
         var result = await this._handler.Handle(command, CancellationToken.None);
@@ -52,6 +58,9 @@ public class DeleteOverdueTasksCommandHandlerTests
         // Assert
         Assert.False(result.IsSuccess);
         Assert.Equal(ErrorCode.NotFound, result.Error!.Code);
+
+        this._taskRepoMock.Verify(
+            r => r.DeleteOverdueTaskAsync(It.IsAny<Guid>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     /// <summary>
@@ -59,26 +68,36 @@ public class DeleteOverdueTasksCommandHandlerTests
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Fact]
-    public async Task Handle_ShouldDeleteOverdueTasks_WhenTaskListExists()
+    public async Task Handle_ShouldDeleteOverdueTasks_WhenTaskListExistsAndTasksAreDeleted()
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var taskListMock = new Mock<TaskListEntity>(userId, "My list") { CallBase = true };
+        var expectedDeletedCount = 5;
+        var taskList = new TaskListEntity(userId, "My list");
 
         this._taskListRepoMock
-            .Setup(r => r.GetTaskListByIdForUserAsync(taskListMock.Object.Id, userId, false, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(taskListMock.Object);
+            .Setup(r => r.GetTaskListByIdForUserAsync(taskList.Id, userId, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(taskList);
 
-        this._uowMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        this._taskRepoMock
+            .Setup(r => r.DeleteOverdueTaskAsync(taskList.Id, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedDeletedCount);
 
-        var command = new DeleteOverdueTasksCommand(taskListMock.Object.Id, userId);
+        var command = new DeleteOverdueTasksCommand(taskList.Id, userId);
 
         // Act
         var result = await this._handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
-        taskListMock.Verify(t => t.DeleteOverdueTasks(It.IsAny<DateTime>()), Times.Once);
-        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(expectedDeletedCount, result.Value);
+
+        this._taskRepoMock.Verify(
+            r => r.DeleteOverdueTaskAsync(
+            taskList.Id,
+            It.IsAny<DateTime>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+
+        this._uowMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }
