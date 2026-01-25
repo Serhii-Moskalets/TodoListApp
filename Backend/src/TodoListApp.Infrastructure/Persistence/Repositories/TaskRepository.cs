@@ -173,6 +173,18 @@ public class TaskRepository(TodoListAppDbContext context)
     }
 
     /// <summary>
+    /// Deletes all overdue tasks within a specific task list.
+    /// </summary>
+    /// <param name="taskListId">The unique identifier of the task list.</param>
+    /// <param name="now">The current date and time used to determine overdue tasks.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+    /// <returns>The number of tasks that were successfully deleted.</returns>
+    public async Task<int> DeleteOverdueTaskAsync(Guid taskListId, DateTime now, CancellationToken cancellationToken = default)
+        => await this.DbSet
+            .Where(t => t.TaskListId == taskListId && t.DueDate.HasValue && t.DueDate < now)
+            .ExecuteDeleteAsync(cancellationToken);
+
+    /// <summary>
     /// Checks if a specific user is the owner of a task.
     /// </summary>
     /// <param name="taskId">The unique identifier of the task.</param>

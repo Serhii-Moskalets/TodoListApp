@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TodoListApp.Infrastructure.Persistence.DatabaseContext;
@@ -11,9 +12,11 @@ using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 namespace TodoListApp.Infrastructure.Migrations
 {
     [DbContext(typeof(TodoListAppDbContext))]
-    partial class TodoListAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260125130442_SetTimestamptzForDateTime")]
+    partial class SetTimestamptzForDateTime
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -25,8 +28,7 @@ namespace TodoListApp.Infrastructure.Migrations
             modelBuilder.Entity("TodoListApp.Domain.Entities.CommentEntity", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone")
@@ -58,12 +60,7 @@ namespace TodoListApp.Infrastructure.Migrations
             modelBuilder.Entity("TodoListApp.Domain.Entities.TagEntity", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_date");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -85,8 +82,7 @@ namespace TodoListApp.Infrastructure.Migrations
             modelBuilder.Entity("TodoListApp.Domain.Entities.TaskEntity", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone")
@@ -136,8 +132,7 @@ namespace TodoListApp.Infrastructure.Migrations
             modelBuilder.Entity("TodoListApp.Domain.Entities.TaskListEntity", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone")
@@ -163,12 +158,7 @@ namespace TodoListApp.Infrastructure.Migrations
             modelBuilder.Entity("TodoListApp.Domain.Entities.UserEntity", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_date");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -240,10 +230,6 @@ namespace TodoListApp.Infrastructure.Migrations
                     b.Property<Guid>("TaskId")
                         .HasColumnType("uuid")
                         .HasColumnName("task_id");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_date");
 
                     b.HasKey("UserId", "TaskId");
 

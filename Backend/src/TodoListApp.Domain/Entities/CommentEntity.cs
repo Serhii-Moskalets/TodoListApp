@@ -33,7 +33,6 @@ public class CommentEntity : BaseEntity
         this.TaskId = taskId;
         this.UserId = userId;
         this.Text = text.Trim();
-        this.CreatedDate = DateTime.UtcNow;
     }
 
     /// <summary>
@@ -65,12 +64,6 @@ public class CommentEntity : BaseEntity
     /// </summary>
     [Column("text")]
     public string Text { get; private set; } = null!;
-
-    /// <summary>
-    /// Gets the date and time when the comment was created.
-    /// </summary>
-    [Column("created_date")]
-    public DateTime CreatedDate { get; init; }
 
     /// <summary>
     /// Gets the ID of the task that this comment belongs to.
