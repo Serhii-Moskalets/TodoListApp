@@ -36,7 +36,7 @@ public class EmailTemplateProviderTests
         // Assert
         htmlResult.Should().NotBeNullOrEmpty();
 
-        htmlResult.Should().Contain("Hi, <span class=\"user-name\">john</span>!");
+        htmlResult.Should().Contain("Hi, <strong>john</strong>!");
         htmlResult.Should().Contain("https://todo-app.com/verify?token=abc");
 
         htmlResult.Should().NotContain("{{USER_NAME}}");
