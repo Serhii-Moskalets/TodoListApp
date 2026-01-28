@@ -22,7 +22,7 @@ public class EmailSenderTests
     /// </list>
     /// </remarks>
     /// <returns>A task representing the asynchronous test operation.</returns>
-    [Fact]
+    [Fact(Skip = "Integration test. Run manually to verify real SMTP connectivity.")]
     public async Task SendAsync_WithValidSettings_ShouldSendEmail()
     {
         // Arrange

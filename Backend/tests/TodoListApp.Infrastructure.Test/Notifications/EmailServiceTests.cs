@@ -9,6 +9,11 @@ namespace TodoListApp.Infrastructure.Test.Notifications;
 /// </summary>
 public class EmailServiceTests
 {
+    private const string Email = "john@test.com";
+    private const string UserName = "john";
+    private const string Link = "https://link.com";
+    private const string ExpectedBody = "<html>Generated Body</html>";
+
     private readonly Mock<IEmailSender> _senderMock;
     private readonly Mock<IEmailTemplateProvider> _templateProviderMock;
     private readonly EmailService _emailService;
@@ -22,6 +27,12 @@ public class EmailServiceTests
         this._templateProviderMock = new Mock<IEmailTemplateProvider>();
 
         this._emailService = new EmailService(this._senderMock.Object, this._templateProviderMock.Object);
+
+        this._templateProviderMock.Setup(
+            x => x.GetEmailTemplateAsync(
+                It.IsAny<string>(),
+                It.IsAny<Dictionary<string, string>>()))
+            .ReturnsAsync(ExpectedBody);
     }
 
     /// <summary>
@@ -39,18 +50,26 @@ public class EmailServiceTests
     [Fact]
     public async Task SendConfirmationEmailAsync_ShouldCallProviderAndSender()
     {
-        // Arrange
-        const string email = "test@user.com";
-        this._templateProviderMock.Setup(x => x.GetEmailTemplateAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
-            .ReturnsAsync("<html>Generated Body</html>");
-
         // Act
-        await this._emailService.SendConfirmationEmailAsync(email, "John", "https://link.com", CancellationToken.None);
+        await this._emailService.SendConfirmationEmailAsync(Email, UserName, Link, CancellationToken.None);
 
         // Assert
-        this._templateProviderMock.Verify(x => x.GetEmailTemplateAsync("email_verification", It.IsAny<Dictionary<string, string>>()), Times.Once);
+        this._templateProviderMock.Verify(
+            x => x.GetEmailTemplateAsync(
+                EmailTemplates.EmailVerification,
+                It.Is<Dictionary<string, string>>(
+                    dict =>
+                    dict["USER_NAME"] == UserName &&
+                    dict["VERIFY_LINK"] == Link)),
+            Times.Once);
 
-        this._senderMock.Verify(x => x.SendAsync(email, It.IsAny<string>(), "<html>Generated Body</html>", It.IsAny<CancellationToken>()), Times.Once);
+        this._senderMock.Verify(
+            x => x.SendAsync(
+                Email,
+                EmailSubjects.RegistrationConfirmation,
+                ExpectedBody,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     /// <summary>
@@ -61,36 +80,54 @@ public class EmailServiceTests
     [Fact]
     public async Task SendEmailChangeConfirmationAsync_ShouldCallProviderWithCorrectTemplate()
     {
-        // Arrange
-        const string email = "new-email@user.com";
-        const string userName = "john";
-        const string changeLink = "https://link.com/change";
-        const string expectedBody = "<html>Email Change Body</html>";
-
-        this._templateProviderMock
-            .Setup(x => x.GetEmailTemplateAsync(
-                "email_change_confirmation",
-                It.IsAny<Dictionary<string, string>>()))
-            .ReturnsAsync(expectedBody);
-
         // Act
-        await this._emailService.SendEmailChangeConfirmationAsync(email, userName, changeLink, CancellationToken.None);
+        await this._emailService.SendEmailChangeConfirmationAsync(Email, UserName, Link, CancellationToken.None);
 
         // Assert
         this._templateProviderMock.Verify(
             x => x.GetEmailTemplateAsync(
-                "email_change_confirmation",
+                EmailTemplates.EmailChange,
                 It.Is<Dictionary<string, string>>(
                     dict =>
-                    dict["USER_NAME"] == userName &&
-                    dict["CHANGE_LINK"] == changeLink)),
+                    dict["USER_NAME"] == UserName &&
+                    dict["CHANGE_LINK"] == Link)),
             Times.Once);
 
         this._senderMock.Verify(
             x => x.SendAsync(
-                email,
-                "Confirm your new email address",
-                expectedBody,
+                Email,
+                EmailSubjects.EmailChangeConfirmation,
+                ExpectedBody,
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="EmailService.SendPasswordResetEmailAsync"/> correctly
+    /// coordinates template processing and delivery for password reset requests.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task SendPasswordResetEmailAsync_ShouldCallProviderAndSender()
+    {
+        // Act
+        await this._emailService.SendPasswordResetEmailAsync(Email, UserName, Link, CancellationToken.None);
+
+        // Assert
+        this._templateProviderMock.Verify(
+            x => x.GetEmailTemplateAsync(
+                EmailTemplates.PasswordReset,
+                It.Is<Dictionary<string, string>>(
+                    dict =>
+                    dict["USER_NAME"] == UserName &&
+                    dict["RESET_LINK"] == Link)),
+            Times.Once);
+
+        this._senderMock.Verify(
+            x => x.SendAsync(
+                Email,
+                EmailSubjects.PasswordReset,
+                ExpectedBody,
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

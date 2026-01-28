@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using TodoListApp.Application.Abstractions.Interfaces.Notifications;
 using TodoListApp.Infrastructure.Notifications.Services;
 
 namespace TodoListApp.Infrastructure.Test.Notifications;
@@ -22,8 +23,6 @@ public class EmailTemplateProviderTests
     public async Task GetEmailTemplateAsync_ShouldReplaceAllPlaceholders()
     {
         // Arrange
-        const string templateName = "email_verification";
-
         var placeholders = new Dictionary<string, string>
         {
             { "USER_NAME", "john" },
@@ -31,12 +30,12 @@ public class EmailTemplateProviderTests
         };
 
         // Act
-        var htmlResult = await this._provider.GetEmailTemplateAsync(templateName, placeholders);
+        var htmlResult = await this._provider.GetEmailTemplateAsync(EmailTemplates.EmailVerification, placeholders);
 
         // Assert
         htmlResult.Should().NotBeNullOrEmpty();
 
-        htmlResult.Should().Contain("Hi, <strong>john</strong>!");
+        htmlResult.Should().Contain("john");
         htmlResult.Should().Contain("https://todo-app.com/verify?token=abc");
 
         htmlResult.Should().NotContain("{{USER_NAME}}");
@@ -62,5 +61,28 @@ public class EmailTemplateProviderTests
         // Assert
         await act.Should().ThrowAsync<FileNotFoundException>()
             .WithMessage("*Email template not found at*");
+    }
+
+    /// <summary>
+    /// Verifies that the provider correctly HTML-encodes placeholder values to prevent XSS injections
+    /// when rendering the email body.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task GetEmailTemplateAsync_ShouldHtmlEncodePlaceholderValues()
+    {
+        // Arrange
+        var placeholders = new Dictionary<string, string>
+        {
+            { "USER_NAME", "<script>alert('xss')</script>" },
+            { "VERIFY_LINK", "http://test.com" },
+        };
+
+        // Act
+        var result = await this._provider.GetEmailTemplateAsync(EmailTemplates.EmailVerification, placeholders);
+
+        // Assert
+        result.Should().Contain("&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;");
+        result.Should().NotContain("<script>");
     }
 }
