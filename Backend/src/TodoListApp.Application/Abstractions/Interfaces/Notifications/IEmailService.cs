@@ -32,4 +32,18 @@ public interface IEmailService
         string userName,
         string changeLink,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sends a confirmation email to verify a user's request to reset their password.
+    /// </summary>
+    /// <param name="toEmail">The recipient's current email address.</param>
+    /// <param name="userName">The name of the user for personalization in the email.</param>
+    /// <param name="resetLink">The unique link the user must click to confirm the password reset.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    Task SendPasswordResetEmailAsync(
+        string toEmail,
+        string userName,
+        string resetLink,
+        CancellationToken cancellationToken = default);
 }
