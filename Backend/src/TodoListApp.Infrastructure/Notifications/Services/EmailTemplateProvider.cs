@@ -1,4 +1,7 @@
-﻿using TodoListApp.Application.Abstractions.Interfaces.Notifications;
+﻿using System.Collections.Concurrent;
+using System.Net;
+using System.Text;
+using TodoListApp.Application.Abstractions.Interfaces.Notifications;
 
 namespace TodoListApp.Infrastructure.Notifications.Services;
 
@@ -7,6 +10,8 @@ namespace TodoListApp.Infrastructure.Notifications.Services;
 /// </summary>
 public class EmailTemplateProvider : IEmailTemplateProvider
 {
+    private static readonly ConcurrentDictionary<string, string> TemplateCache = [];
+
     /// <summary>
     /// Loads an HTML template file and replaces defined placeholders with actual values.
     /// </summary>
@@ -16,19 +21,26 @@ public class EmailTemplateProvider : IEmailTemplateProvider
     /// <exception cref="FileNotFoundException">Thrown when the specified template file does not exist.</exception>
     public async Task<string> GetEmailTemplateAsync(string templateName, Dictionary<string, string> placeholders)
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "Notifications", "Templates", $"{templateName}.html");
-        if (!File.Exists(path))
+        if (!TemplateCache.TryGetValue(templateName, out var originalTemplate))
         {
-            throw new FileNotFoundException($"Email template not found at: {path}");
+            var path = Path.Combine(AppContext.BaseDirectory, "Notifications", "Templates", $"{templateName}.html");
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException($"Email template not found at: {path}");
+            }
+
+            originalTemplate = await File.ReadAllTextAsync(path);
+            TemplateCache[templateName] = originalTemplate;
         }
 
-        var content = await File.ReadAllTextAsync(path);
+        var processedContent = new StringBuilder(originalTemplate);
 
         foreach (var item in placeholders)
         {
-            content = content.Replace($"{{{{{item.Key}}}}}", item.Value);
+            var safeValue = WebUtility.HtmlEncode(item.Value);
+            processedContent.Replace($"{{{{{item.Key}}}}}", safeValue);
         }
 
-        return content;
+        return processedContent.ToString();
     }
 }

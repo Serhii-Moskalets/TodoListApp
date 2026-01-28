@@ -43,7 +43,7 @@ public static class ServiceCollectionExtensions
         // --- Add Email services ---
         services.Configure<EmailSettings>(config.GetSection(EmailSettings.SectionName));
         services.AddTransient<IEmailSender, EmailSender>();
-        services.AddScoped<IEmailTemplateProvider, EmailTemplateProvider>();
+        services.AddSingleton<IEmailTemplateProvider, EmailTemplateProvider>();
         services.AddScoped<IEmailService, EmailService>();
 
         return services;
