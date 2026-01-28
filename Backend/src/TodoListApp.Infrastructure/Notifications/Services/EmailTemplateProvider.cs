@@ -1,4 +1,4 @@
-﻿using TodoListApp.Application.Abstractions.Interfaces.Services;
+﻿using TodoListApp.Application.Abstractions.Interfaces.Notifications;
 
 namespace TodoListApp.Infrastructure.Notifications.Services;
 

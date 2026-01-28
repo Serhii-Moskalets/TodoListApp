@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TodoListApp.Application.Abstractions.Interfaces.Notifications;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
-using TodoListApp.Application.Abstractions.Interfaces.Services;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
 using TodoListApp.Infrastructure.Notifications.Services;
 using TodoListApp.Infrastructure.Notifications.Settings;
@@ -42,8 +42,8 @@ public static class ServiceCollectionExtensions
 
         // --- Add Email services ---
         services.Configure<EmailSettings>(config.GetSection(EmailSettings.SectionName));
-        services.AddTransient<EmailSender>();
-        services.AddSingleton<IEmailTemplateProvider, EmailTemplateProvider>();
+        services.AddTransient<IEmailSender, EmailSender>();
+        services.AddScoped<IEmailTemplateProvider, EmailTemplateProvider>();
         services.AddScoped<IEmailService, EmailService>();
 
         return services;

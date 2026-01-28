@@ -1,4 +1,4 @@
-﻿namespace TodoListApp.Application.Abstractions.Interfaces.Services;
+﻿namespace TodoListApp.Application.Abstractions.Interfaces.Notifications;
 
 /// <summary>
 /// Defines a provider for loading and processing email templates.

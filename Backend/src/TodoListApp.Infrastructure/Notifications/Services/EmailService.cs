@@ -1,4 +1,4 @@
-﻿using TodoListApp.Application.Abstractions.Interfaces.Services;
+﻿using TodoListApp.Application.Abstractions.Interfaces.Notifications;
 
 namespace TodoListApp.Infrastructure.Notifications.Services;
 
@@ -8,8 +8,8 @@ namespace TodoListApp.Infrastructure.Notifications.Services;
 /// <param name="sender">The SMTP sender implementation.</param>
 /// <param name="templateProvider">The template engine for loading HTML files.</param>
 public class EmailService
-    (EmailSender sender,
-    EmailTemplateProvider templateProvider) : IEmailService
+    (IEmailSender sender,
+    IEmailTemplateProvider templateProvider) : IEmailService
 {
     /// <summary>
     /// Prepares and sends a registration confirmation email to a new user.
