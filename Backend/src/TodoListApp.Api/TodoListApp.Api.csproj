@@ -6,6 +6,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	<NoWarn>SA1633,SA1200,SA1309,S2139,CA1873,IDE0290,SA1313,SA1009</NoWarn>
+    <UserSecretsId>d9da6be1-d184-4384-9df4-2ca9d476a7a0</UserSecretsId>
   </PropertyGroup>
 	
   <ItemGroup>

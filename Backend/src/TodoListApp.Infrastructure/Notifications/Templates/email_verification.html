@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Confirmation</title>
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .email-header {
+            background: linear-gradient(135deg, #4a5cd6 0%, #5d3a8c 100%);
+            padding: 40px 30px 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .email-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin: 15px 0 0;
+        }
+
+        .email-body {
+            padding: 40px 30px;
+            line-height: 1.6;
+        }
+
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 25px;
+            color: #4a5568;
+        }
+
+        .instructions {
+            margin-bottom: 30px;
+            color: #4a5568;
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 35px 0;
+        }
+
+        .action-button {
+            display: inline-block;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #4a5cd6 0%, #5d3a8c 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(74, 92, 214, 0.3);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+            .action-button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(74, 92, 214, 0.4);
+                color: white;
+            }
+
+        .expiry-notice {
+            text-align: center;
+            color: #718096;
+            font-size: 14px;
+            margin-top: 30px;
+        }
+
+        .alternative-link {
+            margin-top: 25px;
+            font-size: 14px;
+            color: #4a5568;
+            text-align: center;
+        }
+
+            .alternative-link a {
+                color: #4a5cd6;
+                word-break: break-all;
+            }
+
+        .email-footer {
+            padding: 30px;
+            background-color: #f8f9fa;
+            text-align: center;
+            font-size: 14px;
+            color: #4a5568;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .footer-links {
+            margin-top: 20px;
+        }
+
+            .footer-links a {
+                color: #2d3748;
+                text-decoration: none;
+                margin: 0 10px;
+                font-weight: 500;
+            }
+
+                .footer-links a:hover {
+                    color: #4a5cd6;
+                    text-decoration: underline;
+                }
+
+        .user-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .warning-notice {
+            background-color: #fff5f5;
+            border-left: 4px solid #e53e3e;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            color: #742a2a;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                border-radius: 0;
+            }
+
+            .email-header, .email-body {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <div class="logo">To-Do Application</div>
+            <h1 class="email-title">Verify Your Email Address</h1>
+        </div>
+
+        <div class="email-body">
+            <p class="greeting">Hi, <span class="user-name">{{USER_NAME}}</span>!</p>
+
+            <p class="instructions">
+                Thanks for signing up! To get started with your account, please confirm your email address by clicking the button below.
+            </p>
+
+            <div class="button-container">
+                <a href="{{VERIFY_LINK}}"
+                   style="
+                         display:inline-block;
+                         padding:16px 40px;
+                         background-color: #4a5cd6;
+                         background:linear-gradient(135deg,#4a5cd6 0%,#5d3a8c 100%);
+                         color:#ffffff !important;
+                         text-decoration:none;
+                         border-radius:50px;
+                         font-weight:600;
+                         font-size:16px;
+                         box-shadow:0 4px 15px rgba(74,92,214,0.3);
+                         cursor:pointer;
+                     ">
+                    Confirm Email Address
+                </a>
+            </div>
+
+            <p class="alternative-link">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                <a href="{{VERIFY_LINK}}">{{VERIFY_LINK}}</a>
+            </p>
+
+            <p class="expiry-notice">
+                This link is valid for 15 minutes.
+            </p>
+        </div>
+
+        <div class="email-footer">
+            <p>If you didn't create this account, you can safely ignore this email.</p>
+
+            <div class="footer-links">
+                <a href="#">Help Center</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+            </div>
+
+            <p style="margin-top: 20px;">&copy; 2026 To-Do Application. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
