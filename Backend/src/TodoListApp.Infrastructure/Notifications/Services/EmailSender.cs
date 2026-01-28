@@ -3,6 +3,7 @@ using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using TodoListApp.Application.Abstractions.Interfaces.Notifications;
+using TodoListApp.Infrastructure.Notifications.Exceptions;
 using TodoListApp.Infrastructure.Notifications.Settings;
 
 namespace TodoListApp.Infrastructure.Notifications.Services;
@@ -21,12 +22,25 @@ public class EmailSender(IOptions<EmailSettings> settings) : IEmailSender
     /// <param name="subject">The email subject line.</param>
     /// <param name="body">The HTML body content.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <exception cref="InvalidOperationException">
+    /// <exception cref="EmailSendException">
     /// Thrown when SMTP delivery fails. Check inner exception for details (auth, network, etc.).
+    /// </exception>
+    /// /<exception cref="ArgumentException">
+    /// Thrown when <paramref name="toEmail"/> is null, empty, or invalid.
     /// </exception>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task SendAsync(string toEmail, string subject, string body, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(toEmail))
+        {
+            throw new ArgumentException("Email cannot be empty", nameof(toEmail));
+        }
+
+        if (!MailboxAddress.TryParse(toEmail, out _))
+        {
+            throw new ArgumentException("Invalid email address format", nameof(toEmail));
+        }
+
         try
         {
             var message = new MimeMessage();
@@ -46,7 +60,7 @@ public class EmailSender(IOptions<EmailSettings> settings) : IEmailSender
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"Failed to send email to {toEmail}", ex);
+            throw new EmailSendException(toEmail, $"Failed to send email to {toEmail}", ex);
         }
     }
 }
