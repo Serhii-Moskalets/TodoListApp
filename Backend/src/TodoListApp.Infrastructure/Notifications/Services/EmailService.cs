@@ -17,13 +17,13 @@ public class EmailService
     /// <param name="toEmail">The recipient's email address.</param>
     /// <param name="userName">The name of the user to be used in the greeting.</param>
     /// <param name="confirmLink">The URL for email verification.</param>
-    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task SendConfirmationEmailAsync(
+    public Task SendConfirmationEmailAsync(
         string toEmail,
         string userName,
         string confirmLink,
-        CancellationToken ct = default)
+        CancellationToken cancellationToken = default)
     {
         var placeholders = new Dictionary<string, string>
         {
@@ -31,9 +31,12 @@ public class EmailService
             { "VERIFY_LINK", confirmLink },
         };
 
-        var body = await templateProvider.GetEmailTemplateAsync("email_verification", placeholders);
-
-        await sender.SendAsync(toEmail, "Registration confirmation", body, ct);
+        return this.SendEmailAsync(
+            toEmail,
+            EmailSubjects.RegistrationConfirmation,
+            EmailTemplates.EmailVerification,
+            placeholders,
+            cancellationToken);
     }
 
     /// <summary>
@@ -44,7 +47,7 @@ public class EmailService
     /// <param name="changeLink">The unique link the user must click to confirm the email change.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public async Task SendEmailChangeConfirmationAsync(
+    public Task SendEmailChangeConfirmationAsync(
         string toEmail,
         string userName,
         string changeLink,
@@ -56,8 +59,55 @@ public class EmailService
             { "CHANGE_LINK", changeLink },
         };
 
-        var body = await templateProvider.GetEmailTemplateAsync("email_change_confirmation", placeholders);
+        return this.SendEmailAsync(
+            toEmail,
+            EmailSubjects.EmailChangeConfirmation,
+            EmailTemplates.EmailChange,
+            placeholders,
+            cancellationToken);
+    }
 
-        await sender.SendAsync(toEmail, "Confirm your new email address", body, cancellationToken);
+    /// <summary>
+    /// Sends a confirmation email to verify a user's request to reset their password.
+    /// </summary>
+    /// <param name="toEmail">The recipient's current email address.</param>
+    /// <param name="userName">The name of the user for personalization in the email.</param>
+    /// <param name="resetLink">The unique link the user must click to confirm the password reset.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public Task SendPasswordResetEmailAsync(
+        string toEmail,
+        string userName,
+        string resetLink,
+        CancellationToken cancellationToken = default)
+    {
+        var placeholders = new Dictionary<string, string>
+        {
+            { "USER_NAME", userName },
+            { "RESET_LINK", resetLink },
+        };
+
+        return this.SendEmailAsync(
+            toEmail,
+            EmailSubjects.PasswordReset,
+            EmailTemplates.PasswordReset,
+            placeholders,
+            cancellationToken);
+    }
+
+    private async Task SendEmailAsync(
+        string toEmail,
+        string subject,
+        string templateName,
+        Dictionary<string, string> placeholders,
+        CancellationToken cancellationToken)
+    {
+        var body = await templateProvider.GetEmailTemplateAsync(templateName, placeholders);
+
+        await sender.SendAsync(
+            toEmail,
+            subject,
+            body,
+            cancellationToken);
     }
 }
