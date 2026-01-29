@@ -2,9 +2,9 @@ name: .NET Core CI
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev", "feature/*" ]
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev", "feature/*" ]
 
 jobs:
   build:
@@ -16,9 +16,8 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x # або 9.0.x
+        dotnet-version: 10.0.x
 
-    # Вказуємо шлях до папки Backend для всіх команд
     - name: Restore dependencies
       run: dotnet restore Backend/
 
@@ -26,4 +25,12 @@ jobs:
       run: dotnet build Backend/ --no-restore
 
     - name: Test
+      env:
+        EmailSettings__Host: "smtp.gmail.com"
+        EmailSettings__Port: 587
+        EmailSettings__FromEmail: "monsters.inc.verif@gmail.com"
+        EmailSettings__FromName: "To-Do App"
+        EmailSettings__UserName: "monsters.inc.verif@gmail.com"
+        EmailSettings__Password: ${{ secrets.EMAIL_PASSWORD }}
+        EmailSettings__EnableSsl: "true"
       run: dotnet test Backend/ --no-build --verbosity normal

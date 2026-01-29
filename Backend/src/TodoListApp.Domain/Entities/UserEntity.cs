@@ -21,7 +21,7 @@ public class UserEntity : BaseEntity
     /// <exception cref="DomainException">
     /// Thrown when
     /// <paramref name="firstName"/>, <paramref name="userName"/>,
-    /// <paramref name="email"/>, <paramref name="passwordHash"/>,
+    /// <paramref name="email"/>, <paramref name="passwordHash"/>
     /// is null, empty, or consists only of white-space characters.
     /// </exception>
     public UserEntity(string firstName, string userName, string email, string passwordHash, string? lastName = null)
@@ -76,7 +76,7 @@ public class UserEntity : BaseEntity
     /// Gets the username of the user.
     /// </summary>
     [Column("user_name")]
-    public string UserName { get; private set; } = null!;
+    public string UserName { get; init; } = null!;
 
     /// <summary>
     /// Gets the email address of the user.
@@ -123,27 +123,27 @@ public class UserEntity : BaseEntity
     /// <summary>
     /// Gets the comments created by the user.
     /// </summary>
-    public virtual ICollection<CommentEntity> Comments { get; init; } = new HashSet<CommentEntity>();
+    public virtual ICollection<CommentEntity> Comments { get; init; } = [];
 
     /// <summary>
     /// Gets the tags owned by the user.
     /// </summary>
-    public virtual ICollection<TagEntity> Tags { get; init; } = new HashSet<TagEntity>();
+    public virtual ICollection<TagEntity> Tags { get; init; } = [];
 
     /// <summary>
     /// Gets the task lists owned by the user.
     /// </summary>
-    public virtual ICollection<TaskListEntity> TaskLists { get; init; } = new HashSet<TaskListEntity>();
+    public virtual ICollection<TaskListEntity> TaskLists { get; init; } = [];
 
     /// <summary>
     /// Gets the tasks owned by the user.
     /// </summary>
-    public virtual ICollection<TaskEntity> OwnedTasks { get; init; } = new HashSet<TaskEntity>();
+    public virtual ICollection<TaskEntity> OwnedTasks { get; init; } = [];
 
     /// <summary>
     /// Gets the task access records for the user.
     /// </summary>
-    public virtual ICollection<UserTaskAccessEntity> TaskAccesses { get; init; } = new HashSet<UserTaskAccessEntity>();
+    public virtual ICollection<UserTaskAccessEntity> TaskAccesses { get; init; } = [];
 
     /// <summary>
     /// Sets an email verification token for the user.

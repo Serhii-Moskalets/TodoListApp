@@ -1,7 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TodoListApp.Application.Abstractions.Interfaces.Notifications;
 using TodoListApp.Application.Abstractions.Interfaces.Repositories;
 using TodoListApp.Application.Abstractions.Interfaces.UnitOfWork;
+using TodoListApp.Infrastructure.Notifications.Services;
+using TodoListApp.Infrastructure.Notifications.Settings;
 using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 using TodoListApp.Infrastructure.Persistence.Repositories;
 using TodoListApp.Infrastructure.Persistence.UnitOfWork;
@@ -18,10 +22,11 @@ public static class ServiceCollectionExtensions
     /// including the <see cref="TodoListAppDbContext"/> configured to use PostgreSQL.
     /// </summary>
     /// <param name="services">The service collection to add services to.</param>
-    /// <param name="connectionString">The connection string to the PostgreSQL database.</param>
+    /// <param name="config">The application configuration to access connection strings and settings.</param>
     /// <returns>The updated <see cref="IServiceCollection"/>.</returns>
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, string connectionString)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
+        var connectionString = config.GetConnectionString("DefaultConnection");
         services.AddDbContext<TodoListAppDbContext>(options =>
             options.UseNpgsql(connectionString));
 
@@ -34,6 +39,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserTaskAccessRepository, UserTaskAccessRepository>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // --- Add Email services ---
+        services.Configure<EmailSettings>(config.GetSection(EmailSettings.SectionName));
+        services.AddTransient<IEmailSender, EmailSender>();
+        services.AddSingleton<IEmailTemplateProvider, EmailTemplateProvider>();
+        services.AddScoped<IEmailService, EmailService>();
 
         return services;
     }

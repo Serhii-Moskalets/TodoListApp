@@ -9,11 +9,9 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Sinks.PostgreSQL;
 using TodoListApp.Api.Middleware;
-using TodoListApp.Application.Abstractions.Interfaces.TodoListAppDbContext;
 using TodoListApp.Application.Common.Extensions;
 using TodoListApp.Domain.Exceptions;
 using TodoListApp.Infrastructure.Extensions;
-using TodoListApp.Infrastructure.Persistence.DatabaseContext;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,10 +43,7 @@ builder.Logging.ClearProviders();
 builder.Host.UseSerilog();
 
 // DI
-builder.Services.AddDbContext<ITodoListAppDbContext, TodoListAppDbContext>(options =>
-    options.UseNpgsql(connectionString));
-
-builder.Services.AddInfrastructure(connectionString);
+builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddApplicationServices();
 
